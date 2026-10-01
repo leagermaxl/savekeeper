@@ -1,0 +1,15 @@
+# Normalize line endings: LF in the repository and in working copies.
+* text=auto eol=lf
+
+# Windows scripts keep CRLF.
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+
+# Binary samples and assets (SPEC-12 §4.3).
+*.png  binary
+*.ico  binary
+*.icns binary
+*.zip  binary
+*.age  binary
+*.reg  binary
