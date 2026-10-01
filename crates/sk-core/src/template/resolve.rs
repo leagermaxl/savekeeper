@@ -176,7 +176,9 @@ fn package_name(pfn: &str) -> Option<&str> {
     (valid && !name.is_empty()).then_some(name)
 }
 
-pub(super) fn from_path(path: &Path, env: &Environment) -> Parsed {
+/// `from_path` that only uses root tokens accepted by `allow`; drive tokens
+/// remain the fallback for paths with a drive letter.
+pub(super) fn from_path(path: &Path, env: &Environment, allow: &dyn Fn(&Token) -> bool) -> Parsed {
     let mut candidates: Vec<(Token, PathBuf)> = KnownFolder::ALL
         .into_iter()
         .filter_map(|f| {
@@ -191,6 +193,7 @@ pub(super) fn from_path(path: &Path, env: &Environment) -> Parsed {
             .iter()
             .map(|d| (Token::Drive(d.letter), drive_root(d.letter))),
     );
+    candidates.retain(|(token, _)| allow(token));
 
     // The longest matching candidate; on a tie the earlier one wins.
     let mut best: Option<(Token, Vec<Component<'_>>, usize)> = None;

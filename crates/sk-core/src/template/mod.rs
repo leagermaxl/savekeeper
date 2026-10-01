@@ -60,7 +60,17 @@ impl PathTemplate {
 
     /// The most specific template for an absolute path (SPEC-02 §3.2).
     pub fn from_path(path: &Path, env: &Environment) -> PathTemplate {
-        Self(resolve::from_path(path, env).render())
+        Self(resolve::from_path(path, env, &|_| true).render())
+    }
+
+    /// [`from_path`](Self::from_path) limited to the root tokens accepted by
+    /// `allow` (SPEC-02 §6: `EnvironmentSnapshot`).
+    pub(crate) fn from_path_with(
+        path: &Path,
+        env: &Environment,
+        allow: &dyn Fn(&Token) -> bool,
+    ) -> PathTemplate {
+        Self(resolve::from_path(path, env, allow).render())
     }
 
     /// The template string.

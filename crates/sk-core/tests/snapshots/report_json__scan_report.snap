@@ -1,0 +1,121 @@
+---
+source: crates/sk-core/tests/report_json.rs
+expression: "serde_json::to_value(report()).unwrap()"
+---
+{
+  "app_version": "0.1.0+g1a2b3c4",
+  "environment": {
+    "drives": [
+      {
+        "fs": "NTFS",
+        "kind": "fixed",
+        "label": null,
+        "letter": "C",
+        "volume_serial": 305419896
+      }
+    ],
+    "is_elevated": false,
+    "known_folders": {
+      "DOCUMENTS": "{ONEDRIVE}\\Документы",
+      "HOME": "{DRIVE:C}\\Users\\<redacted>",
+      "SAVED_GAMES": "{HOME}\\Saved Games"
+    },
+    "launchers": [
+      {
+        "game_count": 12,
+        "id": "steam",
+        "root": "{PROGRAMFILES_X86}\\Steam"
+      }
+    ],
+    "machine_name": "DESKTOP-01",
+    "os": {
+      "arch": "x86_64",
+      "build": "26100.2033",
+      "display_version": "24H2",
+      "product": "Windows 11 Pro",
+      "ui_language": "ru-RU"
+    }
+  },
+  "findings": [
+    {
+      "app": null,
+      "category": "game_save",
+      "children": [],
+      "default_selected": true,
+      "evidence": [
+        {
+          "confidence": 1.0,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "elden-ring"
+          }
+        }
+      ],
+      "id": "c456162ec5590775",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "C:\\Users\\max\\AppData\\Roaming\\EldenRing",
+        "root": "{APPDATA}\\EldenRing"
+      },
+      "title": "ELDEN RING — сохранения"
+    }
+  ],
+  "finished_at": "2026-09-28T14:31:40.25Z",
+  "issues": [
+    {
+      "message_args": {},
+      "message_key": "issue.onedrive_missing",
+      "path": null,
+      "severity": "info",
+      "source": "environment"
+    }
+  ],
+  "options": {
+    "collectors": {
+      "games": true,
+      "heuristics": true,
+      "rules": true,
+      "system": true
+    },
+    "llm": "off",
+    "max_depth": null,
+    "roots": [
+      "{DRIVE:D}"
+    ]
+  },
+  "scan_id": "a1b2c3d4-e5f6-4711-8899-aabbccddeeff",
+  "schema_version": 1,
+  "started_at": "2026-09-28T14:30:12Z",
+  "totals": {
+    "all": {
+      "bytes": 28311552,
+      "count": 1,
+      "selected_bytes": 28311552,
+      "selected_count": 1
+    },
+    "by_category": {
+      "game_save": {
+        "bytes": 28311552,
+        "count": 1,
+        "selected_bytes": 28311552,
+        "selected_count": 1
+      }
+    },
+    "needs_elevation_count": 0,
+    "sensitive_selected": 0,
+    "too_large_count": 0,
+    "unknown_count": 0
+  },
+  "unknown_summaries": []
+}

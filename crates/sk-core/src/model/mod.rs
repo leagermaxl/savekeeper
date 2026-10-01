@@ -6,6 +6,7 @@
 mod evidence;
 mod finding;
 mod id;
+mod report;
 mod scan;
 mod stats;
 mod summary;
@@ -13,6 +14,10 @@ mod summary;
 pub use evidence::{Evidence, EvidenceSource};
 pub use finding::{AppKind, AppRef, Category, Finding, RegHive, Target};
 pub use id::FindingId;
+pub use report::{
+    CategoryTotals, DriveSnapshot, EnvironmentSnapshot, LauncherSnapshot, ReportError,
+    ScanOptionsSnapshot, ScanReport, Totals,
+};
 pub use scan::{CollectorToggles, LlmMode};
 pub use stats::{IssueSeverity, ScanIssue, Score, Sensitivity, TargetStats};
 pub use summary::{ChildStat, ExtStat, FolderSummary, Marker};
