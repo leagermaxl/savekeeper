@@ -1,5 +1,8 @@
 //! SaveKeeper project automation, run as `cargo xtask <command>` (SPEC-12 §4.9).
 
+mod check_deps;
+mod deps_rules;
+
 use anyhow::bail;
 use clap::{Parser, Subcommand};
 
@@ -40,25 +43,28 @@ impl Command {
         }
     }
 
-    /// Task that implements the subcommand.
-    fn planned_in(self) -> &'static str {
+    /// Task that will implement the subcommand; `None` once it is implemented.
+    fn planned_in(self) -> Option<&'static str> {
         match self {
-            Command::Fixtures => "T-12-06",
-            Command::CheckDeps => "T-12-03",
-            Command::Bindings => "T-02-09, T-12-09",
-            Command::I18nCheck => "T-12-09",
-            Command::LlmEval => "T-12-12",
-            Command::Dist => "SPEC-14",
+            Command::Fixtures => Some("T-12-06"),
+            Command::CheckDeps => None,
+            Command::Bindings => Some("T-02-09, T-12-09"),
+            Command::I18nCheck => Some("T-12-09"),
+            Command::LlmEval => Some("T-12-12"),
+            Command::Dist => Some("SPEC-14"),
         }
     }
 }
 
 fn run(command: Command) -> anyhow::Result<()> {
-    bail!(
-        "`cargo xtask {}` is not implemented yet ({})",
-        command.name(),
-        command.planned_in()
-    )
+    match command {
+        Command::CheckDeps => check_deps::run(),
+        stub => bail!(
+            "`cargo xtask {}` is not implemented yet ({})",
+            stub.name(),
+            stub.planned_in().unwrap_or("not planned")
+        ),
+    }
 }
 
 fn main() -> anyhow::Result<()> {
@@ -107,9 +113,12 @@ mod tests {
     #[test]
     fn stubs_fail_with_task_reference() {
         for command in ALL {
+            let Some(task) = command.planned_in() else {
+                continue;
+            };
             let err = run(command).unwrap_err().to_string();
             assert!(err.contains(command.name()), "{err}");
-            assert!(err.contains(command.planned_in()), "{err}");
+            assert!(err.contains(task), "{err}");
         }
     }
 }
