@@ -68,7 +68,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@1.88
+      - uses: dtolnay/rust-toolchain@1.93
       - uses: Swatinem/rust-cache@v2
-      # `+1.88` overrides the `stable` channel from rust-toolchain.toml.
-      - run: cargo +1.88 check --workspace --exclude savekeeper-app --locked
+      # `+1.93` overrides the `stable` channel from rust-toolchain.toml.
+      - run: cargo +1.93 check --workspace --exclude savekeeper-app --locked

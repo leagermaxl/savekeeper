@@ -8,7 +8,7 @@
 | Крейт(ы) | все, `fixtures/`, `xtask/`, `.github/workflows/` |
 | Зависит от | SPEC-00, SPEC-01, SPEC-02 |
 | Используется в | все спеки (§6 «Тестирование» каждой спеки опирается на эту) |
-| Последнее изменение | 2026-10-01 (§4.8: Node 24 LTS; §4.2: состав `sk-testkit`, `collect_ctx` со сканером, правило unit-тестов; §4.5: `MockClassifier` в `sk-llm`; §4.6: транзитивные рёбра, `xtask`; зависимости T-12-02/04/05/06; §4.8: MSRV 1.88) |
+| Последнее изменение | 2026-10-01 (§4.8: Node 24 LTS; §4.2: состав `sk-testkit`, `collect_ctx` со сканером, правило unit-тестов; §4.5: `MockClassifier` в `sk-llm`; §4.6: транзитивные рёбра, `xtask`; зависимости T-12-02/04/05/06; §4.8: MSRV 1.93) |
 
 ## 1. Цель
 
@@ -192,7 +192,7 @@ jobs:
             "cargo xtask fixtures",
             "cargo test --workspace --locked"]     # ubuntu: --exclude savekeeper-app
     env: { INSTA_UPDATE: "no", RUST_BACKTRACE: "1" }
-  msrv:            # ubuntu-latest, toolchain 1.88: cargo check --workspace --exclude savekeeper-app
+  msrv:            # ubuntu-latest, toolchain 1.93: cargo check --workspace --exclude savekeeper-app
   frontend:        # ubuntu-latest
     steps: [checkout, pnpm/action-setup, setup-node(24, cache pnpm),
             "pnpm -C app install --frozen-lockfile",

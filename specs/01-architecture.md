@@ -8,7 +8,7 @@
 | Крейт(ы) | все, в первую очередь `sk-core`, `sk-engine`, `sk-cli` |
 | Зависит от | SPEC-00, SPEC-02 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-10-01 (YAML: `serde-saphyr`; `FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; MSRV 1.88; уточнение T-01-01) |
+| Последнее изменение | 2026-10-01 (MSRV 1.93; YAML: `serde-saphyr`; `FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; уточнение T-01-01) |
 
 ## 1. Цель
 
@@ -54,7 +54,7 @@
 ```
 savekeeper/
 ├── Cargo.toml                 # [workspace]
-├── rust-toolchain.toml        # stable, MSRV 1.88
+├── rust-toolchain.toml        # stable, MSRV 1.93
 ├── deny.toml                  # cargo-deny: лицензии, advisories
 ├── crates/
 │   ├── sk-core/               # SPEC-02: доменные типы, PathTemplate, KnownFolders, конфиг, события, ошибки, трейт FsScanner
