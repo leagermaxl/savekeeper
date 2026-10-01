@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-core` |
 | Зависит от | SPEC-00 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-10-02 (§2.7: API `FindingId::for_target`, уточнения формулы; §4.2: API `sk-core::privacy`, правила замен, `machine_name`; §3.1–§3.3: синтаксис шаблонов, `Token`, `TemplateError`, правила `resolve`/`from_path`, токены `{STORE_GAME_ID}`/`{GAME_DIR_NAME}` в таблице, `Environment.store_packages` для `{PACKAGE:…}`; §3.3: `Environment::known_folder`, `KnownFolder::ALL/token/from_token`; §3.1, §3.3: OneDrive-корни заполняет `detect()`, `EnvError`, раскладка `fake`, правила для дисков и процессов, состав T-02-05; §5: API `sk-core::path` и `PathSet`; §8, T-02-09: снапшот контракта — TS-декларации вместо JSON Schema, `u64` → `number`; T-02-09: `xtask bindings`, зависит от T-11-01; определены `OsInfo`, `KnownFolder`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `CollectorToggles`, `LlmMode`; обязательные Known Folders; состав и зависимости T-02-01/05/08) |
+| Последнее изменение | 2026-10-02 (§4.1: `Marker::ALL`; §6: `from_env`, `from_json`, `ReportError`, правила снапшота окружения; §2.7: API `FindingId::for_target`, уточнения формулы; §4.2: API `sk-core::privacy`, правила замен, `machine_name`; §3.1–§3.3: синтаксис шаблонов, `Token`, `TemplateError`, правила `resolve`/`from_path`, токены `{STORE_GAME_ID}`/`{GAME_DIR_NAME}` в таблице, `Environment.store_packages` для `{PACKAGE:…}`; §3.3: `Environment::known_folder`, `KnownFolder::ALL/token/from_token`; §3.1, §3.3: OneDrive-корни заполняет `detect()`, `EnvError`, раскладка `fake`, правила для дисков и процессов, состав T-02-05; §5: API `sk-core::path` и `PathSet`; §8, T-02-09: снапшот контракта — TS-декларации вместо JSON Schema, `u64` → `number`; T-02-09: `xtask bindings`, зависит от T-11-01; определены `OsInfo`, `KnownFolder`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `CollectorToggles`, `LlmMode`; обязательные Known Folders; состав и зависимости T-02-01/05/08) |
 
 ## 1. Цель
 
@@ -405,7 +405,7 @@ pub enum Marker {
     UwpPackage,          // папка {LOCALAPPDATA}\Packages\<PFN> (MS Store / UWP)
 }
 ```
-Правила вычисления маркеров описаны в SPEC-03 §summarize. Список расширяется только через правку этой спеки.
+Правила вычисления маркеров описаны в SPEC-03 §summarize. Список расширяется только через правку этой спеки. `Marker::ALL` — все маркеры в порядке объявления.
 
 ### 4.2 Приватность FolderSummary
 - `path` — всегда шаблон (`{LOCALAPPDATA}\Foo`), никогда не абсолютный путь с именем пользователя.
@@ -517,6 +517,20 @@ pub struct CollectorToggles { pub rules: bool, pub games: bool, pub system: bool
 pub enum LlmMode { Off, Local, Cloud }  // по умолчанию Off
 ```
 
+```rust
+impl ScanReport {
+    pub const SCHEMA_VERSION: u32 = 1;
+    /// Читает отчёт; schema_version > SCHEMA_VERSION → ReportError::UnsupportedVersion.
+    pub fn from_json(json: &str) -> Result<Self, ReportError>;
+}
+#[derive(thiserror::Error, Debug)]
+pub enum ReportError { Json(serde_json::Error), UnsupportedVersion { found: u32, supported: u32 } }
+
+impl EnvironmentSnapshot { pub fn from_env(env: &Environment) -> Self; }
+impl From<&DriveInfo> for DriveSnapshot { .. }
+impl LauncherSnapshot { pub fn from_launcher(launcher: &LauncherInfo, env: &Environment) -> Self; }
+```
+- `EnvironmentSnapshot::from_env`: `known_folders` — путь каждой папки как шаблон относительно самой длинной подходящей базы из `{HOME}` (кроме самой `HOME`), `{ONEDRIVE}` и `{DRIVE:X}`; затем `privacy::redact`, так что `HOME` = `{DRIVE:C}\Users\<redacted>`. `LauncherSnapshot.root` строится так же, но базы — все токены `from_path`, кроме `{STEAM}` (пример: `{PROGRAMFILES_X86}\Steam`). `machine_name` копируется как есть: снапшот лежит у пользователя, а наружу (LLM) не уходит.
 - Сохраняется в `savekeeper-data/scans/<scan_id>.json` (SPEC-01 §4.8.1).
 - Совместимость: читатель принимает `schema_version <= current`. Для новых полей используется `#[serde(default)]`.
 
@@ -548,7 +562,7 @@ pub enum LlmMode { Off, Local, Cloud }  // по умолчанию Off
 - [x] **T-02-05** — `Environment` (+ `OsInfo`, `KnownFolder`, `DriveInfo`, `CloudRoot`, `LauncherInfo`, `InstalledProgram` и вложенные типы §3.3): структура, `fake()`, `detect()` для Windows (`SHGetKnownFolderPath`, `GetUserNameW`, `IsUserAnAdmin`/token elevation, `GetLogicalDrives`+`GetDriveTypeW`+`GetVolumeInformationW`, версия ОС из `RtlGetVersion` / реестра `CurrentVersion`) OneDrive-корни, `running_processes` (`CreateToolhelp32Snapshot`, SPEC-04 §9), тип носителя (`IOCTL_STORAGE_QUERY_PROPERTY`) и заглушка для других ОС. *Готово, когда:* Windows-тест §8.
 - [x] **T-02-06** — `FindingId` по §2.7. *Зависит:* T-02-01, T-02-03.
 - [x] **T-02-07** — `FolderSummary`, `Marker`, `ExtStat`, `ChildStat` (только типы; вычисление в SPEC-03).
-- [ ] **T-02-08** — `ScanReport`, `EnvironmentSnapshot`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `Totals`, `CategoryTotals` + версионирование. *Зависит:* T-02-01, T-02-03, T-02-05, T-02-07.
+- [ ] **T-02-08** — `ScanReport`, `EnvironmentSnapshot` (+ `from_env`), `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `Totals`, `CategoryTotals` + версионирование (`SCHEMA_VERSION`, `from_json`, `ReportError`). *Зависит:* T-02-01, T-02-03, T-02-05, T-02-07.
 - [ ] **T-02-09** — `cargo xtask bindings` (SPEC-12 §4.9): экспорт TS-типов `sk-core` через specta в `app/src/bindings.ts`. В SPEC-11 T-11-02 тот же экспорт дополняется командами и событиями `tauri-specta` (один генератор, один файл). `u64`/`i64` экспортируются как `number` (`BigIntExportBehavior::Number`): размеры и счётчики не превышают 2^53. *Зависит:* T-02-08, T-11-01 (`app/` и `tsconfig` для проверки), T-12-01. *Готово, когда:* файл генерируется и компилируется `tsc`, insta-снапшот TS-деклараций типов `sk-core` зафиксирован.
 
 ## 10. Критерии приёмки
