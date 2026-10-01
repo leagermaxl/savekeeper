@@ -3,7 +3,7 @@
 | Поле | Значение |
 |---|---|
 | ID | SPEC-13 |
-| Статус | draft |
+| Статус | approved |
 | Фаза | P4 (post-MVP) |
 | Крейт(ы) | `sk-restore` (оркестрация — `sk-engine::RestoreJob`), экран в `app/` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-06, SPEC-10, SPEC-11, SPEC-14 |

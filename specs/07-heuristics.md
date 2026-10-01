@@ -3,7 +3,7 @@
 | Поле | Значение |
 |---|---|
 | ID | SPEC-07 |
-| Статус | draft |
+| Статус | approved |
 | Фаза | P2 |
 | Крейт(ы) | `sk-heuristics` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03, SPEC-04, SPEC-05 |

@@ -3,7 +3,7 @@
 | Поле | Значение |
 |---|---|
 | ID | SPEC-10 |
-| Статус | draft |
+| Статус | approved |
 | Фаза | P3 |
 | Крейт(ы) | `sk-backup` (оркестрация — `sk-engine::BackupJob`) |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03, SPEC-06, SPEC-09 |

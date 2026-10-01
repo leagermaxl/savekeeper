@@ -94,18 +94,18 @@
 | SPEC-00 | [00-master.md](00-master.md) | Эта спека | — | — | approved |
 | SPEC-01 | [01-architecture.md](01-architecture.md) | Архитектура, крейты, конвейер, конфиг, data-dir | P0 | все | in-progress |
 | SPEC-02 | [02-data-model.md](02-data-model.md) | Доменные типы, шаблоны путей, форматы | P0 | `sk-core` | approved |
-| SPEC-03 | [03-scanner.md](03-scanner.md) | Обход ФС, замер размеров, FolderSummary, исключения | P1 | `sk-scan` | draft |
-| SPEC-04 | [04-rules-engine.md](04-rules-engine.md) | Правила известных мест (YAML) + встроенная база | P1 | `sk-rules` | draft |
-| SPEC-05 | [05-games.md](05-games.md) | Сохранения игр: манифест Ludusavi, лаунчеры | P1 | `sk-games` | draft |
-| SPEC-06 | [06-system-export.md](06-system-export.md) | winget, реестр, Wi-Fi, драйверы, прочие системные экспорты | P1 | `sk-system` | draft |
-| SPEC-07 | [07-heuristics.md](07-heuristics.md) | Неизвестные папки, git-репозитории, пользовательские файлы, отсев мусора | P2 | `sk-heuristics` | draft |
-| SPEC-08 | [08-llm-classifier.md](08-llm-classifier.md) | Абстракция LLM, провайдеры, промпт, приватность, кэш | P2 | `sk-llm` | draft |
-| SPEC-09 | [09-scoring.md](09-scoring.md) | Оценка важности, выбор по умолчанию, слияние находок | P2 | `sk-score` | draft |
-| SPEC-10 | [10-backup.md](10-backup.md) | Запись бэкапа, манифест, отчёт, шифрование, верификация | P3 | `sk-backup` | draft |
-| SPEC-11 | [11-ui.md](11-ui.md) | Tauri-приложение: экраны, IPC, состояние, i18n | P3 | `app/` | draft |
+| SPEC-03 | [03-scanner.md](03-scanner.md) | Обход ФС, замер размеров, FolderSummary, исключения | P1 | `sk-scan` | approved |
+| SPEC-04 | [04-rules-engine.md](04-rules-engine.md) | Правила известных мест (YAML) + встроенная база | P1 | `sk-rules` | approved |
+| SPEC-05 | [05-games.md](05-games.md) | Сохранения игр: манифест Ludusavi, лаунчеры | P1 | `sk-games` | approved |
+| SPEC-06 | [06-system-export.md](06-system-export.md) | winget, реестр, Wi-Fi, драйверы, прочие системные экспорты | P1 | `sk-system` | approved |
+| SPEC-07 | [07-heuristics.md](07-heuristics.md) | Неизвестные папки, git-репозитории, пользовательские файлы, отсев мусора | P2 | `sk-heuristics` | approved |
+| SPEC-08 | [08-llm-classifier.md](08-llm-classifier.md) | Абстракция LLM, провайдеры, промпт, приватность, кэш | P2 | `sk-llm` | approved |
+| SPEC-09 | [09-scoring.md](09-scoring.md) | Оценка важности, выбор по умолчанию, слияние находок | P2 | `sk-score` | approved |
+| SPEC-10 | [10-backup.md](10-backup.md) | Запись бэкапа, манифест, отчёт, шифрование, верификация | P3 | `sk-backup` | approved |
+| SPEC-11 | [11-ui.md](11-ui.md) | Tauri-приложение: экраны, IPC, состояние, i18n | P3 | `app/` | approved |
 | SPEC-12 | [12-testing-ci.md](12-testing-ci.md) | Стратегия тестов, фикстуры, CI | P0 (сквозная) | все | in-progress |
-| SPEC-13 | [13-restore.md](13-restore.md) | Восстановление из бэкапа | P4 (post-MVP) | `sk-restore` | draft |
-| SPEC-14 | [14-distribution.md](14-distribution.md) | Портативная сборка, версии, релизы, повышение прав | P3 | `app/`, CI | draft |
+| SPEC-13 | [13-restore.md](13-restore.md) | Восстановление из бэкапа | P4 (post-MVP) | `sk-restore` | approved |
+| SPEC-14 | [14-distribution.md](14-distribution.md) | Портативная сборка, версии, релизы, повышение прав | P3 | `app/`, CI | approved |
 
 ### 5.1 Граф зависимостей
 

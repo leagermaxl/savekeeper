@@ -3,7 +3,7 @@
 | Поле | Значение |
 |---|---|
 | ID | SPEC-14 |
-| Статус | draft |
+| Статус | approved |
 | Фаза | P3 |
 | Крейт(ы) | `app/src-tauri`, `sk-core::win::elevation`, `xtask` (dist), `.github/workflows/release.yml` |
 | Зависит от | SPEC-00, SPEC-01, SPEC-06, SPEC-11, SPEC-12 |

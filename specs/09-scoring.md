@@ -3,7 +3,7 @@
 | Поле | Значение |
 |---|---|
 | ID | SPEC-09 |
-| Статус | draft |
+| Статус | approved |
 | Фаза | P2 |
 | Крейт(ы) | `sk-score` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-04, SPEC-05, SPEC-06, SPEC-07, SPEC-08 |
