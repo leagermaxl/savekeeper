@@ -244,7 +244,7 @@ jobs:
 ## 7. Задачи
 
 - [x] **T-12-01** — Крейт `xtask` с алиасом, подкоманда-заглушка для каждой команды §4.9. *Зависит:* T-01-01.
-- [ ] **T-12-02** — CI `ci.yml`: jobs lint, test (win+linux), msrv. *Зависит:* T-12-01, T-12-03 (lint-job вызывает `check-deps`). Шаг `cargo xtask fixtures` подключается в T-12-06, `cargo deny check` — в T-12-04. *Готово, когда:* зелёный прогон на пустом workspace.
+- [x] **T-12-02** — CI `ci.yml`: jobs lint, test (win+linux), msrv. *Зависит:* T-12-01, T-12-03 (lint-job вызывает `check-deps`). Шаг `cargo xtask fixtures` подключается в T-12-06, `cargo deny check` — в T-12-04. *Готово, когда:* зелёный прогон на пустом workspace.
 - [x] **T-12-03** — `cargo xtask check-deps` по правилам §4.6. *Зависит:* T-12-01. *Готово, когда:* тест с запрещённым ребром.
 - [ ] **T-12-04** — `deny.toml`: лицензии (allow: MIT, Apache-2.0, BSD-2/3, ISC, Zlib, Unicode-3.0, MPL-2.0), bans, advisories, sources (только crates.io) + шаг `cargo deny check` в lint-job `ci.yml`. *Зависит:* T-12-02.
 - [ ] **T-12-05** — `sk-testkit`: `FakeProfile`, `collect_ctx`, `drain_events`, `tree_hash`, `RegTestKey` (`MockClassifier` — в SPEC-08 T-08-01). *Зависит:* T-02-05, T-01-03.
