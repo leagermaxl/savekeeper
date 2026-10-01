@@ -130,8 +130,11 @@ fn report_round_trips() {
 
 #[test]
 fn snapshot_report() {
-    // insta cannot write enum map keys; serde_json writes them as strings.
-    insta::assert_json_snapshot!("scan_report", serde_json::to_value(report()).unwrap());
+    // insta cannot write enum map keys; serde_json writes them as strings. Going
+    // through a string keeps f32 values short.
+    let text = serde_json::to_string(&report()).unwrap();
+    let json: serde_json::Value = serde_json::from_str(&text).unwrap();
+    insta::assert_json_snapshot!("scan_report", json);
 }
 
 #[test]

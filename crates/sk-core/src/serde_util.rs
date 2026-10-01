@@ -43,6 +43,26 @@ pub(crate) mod lossy_path_opt {
     }
 }
 
+/// `Vec<PathBuf>` as lossy UTF-8 strings.
+pub(crate) mod lossy_path_vec {
+    use std::path::PathBuf;
+
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub(crate) fn serialize<S: Serializer>(
+        paths: &[PathBuf],
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        serializer.collect_seq(paths.iter().map(|p| p.to_string_lossy()))
+    }
+
+    pub(crate) fn deserialize<'de, D: Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<Vec<PathBuf>, D::Error> {
+        Vec::<String>::deserialize(deserializer).map(|v| v.into_iter().map(PathBuf::from).collect())
+    }
+}
+
 /// `BTreeMap<K, PathBuf>` with lossy UTF-8 string values.
 pub(crate) mod lossy_path_map {
     use std::collections::BTreeMap;

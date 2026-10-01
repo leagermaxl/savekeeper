@@ -19,6 +19,7 @@ specta.workspace = true
 thiserror.workspace = true
 time.workspace = true
 tokio = { workspace = true, features = ["sync"] }
+tracing.workspace = true
 uuid = { workspace = true, features = ["serde"] }
 
 [target.'cfg(windows)'.dependencies]
@@ -42,4 +43,5 @@ windows = { workspace = true, features = [
 
 [dev-dependencies]
 insta.workspace = true
+tempfile.workspace = true
 time = { workspace = true, features = ["macros"] }

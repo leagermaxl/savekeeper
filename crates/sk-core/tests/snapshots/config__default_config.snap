@@ -1,0 +1,154 @@
+---
+source: crates/sk-core/tests/config.rs
+expression: json
+---
+{
+  "backup": {
+    "compression_level": 6,
+    "encrypt": false,
+    "format": "zip",
+    "verify": true
+  },
+  "games": {
+    "auto_update": true,
+    "manifest_url": "https://raw.githubusercontent.com/mtkennerly/ludusavi-manifest/master/data/manifest.yaml",
+    "update_interval_hours": 168
+  },
+  "heuristics": {
+    "enabled": {
+      "git": true,
+      "junk": true,
+      "unk": true,
+      "usr": true,
+      "web": true
+    },
+    "git": {
+      "max_depth": 6,
+      "max_repos": 200
+    },
+    "thresholds": {
+      "config_max_bytes": 5242880,
+      "save_ext_ratio": 0.2,
+      "sqlite_recent_days": 90
+    },
+    "unknown_threshold": 0.6,
+    "usr": {
+      "max_candidates": 200,
+      "min_weight": 20,
+      "scan_all_fixed_drives": true
+    }
+  },
+  "llm": {
+    "allow_content_peek": false,
+    "allow_content_peek_cloud": false,
+    "cloud": {
+      "api_key_env": "ANTHROPIC_API_KEY",
+      "api_key_source": "credential_manager",
+      "kind": "anthropic",
+      "max_batch": 20,
+      "max_concurrency": 4,
+      "model": "claude-haiku-4-5",
+      "timeout_s": 60
+    },
+    "confirm_cloud_each_scan": true,
+    "local": {
+      "endpoint": "http://127.0.0.1:11434",
+      "kind": "ollama",
+      "max_batch": 8,
+      "max_concurrency": 1,
+      "model": "qwen2.5:7b-instruct",
+      "timeout_s": 120
+    },
+    "max_items_per_scan": 300,
+    "min_confidence_to_apply": 0.5,
+    "mode": "off"
+  },
+  "scan": {
+    "exclude_globs": [],
+    "extra_roots": [],
+    "follow_symlinks": false,
+    "ignored_templates": [],
+    "max_depth": 32
+  },
+  "schema_version": 1,
+  "scoring": {
+    "category_weights": {
+      "app_config": {
+        "authored": 0.5,
+        "irreplaceability": 0.65,
+        "size_tolerant": false
+      },
+      "app_data": {
+        "authored": 0.5,
+        "irreplaceability": 0.7,
+        "size_tolerant": false
+      },
+      "cache": {
+        "authored": 0.0,
+        "irreplaceability": 0.0,
+        "size_tolerant": true
+      },
+      "credentials": {
+        "authored": 1.0,
+        "irreplaceability": 1.0,
+        "size_tolerant": false
+      },
+      "dev_environment": {
+        "authored": 0.6,
+        "irreplaceability": 0.8,
+        "size_tolerant": false
+      },
+      "game_config": {
+        "authored": 0.4,
+        "irreplaceability": 0.55,
+        "size_tolerant": false
+      },
+      "game_save": {
+        "authored": 0.9,
+        "irreplaceability": 0.95,
+        "size_tolerant": false
+      },
+      "reinstallable": {
+        "authored": 0.0,
+        "irreplaceability": 0.05,
+        "size_tolerant": true
+      },
+      "system_settings": {
+        "authored": 0.4,
+        "irreplaceability": 0.6,
+        "size_tolerant": false
+      },
+      "unknown": {
+        "authored": 0.3,
+        "irreplaceability": 0.35,
+        "size_tolerant": false
+      },
+      "user_files": {
+        "authored": 0.9,
+        "irreplaceability": 0.85,
+        "size_tolerant": true
+      }
+    },
+    "cloud_synced_penalty": 0.15,
+    "installed_bonus": 0.05,
+    "max_default_item_bytes": 2147483648,
+    "select_threshold": 0.4,
+    "size_free_bytes": 104857600,
+    "size_penalty_cap": 0.4,
+    "uninstalled_penalty": 0.1,
+    "unknown_max_default_bytes": 209715200,
+    "unknown_select_threshold": 0.3
+  },
+  "system": {
+    "disabled_exporters": [],
+    "winget_timeout_s": 180
+  },
+  "ui": {
+    "language": "auto",
+    "theme": "system"
+  },
+  "updates": {
+    "check": false,
+    "interval_days": 7
+  }
+}
