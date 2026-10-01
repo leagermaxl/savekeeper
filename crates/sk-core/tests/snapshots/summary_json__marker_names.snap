@@ -1,0 +1,20 @@
+---
+source: crates/sk-core/tests/summary_json.rs
+expression: names
+---
+[
+  "has_executables",
+  "git_repo",
+  "unity_game",
+  "unreal_save_games",
+  "electron_app",
+  "chromium_profile",
+  "sqlite_files",
+  "cache_like",
+  "config_like",
+  "media_heavy",
+  "document_heavy",
+  "project_like",
+  "cloud_synced",
+  "uwp_package"
+]

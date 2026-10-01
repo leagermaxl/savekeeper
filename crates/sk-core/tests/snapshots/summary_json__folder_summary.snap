@@ -1,0 +1,41 @@
+---
+source: crates/sk-core/tests/summary_json.rs
+expression: summary()
+---
+{
+  "path": "{LOCALAPPDATA}\\SomeApp",
+  "total_bytes": 734003200,
+  "file_count": 1204,
+  "dir_count": 87,
+  "max_depth": 6,
+  "newest_mtime": "2026-09-30T18:02:11Z",
+  "oldest_mtime": "2023-01-15T09:00:00Z",
+  "ext_histogram": [
+    {
+      "ext": "json",
+      "count": 412,
+      "bytes": 3145728
+    },
+    {
+      "ext": "",
+      "count": 9,
+      "bytes": 4096
+    }
+  ],
+  "sample_names": [
+    "settings.json",
+    "profiles\\<redacted>\\state.db"
+  ],
+  "top_children": [
+    {
+      "name": "Cache",
+      "bytes": 600000000,
+      "files": 900
+    }
+  ],
+  "markers": [
+    "electron_app",
+    "config_like"
+  ],
+  "truncated": false
+}

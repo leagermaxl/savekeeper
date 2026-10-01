@@ -547,7 +547,7 @@ pub enum LlmMode { Off, Local, Cloud }  // по умолчанию Off
 - [x] **T-02-04** — `sk-core::privacy::redact` и обезличивание путей для логов. *Зависит:* T-02-03.
 - [x] **T-02-05** — `Environment` (+ `OsInfo`, `KnownFolder`, `DriveInfo`, `CloudRoot`, `LauncherInfo`, `InstalledProgram` и вложенные типы §3.3): структура, `fake()`, `detect()` для Windows (`SHGetKnownFolderPath`, `GetUserNameW`, `IsUserAnAdmin`/token elevation, `GetLogicalDrives`+`GetDriveTypeW`+`GetVolumeInformationW`, версия ОС из `RtlGetVersion` / реестра `CurrentVersion`) OneDrive-корни, `running_processes` (`CreateToolhelp32Snapshot`, SPEC-04 §9), тип носителя (`IOCTL_STORAGE_QUERY_PROPERTY`) и заглушка для других ОС. *Готово, когда:* Windows-тест §8.
 - [x] **T-02-06** — `FindingId` по §2.7. *Зависит:* T-02-01, T-02-03.
-- [ ] **T-02-07** — `FolderSummary`, `Marker`, `ExtStat`, `ChildStat` (только типы; вычисление в SPEC-03).
+- [x] **T-02-07** — `FolderSummary`, `Marker`, `ExtStat`, `ChildStat` (только типы; вычисление в SPEC-03).
 - [ ] **T-02-08** — `ScanReport`, `EnvironmentSnapshot`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `Totals`, `CategoryTotals` + версионирование. *Зависит:* T-02-01, T-02-03, T-02-05, T-02-07.
 - [ ] **T-02-09** — `cargo xtask bindings` (SPEC-12 §4.9): экспорт TS-типов `sk-core` через specta в `app/src/bindings.ts`. В SPEC-11 T-11-02 тот же экспорт дополняется командами и событиями `tauri-specta` (один генератор, один файл). `u64`/`i64` экспортируются как `number` (`BigIntExportBehavior::Number`): размеры и счётчики не превышают 2^53. *Зависит:* T-02-08, T-11-01 (`app/` и `tsconfig` для проверки), T-12-01. *Готово, когда:* файл генерируется и компилируется `tsc`, insta-снапшот TS-деклараций типов `sk-core` зафиксирован.
 
