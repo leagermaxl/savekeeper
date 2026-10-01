@@ -8,7 +8,7 @@
 | Крейт(ы) | все, в первую очередь `sk-core`, `sk-engine`, `sk-cli` |
 | Зависит от | SPEC-00, SPEC-02 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-09-28 (интеграция предложений SPEC-03..14) |
+| Последнее изменение | 2026-10-01 (MSRV 1.88; уточнение T-01-01: `sk-cli` — бинарник, `xtask/` и `app/` — в своих задачах) |
 
 ## 1. Цель
 
@@ -54,7 +54,7 @@
 ```
 savekeeper/
 ├── Cargo.toml                 # [workspace]
-├── rust-toolchain.toml        # stable, MSRV 1.80
+├── rust-toolchain.toml        # stable, MSRV 1.88
 ├── deny.toml                  # cargo-deny: лицензии, advisories
 ├── crates/
 │   ├── sk-core/               # SPEC-02: доменные типы, PathTemplate, KnownFolders, конфиг, события, ошибки
@@ -372,7 +372,7 @@ savekeeper-cli env                      # вывести Environment (known fold
 
 ## 7. Задачи
 
-- [x] **T-01-01** — Создать workspace: корневой `Cargo.toml`, `rust-toolchain.toml`, пустые крейты из §4.1 с `lib.rs`, общие `[workspace.dependencies]` и `[workspace.lints]`. *Готово, когда:* `cargo build --workspace` проходит.
+- [x] **T-01-01** — Создать workspace: корневой `Cargo.toml`, `rust-toolchain.toml`, пустые крейты из `crates/` (§4.1): библиотеки с `lib.rs`, `sk-cli` — бинарник `savekeeper-cli` с `main.rs` (`xtask/` создаётся в T-12-01, `app/` — в SPEC-11), общие `[workspace.dependencies]` и `[workspace.lints]`. *Готово, когда:* `cargo build --workspace` проходит.
 - [ ] **T-01-02** — `sk-core::events`: `Event`, `ScanPhase`, `EventSink`, `ThrottledSink`. *Зависит:* T-01-01, T-02-01. *Готово, когда:* тест троттлинга (1000 событий за 100 мс → ≤ 2 доставлено + последнее).
 - [ ] **T-01-03** — `sk-core::collector`: `Collector`, `PostCollector`, `CollectContext`, `CollectOutput`, `PathSet`. *Зависит:* T-02-02. *Готово, когда:* тесты `PathSet::covers()` для вложенных путей, регистра (Windows — регистронезависимо) и `\\?\`-префикса.
 - [ ] **T-01-04** — `sk-core::config`: схема §4.8.2, `load_or_default`, миграции, поиск data-dir (портативный или fallback). *Готово, когда:* unit-тесты из §6.
