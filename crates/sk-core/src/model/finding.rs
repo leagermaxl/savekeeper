@@ -1,4 +1,4 @@
-//! `Finding`, its target, category and application (SPEC-02 §2.1–§2.4, §2.7).
+//! `Finding`, its target, category and application (SPEC-02 §2.1–§2.4).
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
-use super::{Evidence, Score, Sensitivity, TargetStats};
+use super::{Evidence, FindingId, Score, Sensitivity, TargetStats};
 use crate::template::PathTemplate;
 
 /// Something worth saving, with the evidence why (SPEC-02 §2.1).
@@ -41,21 +41,6 @@ pub struct Finding {
     pub children: Vec<FindingId>,
     /// i18n key of a hint for the user (SPEC-04).
     pub notes_key: Option<String>,
-}
-
-/// Stable finding identifier: the first 16 hex characters of a BLAKE3 hash
-/// of the canonical target key (SPEC-02 §2.7). Computed in T-02-06.
-///
-/// Serialized as a plain string.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Type)]
-#[serde(transparent)]
-pub struct FindingId(String);
-
-impl FindingId {
-    /// The identifier string.
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
 }
 
 /// What exactly is saved (SPEC-02 §2.2).
