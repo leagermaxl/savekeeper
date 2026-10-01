@@ -242,6 +242,21 @@ mod windows {
     }
 
     #[test]
+    fn detect_lists_store_packages() {
+        let env = Environment::detect().unwrap();
+        let packages = env
+            .known_folder(KnownFolder::LocalAppData)
+            .unwrap()
+            .join("Packages");
+        let mut sorted = env.store_packages.clone();
+        sorted.sort();
+        assert_eq!(sorted, env.store_packages);
+        for name in &env.store_packages {
+            assert!(packages.join(name).is_dir(), "{name}");
+        }
+    }
+
+    #[test]
     fn onedrive_roots_exist() {
         let env = Environment::detect().unwrap();
         for root in &env.cloud_roots {

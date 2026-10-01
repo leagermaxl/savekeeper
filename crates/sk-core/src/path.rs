@@ -31,6 +31,20 @@ pub fn starts_with_ci(path: &Path, base: &Path) -> bool {
     keys(path).starts_with(&keys(base))
 }
 
+/// Components of `path` after `base` if `path` starts with `base` (as in
+/// [`starts_with_ci`]); `.` components are skipped.
+pub(crate) fn strip_prefix_ci<'a>(path: &'a Path, base: &Path) -> Option<Vec<Component<'a>>> {
+    let base_len = keys(base).len();
+    let components: Vec<Component<'a>> = path
+        .components()
+        .filter(|c| *c != Component::CurDir)
+        .collect();
+    let path_keys: Vec<String> = components.iter().filter_map(|c| key(*c)).collect();
+    path_keys
+        .starts_with(&keys(base))
+        .then(|| components[base_len..].to_vec())
+}
+
 /// Comparison key of each path component.
 fn keys(path: &Path) -> Vec<String> {
     path.components().filter_map(key).collect()

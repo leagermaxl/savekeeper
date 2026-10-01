@@ -49,6 +49,9 @@ pub struct Environment {
     pub installed_programs: Vec<InstalledProgram>,
     /// Lowercase executable names of running processes, sorted, no duplicates.
     pub running_processes: Vec<String>,
+    /// Folder names under `{LOCALAPPDATA}\Packages` (package family names), sorted;
+    /// used by `{PACKAGE:name}`.
+    pub store_packages: Vec<String>,
 }
 
 /// Failure to read data the environment cannot do without.

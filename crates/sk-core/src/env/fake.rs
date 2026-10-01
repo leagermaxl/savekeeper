@@ -67,5 +67,6 @@ pub(super) fn fake(root: &Path) -> Environment {
         launchers: Vec::new(),
         installed_programs: Vec::new(),
         running_processes: Vec::new(),
+        store_packages: Vec::new(),
     }
 }
