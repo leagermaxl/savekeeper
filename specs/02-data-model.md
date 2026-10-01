@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-core` |
 | Зависит от | SPEC-00 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-10-01 (§4.2: API `sk-core::privacy`, правила замен, `machine_name`; §3.1–§3.3: синтаксис шаблонов, `Token`, `TemplateError`, правила `resolve`/`from_path`, токены `{STORE_GAME_ID}`/`{GAME_DIR_NAME}` в таблице, `Environment.store_packages` для `{PACKAGE:…}`; §3.3: `Environment::known_folder`, `KnownFolder::ALL/token/from_token`; §3.1, §3.3: OneDrive-корни заполняет `detect()`, `EnvError`, раскладка `fake`, правила для дисков и процессов, состав T-02-05; §5: API `sk-core::path` и `PathSet`; §8, T-02-09: снапшот контракта — TS-декларации вместо JSON Schema, `u64` → `number`; T-02-09: `xtask bindings`, зависит от T-11-01; определены `OsInfo`, `KnownFolder`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `CollectorToggles`, `LlmMode`; обязательные Known Folders; состав и зависимости T-02-01/05/08) |
+| Последнее изменение | 2026-10-02 (§2.7: API `FindingId::for_target`, уточнения формулы; §4.2: API `sk-core::privacy`, правила замен, `machine_name`; §3.1–§3.3: синтаксис шаблонов, `Token`, `TemplateError`, правила `resolve`/`from_path`, токены `{STORE_GAME_ID}`/`{GAME_DIR_NAME}` в таблице, `Environment.store_packages` для `{PACKAGE:…}`; §3.3: `Environment::known_folder`, `KnownFolder::ALL/token/from_token`; §3.1, §3.3: OneDrive-корни заполняет `detect()`, `EnvError`, раскладка `fake`, правила для дисков и процессов, состав T-02-05; §5: API `sk-core::path` и `PathSet`; §8, T-02-09: снапшот контракта — TS-декларации вместо JSON Schema, `u64` → `number`; T-02-09: `xtask bindings`, зависит от T-11-01; определены `OsInfo`, `KnownFolder`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `CollectorToggles`, `LlmMode`; обязательные Known Folders; состав и зависимости T-02-01/05/08) |
 
 ## 1. Цель
 
@@ -166,6 +166,17 @@ pub struct ScanIssue {
 
 Используем шаблон, а не resolved-путь, поэтому id совпадает на разных машинах и у разных
 пользователей. Это нужно для SPEC-13 (restore) и для сравнения сканов.
+
+```rust
+impl FindingId {
+    pub fn for_target(target: &Target) -> FindingId;   // по формуле выше
+    pub fn as_str(&self) -> &str;
+}
+```
+- `File` использует ту же формулу с пустыми `include`/`exclude`: `"fs:" + шаблон + "||"`.
+- `hive` — имя из JSON (`hkcu`, `hklm`). `lowercase` — Unicode `to_lowercase`.
+- `canonical_json` — компактный JSON с рекурсивно отсортированными ключами объектов, не зависящий от feature `preserve_order` у `serde_json`.
+- Формула — часть контракта: изменение меняет id всех находок и ломает сопоставление со старыми бэкапами (SPEC-13). Значения id для эталонных целей закреплены тестом.
 
 ## 3. Шаблоны путей и окружение
 
