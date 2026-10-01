@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-core` |
 | Зависит от | SPEC-00 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-10-01 (T-02-09: `xtask bindings`, зависит от T-11-01; определены `OsInfo`, `KnownFolder`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `CollectorToggles`, `LlmMode`; обязательные Known Folders; состав и зависимости T-02-01/05/08) |
+| Последнее изменение | 2026-10-01 (§8, T-02-09: снапшот контракта — TS-декларации вместо JSON Schema, `u64` → `number`; T-02-09: `xtask bindings`, зависит от T-11-01; определены `OsInfo`, `KnownFolder`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `CollectorToggles`, `LlmMode`; обязательные Known Folders; состав и зависимости T-02-01/05/08) |
 
 ## 1. Цель
 
@@ -432,7 +432,7 @@ pub enum LlmMode { Off, Local, Cloud }  // по умолчанию Off
 
 ## 8. Тестирование
 
-- Round-trip serde (JSON) для всех типов + snapshot-тест JSON-схемы через `insta` (контракт для UI).
+- Round-trip serde (JSON) для всех типов + insta-снапшоты JSON-примеров. Схема контракта для UI — снапшот TS-деклараций, которые `specta-typescript` генерирует в T-02-09 (JSON Schema через specta не используется: `specta-jsonschema` незрелый).
 - `FindingId` стабилен: одинаковый для двух `Environment::fake` с разными корнями и именами пользователей.
 - `PathTemplate::from_path` выбирает самый специфичный токен: `{LOCALLOW}` вместо `{HOME}\AppData\LocalLow`.
 - Покомпонентное сравнение: `C:\Users\maxim` не начинается с `C:\Users\max`.
@@ -449,7 +449,7 @@ pub enum LlmMode { Off, Local, Cloud }  // по умолчанию Off
 - [ ] **T-02-06** — `FindingId` по §2.7. *Зависит:* T-02-01, T-02-03.
 - [ ] **T-02-07** — `FolderSummary`, `Marker`, `ExtStat`, `ChildStat` (только типы; вычисление в SPEC-03).
 - [ ] **T-02-08** — `ScanReport`, `EnvironmentSnapshot`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `Totals`, `CategoryTotals` + версионирование. *Зависит:* T-02-01, T-02-03, T-02-05, T-02-07.
-- [ ] **T-02-09** — `cargo xtask bindings` (SPEC-12 §4.9): экспорт TS-типов `sk-core` через specta в `app/src/bindings.ts`. В SPEC-11 T-11-02 тот же экспорт дополняется командами и событиями `tauri-specta` (один генератор, один файл). *Зависит:* T-02-08, T-11-01 (`app/` и `tsconfig` для проверки), T-12-01. *Готово, когда:* файл генерируется и компилируется `tsc`.
+- [ ] **T-02-09** — `cargo xtask bindings` (SPEC-12 §4.9): экспорт TS-типов `sk-core` через specta в `app/src/bindings.ts`. В SPEC-11 T-11-02 тот же экспорт дополняется командами и событиями `tauri-specta` (один генератор, один файл). `u64`/`i64` экспортируются как `number` (`BigIntExportBehavior::Number`): размеры и счётчики не превышают 2^53. *Зависит:* T-02-08, T-11-01 (`app/` и `tsconfig` для проверки), T-12-01. *Готово, когда:* файл генерируется и компилируется `tsc`, insta-снапшот TS-деклараций типов `sk-core` зафиксирован.
 
 ## 10. Критерии приёмки
 

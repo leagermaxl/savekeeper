@@ -8,7 +8,7 @@
 | Крейт(ы) | все, `fixtures/`, `xtask/`, `.github/workflows/` |
 | Зависит от | SPEC-00, SPEC-01, SPEC-02 |
 | Используется в | все спеки (§6 «Тестирование» каждой спеки опирается на эту) |
-| Последнее изменение | 2026-10-01 (§4.8: Node 24 LTS; §4.2: состав `sk-testkit`, `collect_ctx` со сканером, правило unit-тестов; §4.5: `MockClassifier` в `sk-llm`; §4.6: транзитивные рёбра, `xtask`; зависимости T-12-02/04/05/06; §4.8: MSRV 1.93) |
+| Последнее изменение | 2026-10-01 (§4.4: снапшот TS-деклараций вместо JSON Schema для SPEC-02; §4.8: Node 24 LTS; §4.2: состав `sk-testkit`, `collect_ctx` со сканером, правило unit-тестов; §4.5: `MockClassifier` в `sk-llm`; §4.6: транзитивные рёбра, `xtask`; зависимости T-12-02/04/05/06; §4.8: MSRV 1.93) |
 
 ## 1. Цель
 
@@ -139,7 +139,7 @@ tree:
 ### 4.4 Snapshot-тесты
 - `insta` с `json`/`yaml`-снапшотами, `redactions` для недетерминированных полей: `scan_id`, `*_at`, `app_version`, `mtime`, абсолютные пути (`[root]`).
 - Обновление: `cargo insta review`. В CI `INSTA_UPDATE=no`, так что несовпадение роняет тест.
-- Что обязательно покрыть снапшотами: JSON Schema и пример `ScanReport`/`Finding` (SPEC-02), `Config` по умолчанию (SPEC-01), `BackupManifest` (SPEC-10), промпт и JSON Schema ответа LLM (SPEC-08), `report.html` фикстуры (SPEC-10).
+- Что обязательно покрыть снапшотами: TS-декларации типов (`specta-typescript`, SPEC-02 T-02-09) и пример `ScanReport`/`Finding` (SPEC-02), `Config` по умолчанию (SPEC-01), `BackupManifest` (SPEC-10), промпт и JSON Schema ответа LLM (SPEC-08), `report.html` фикстуры (SPEC-10).
 
 ### 4.5 LLM: моки и eval
 - `MockClassifier` (в `sk-llm`, feature `mock`, SPEC-08 §4.2.4): правила «шаблон пути → Classification», по умолчанию `Unknown`. Используется во всех тестах pipeline.
