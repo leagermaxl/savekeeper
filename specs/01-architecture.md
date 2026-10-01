@@ -8,7 +8,7 @@
 | Крейт(ы) | все, в первую очередь `sk-core`, `sk-engine`, `sk-cli` |
 | Зависит от | SPEC-00, SPEC-02 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-10-01 (T-01-03: `PathSet` вынесен в T-02-02; MSRV 1.93; YAML: `serde-saphyr`; `FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; уточнение T-01-01) |
+| Последнее изменение | 2026-10-02 (§4.5: `ScanPhase`, `LogLevel`, API и правила `ThrottledSink`; T-01-03: `PathSet` вынесен в T-02-02; MSRV 1.93; YAML: `serde-saphyr`; `FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; уточнение T-01-01) |
 
 ## 1. Цель
 
@@ -250,10 +250,22 @@ pub enum Event {
     Log           { level: LogLevel, message: String },
 }
 
-pub type EventSink = tokio::sync::mpsc::UnboundedSender<Event>; // обёртка с троттлингом
+pub type EventSink = tokio::sync::mpsc::UnboundedSender<Event>;
+
+/// Фазы скана — строки таблицы §4.4.
+pub enum ScanPhase { Environment, Collect, Heuristics, Measure, Classify, Score, Done }
+pub enum LogLevel { Debug, Info, Warn, Error }
+
+/// Обёртка над EventSink для источников частого прогресса (Send + Sync, общая для потоков).
+pub struct ThrottledSink { /* EventSink + последнее время отправки и отложенное событие по ключу */ }
+impl ThrottledSink {
+    pub fn new(sink: EventSink) -> Self;               // интервал 100 мс
+    pub fn send(&self, event: Event);
+    pub fn flush(&self);                               // отправить отложенные; вызывается и в Drop
+}
 ```
 
-- **Троттлинг:** `Progress` и `BackupProgress` отправляются не чаще 10 раз/с на фазу (обёртка `ThrottledSink`).
+- **Троттлинг:** `Progress` и `BackupProgress` отправляются не чаще 10 раз/с на фазу (обёртка `ThrottledSink`). Ключ — вид события и фаза. Событие внутри интервала не отправляется, а запоминается как отложенное (промежуточные затираются). Отложенное уходит при следующей разрешённой отправке, при `flush()` и в `Drop`. Любое другое событие сначала выталкивает все отложенные, чтобы `PhaseFinished` не обгонял последний `Progress`. Закрытый канал — не ошибка: события молча отбрасываются.
 - В Tauri события транслируются в `app.emit("sk://event", event)` (SPEC-11 §IPC).
 - В CLI отображаются через `indicatif`.
 
