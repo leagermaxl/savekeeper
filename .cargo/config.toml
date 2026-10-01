@@ -2,3 +2,6 @@
 # prefer versions whose `rust-version` is compatible with the workspace MSRV.
 [resolver]
 incompatible-rust-versions = "fallback"
+
+[alias]
+xtask = "run --package xtask --"
