@@ -8,7 +8,7 @@
 | Крейт(ы) | все, в первую очередь `sk-core`, `sk-engine`, `sk-cli` |
 | Зависит от | SPEC-00, SPEC-02 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-10-02 (§4.5: `ScanPhase`, `LogLevel`, API и правила `ThrottledSink`; T-01-03: `PathSet` вынесен в T-02-02; MSRV 1.93; YAML: `serde-saphyr`; `FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; уточнение T-01-01) |
+| Последнее изменение | 2026-10-02 (§4.8.2: API `Config`/`LoadedConfig`/`ConfigWarning`/`DataDir`, правила загрузки, типы значений; §4.5: `ScanPhase`, `LogLevel`, API и правила `ThrottledSink`; T-01-03: `PathSet` вынесен в T-02-02; MSRV 1.93; YAML: `serde-saphyr`; `FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; уточнение T-01-01) |
 
 ## 1. Цель
 
@@ -354,6 +354,43 @@ pub enum EngineError { #[error("cancelled")] Cancelled, #[error(transparent)] Co
 - Загрузка: `Config::load_or_default(path)`. Неизвестные поля игнорируются с предупреждением в логе, битый JSON приводит к бэкапу файла в `.bak` и дефолтам.
 - API-ключ **никогда** не хранится в конфиге открытым текстом. Варианты: переменная окружения или Windows Credential Manager (`keyring` crate), SPEC-08.
 - Миграции: `schema_version` + функции `migrate_vN_to_vN+1`.
+
+```rust
+// sk-core::config
+#[derive(Default)] // Default = значения схемы выше
+pub struct Config { pub schema_version: u32, pub ui: UiConfig, pub scan: ScanConfig, pub games: GamesConfig,
+                    pub system: SystemConfig, pub heuristics: HeuristicsConfig, pub llm: LlmConfig,
+                    pub scoring: ScoringConfig, pub backup: BackupConfig, pub updates: UpdatesConfig }
+impl Config {
+    pub const SCHEMA_VERSION: u32 = 1;
+    pub fn load_or_default(path: &Path) -> LoadedConfig;
+    pub fn save(&self, path: &Path) -> Result<(), ConfigError>;   // атомарно: временный файл + rename
+}
+pub struct LoadedConfig { pub config: Config, pub warnings: Vec<ConfigWarning> }
+pub enum ConfigWarning {
+    Created,                                        // файла не было, записаны дефолты
+    UnknownField(String),                           // путь поля: "llm.locl"
+    Corrupt { backup: Option<PathBuf>, error: String },
+    NewerSchema(u32),                               // файл от более новой версии программы
+    Migrated { from: u32, to: u32 },
+    SaveFailed(String),
+}
+
+pub struct DataDir { pub root: PathBuf /* savekeeper-data */, pub config_path: PathBuf, pub portable: bool }
+impl DataDir {
+    pub fn locate(exe_dir: &Path, local_app_data: Option<&Path>) -> Result<DataDir, ConfigError>;
+    pub fn logs(&self) -> PathBuf;  pub fn cache(&self) -> PathBuf;
+    pub fn rules(&self) -> PathBuf; pub fn scans(&self) -> PathBuf;   // rules = rules.d
+    pub fn create_dirs(&self) -> std::io::Result<()>;
+}
+```
+- Все секции и поля `#[serde(default)]`: отсутствующая секция или поле берётся из дефолтов, частичный конфиг валиден. `scoring.category_weights` дополняется до полной таблицы SPEC-09 §4.6 и по категориям, и по полям (`irreplaceability`, `authored`, `size_tolerant`).
+- Неизвестное поле → `UnknownField` (+ `tracing::warn`), значение игнорируется, файл не переписывается.
+- Битый JSON или неверный тип поля → файл переименовывается в `<имя>.bak` (старый `.bak` заменяется), на его место пишутся дефолты, `Corrupt`.
+- Файла нет → пишутся дефолты, `Created`. Ошибка записи → `SaveFailed`, программа работает с дефолтами.
+- `schema_version`: отсутствует → 1; больше `SCHEMA_VERSION` → дефолты в памяти, файл не трогается, `NewerSchema`; меньше → миграции по порядку над JSON, файл переписывается, `Migrated`; 0 или не число → `Corrupt`.
+- `DataDir::locate`: если в `exe_dir` можно создать и удалить пробный файл — портативный режим (`<exe_dir>\savekeeper.config.json`, `<exe_dir>\savekeeper-data`). Иначе `<LOCALAPPDATA>\SaveKeeper\savekeeper.config.json` и `<LOCALAPPDATA>\SaveKeeper\savekeeper-data`, `portable = false`. Ни то ни другое → `ConfigError::NoDataDir`.
+- Типы значений: `ui.language` = `auto | ru | en`, `ui.theme` = `system | light | dark`, `llm.local.kind` = `ollama | openai_compat`, `llm.cloud.kind` = `anthropic | openai_compat`, `llm.cloud.api_key_source` = `credential_manager | env`, `backup.format` = `zip | dir` (`BackupFormat` из `sk-core::config`, его же использует SPEC-10). `scan.ignored_templates` хранится строками: один неверный шаблон не должен сбрасывать весь конфиг, проверяет потребитель (SPEC-11).
 
 #### 4.8.3 Логирование
 - `tracing` с уровнем из `SK_LOG` (по умолчанию `info`), в файл и в `Event::Log` (только `warn+`).
