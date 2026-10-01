@@ -18,6 +18,7 @@ serde_json.workspace = true
 specta.workspace = true
 thiserror.workspace = true
 time.workspace = true
+tokio = { workspace = true, features = ["sync"] }
 uuid = { workspace = true, features = ["serde"] }
 
 [target.'cfg(windows)'.dependencies]
