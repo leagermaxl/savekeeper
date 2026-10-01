@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-core` |
 | Зависит от | SPEC-00 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-10-01 (§3.1, §3.3: OneDrive-корни заполняет `detect()`, `EnvError`, раскладка `fake`, правила для дисков и процессов, состав T-02-05; §5: API `sk-core::path` и `PathSet`; §8, T-02-09: снапшот контракта — TS-декларации вместо JSON Schema, `u64` → `number`; T-02-09: `xtask bindings`, зависит от T-11-01; определены `OsInfo`, `KnownFolder`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `CollectorToggles`, `LlmMode`; обязательные Known Folders; состав и зависимости T-02-01/05/08) |
+| Последнее изменение | 2026-10-01 (§3.3: `Environment::known_folder`, `KnownFolder::ALL/token/from_token`; §3.1, §3.3: OneDrive-корни заполняет `detect()`, `EnvError`, раскладка `fake`, правила для дисков и процессов, состав T-02-05; §5: API `sk-core::path` и `PathSet`; §8, T-02-09: снапшот контракта — TS-декларации вместо JSON Schema, `u64` → `number`; T-02-09: `xtask bindings`, зависит от T-11-01; определены `OsInfo`, `KnownFolder`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `CollectorToggles`, `LlmMode`; обязательные Known Folders; состав и зависимости T-02-01/05/08) |
 
 ## 1. Цель
 
@@ -294,6 +294,13 @@ pub struct InstalledProgram {
 impl Environment {
     pub fn detect() -> Result<Self, EnvError>;           // Windows: Known Folders API; другие ОС: заглушка из env/home
     pub fn fake(root: &Path) -> Self;                    // для тестов: все папки внутри root (SPEC-12)
+    pub fn known_folder(&self, folder: KnownFolder) -> Option<&Path>;
+}
+
+impl KnownFolder {
+    pub const ALL: [KnownFolder; 16];                   // в порядке объявления
+    pub fn token(self) -> &'static str;                 // имя токена без скобок: "SAVED_GAMES"
+    pub fn from_token(token: &str) -> Option<Self>;     // регистрозависимо, как токены §3.1
 }
 
 #[derive(thiserror::Error, Debug)]
