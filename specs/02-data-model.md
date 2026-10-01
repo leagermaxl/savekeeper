@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-core` |
 | Зависит от | SPEC-00 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-10-01 (§5: API `sk-core::path` и `PathSet`; §8, T-02-09: снапшот контракта — TS-декларации вместо JSON Schema, `u64` → `number`; T-02-09: `xtask bindings`, зависит от T-11-01; определены `OsInfo`, `KnownFolder`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `CollectorToggles`, `LlmMode`; обязательные Known Folders; состав и зависимости T-02-01/05/08) |
+| Последнее изменение | 2026-10-01 (§3.1, §3.3: OneDrive-корни заполняет `detect()`, `EnvError`, раскладка `fake`, правила для дисков и процессов, состав T-02-05; §5: API `sk-core::path` и `PathSet`; §8, T-02-09: снапшот контракта — TS-декларации вместо JSON Schema, `u64` → `number`; T-02-09: `xtask bindings`, зависит от T-11-01; определены `OsInfo`, `KnownFolder`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `CollectorToggles`, `LlmMode`; обязательные Known Folders; состав и зависимости T-02-01/05/08) |
 
 ## 1. Цель
 
@@ -185,7 +185,7 @@ pub struct ScanIssue {
 | `{PUBLIC}` | `FOLDERID_Public` | `C:\Users\Public` |
 | `{WINDIR}` | `FOLDERID_Windows` | `C:\Windows` |
 | `{PROGRAMFILES}`, `{PROGRAMFILES_X86}` | FOLDERID_ProgramFiles(X86) | |
-| `{ONEDRIVE}` | `HKCU\Software\Microsoft\OneDrive\UserFolder` | может отсутствовать |
+| `{ONEDRIVE}` | `Environment.cloud_roots`: корень `OneDrive`, иначе первый `OneDriveBusiness` (§3.3) | может отсутствовать |
 | `{STEAM}` | корень Steam (SPEC-05) | `C:\Program Files (x86)\Steam` |
 | `{STEAM_USERID}` | id3 пользователя Steam (SPEC-05), может раскрываться в несколько | `12345678` |
 | `{GAME_DIR}` | каталог установки конкретной игры (SPEC-05) | контекстный |
@@ -233,7 +233,7 @@ pub struct Environment {
     pub is_elevated: bool,
     pub known_folders: BTreeMap<KnownFolder, PathBuf>,
     pub drives: Vec<DriveInfo>,
-    pub cloud_roots: Vec<CloudRoot>,    // заполняет sk-scan::cloud::detect_roots (SPEC-03)
+    pub cloud_roots: Vec<CloudRoot>,    // OneDrive — detect() (§3.3); Dropbox, Google Drive, Yandex.Disk — sk-scan::cloud::detect_roots (SPEC-03)
     pub launchers: Vec<LauncherInfo>,   // заполняет SPEC-05
     pub installed_programs: Vec<InstalledProgram>, // заполняет SPEC-06 §4.4 (Uninstall-ключи HKLM+HKCU+WOW6432Node, MSIX)
     pub running_processes: Vec<String>, // lowercase имена exe, снимок в фазе Environment (SPEC-04 условия, SPEC-10 locked-подсказки)
@@ -269,6 +269,9 @@ pub enum KnownFolder {
 }
 ```
 - `KnownFolder` ↔ токен ↔ `FOLDERID` — ровно строки таблицы §3.1. Токены из других источников (`{ONEDRIVE}`, `{STEAM}`, `{DRIVE:X}`, `{PACKAGE:...}` и т.п.) в `KnownFolder` не входят.
+- `cloud_roots` для OneDrive заполняет `Environment::detect()`, потому что от них зависят `{ONEDRIVE}` и `EnvironmentSnapshot` в `sk-core`: `OneDrive` — `HKCU\Software\Microsoft\OneDrive\Accounts\Personal\UserFolder` (если нет — `HKCU\Software\Microsoft\OneDrive\UserFolder`), `OneDriveBusiness` — `UserFolder` каждого `Accounts\Business<N>`. Несуществующие на диске пути пропускаются. Остальных провайдеров добавляет `sk-scan::cloud::detect_roots(env)` через обогатитель (конец §3.3).
+- `drives`: том запрашивается (`GetVolumeInformationW`, `GetDiskFreeSpaceExW`, тип носителя) только для `Fixed` и `Removable`; у сетевых и CD-дисков заполняются только `letter` и `kind`, чтобы отключённый сетевой диск не блокировал скан.
+- `running_processes`: снимок `CreateToolhelp32Snapshot`, имена exe в lowercase, без дублей, отсортированы.
 - `OsInfo.product`: в `ProductName` у Windows 11 записано «Windows 10 …», поэтому при `build ≥ 22000` префикс заменяется на «Windows 11».
 
 Типы окружения, которые **заполняют фичевые крейты**, определяются в `sk-core`, чтобы не было
@@ -292,7 +295,17 @@ impl Environment {
     pub fn detect() -> Result<Self, EnvError>;           // Windows: Known Folders API; другие ОС: заглушка из env/home
     pub fn fake(root: &Path) -> Self;                    // для тестов: все папки внутри root (SPEC-12)
 }
+
+#[derive(thiserror::Error, Debug)]
+pub enum EnvError {
+    /// Не удалось получить обязательные данные (профиль, имя пользователя).
+    Os { api: &'static str, code: i32 },
+    /// Обязательная Known Folder `Home` недоступна.
+    MissingHome,
+}
 ```
+- Отсутствие необязательных папок, OneDrive, сведений о дисках и процессах — не ошибка: поле остаётся пустым.
+- Раскладка `fake(root)` (как у Windows, относительно `root`): `{HOME}` = `Users\user`; `{APPDATA}`, `{LOCALAPPDATA}`, `{LOCALLOW}` = `{HOME}\AppData\Roaming|Local|LocalLow`; `Documents`, `Desktop`, `Pictures`, `Music`, `Videos`, `Downloads`, `Saved Games` под `{HOME}`; `{PUBLIC}` = `Users\Public`, `{PROGRAMDATA}` = `ProgramData`, `{WINDIR}` = `Windows`, `{PROGRAMFILES}` = `Program Files`, `{PROGRAMFILES_X86}` = `Program Files (x86)`. `user_name = "user"`, `machine_name = "FAKE-PC"`, ОС «Windows 11 Pro» 26100, один диск `C` (Fixed, Ssd, NTFS), остальные списки пусты. Папки на диске не создаются (это делает `FakeProfile`, SPEC-12).
 - `Environment::fake` обязателен: на нём строятся все кроссплатформенные тесты.
 - `launchers` и `installed_programs` заполняются в фазе `Environment` соответствующими крейтами через функцию-обогатитель `fn enrich(env: &mut Environment)`, чтобы не создавать зависимость `sk-core → sk-games`.
 
@@ -469,7 +482,7 @@ pub enum LlmMode { Off, Local, Cloud }  // по умолчанию Off
 - [x] **T-02-02** — `sk-core::path`: `to_extended`, `eq_ci`, `starts_with_ci` (покомпонентно), `PathSet` (префиксное дерево, используется SPEC-01). *Готово, когда:* тесты §8.
 - [ ] **T-02-03** — `PathTemplate`: parse, resolve (включая мульти-значные токены), from_path. *Зависит:* T-02-02, T-02-05.
 - [ ] **T-02-04** — `sk-core::privacy::redact` и обезличивание путей для логов. *Зависит:* T-02-03.
-- [ ] **T-02-05** — `Environment` (+ `OsInfo`, `KnownFolder`, `DriveInfo`, `CloudRoot`, `LauncherInfo`, `InstalledProgram` и вложенные типы §3.3): структура, `fake()`, `detect()` для Windows (`SHGetKnownFolderPath`, `GetUserNameW`, `IsUserAnAdmin`/token elevation, `GetLogicalDrives`+`GetDriveTypeW`+`GetVolumeInformationW`, версия ОС из `RtlGetVersion` / реестра `CurrentVersion`) и заглушка для других ОС. *Готово, когда:* Windows-тест §8.
+- [ ] **T-02-05** — `Environment` (+ `OsInfo`, `KnownFolder`, `DriveInfo`, `CloudRoot`, `LauncherInfo`, `InstalledProgram` и вложенные типы §3.3): структура, `fake()`, `detect()` для Windows (`SHGetKnownFolderPath`, `GetUserNameW`, `IsUserAnAdmin`/token elevation, `GetLogicalDrives`+`GetDriveTypeW`+`GetVolumeInformationW`, версия ОС из `RtlGetVersion` / реестра `CurrentVersion`) OneDrive-корни, `running_processes` (`CreateToolhelp32Snapshot`, SPEC-04 §9), тип носителя (`IOCTL_STORAGE_QUERY_PROPERTY`) и заглушка для других ОС. *Готово, когда:* Windows-тест §8.
 - [ ] **T-02-06** — `FindingId` по §2.7. *Зависит:* T-02-01, T-02-03.
 - [ ] **T-02-07** — `FolderSummary`, `Marker`, `ExtStat`, `ChildStat` (только типы; вычисление в SPEC-03).
 - [ ] **T-02-08** — `ScanReport`, `EnvironmentSnapshot`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `Totals`, `CategoryTotals` + версионирование. *Зависит:* T-02-01, T-02-03, T-02-05, T-02-07.
