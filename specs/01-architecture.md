@@ -3,7 +3,7 @@
 | Поле | Значение |
 |---|---|
 | ID | SPEC-01 |
-| Статус | approved |
+| Статус | in-progress |
 | Фаза | P0 |
 | Крейт(ы) | все, в первую очередь `sk-core`, `sk-engine`, `sk-cli` |
 | Зависит от | SPEC-00, SPEC-02 |
@@ -372,7 +372,7 @@ savekeeper-cli env                      # вывести Environment (known fold
 
 ## 7. Задачи
 
-- [ ] **T-01-01** — Создать workspace: корневой `Cargo.toml`, `rust-toolchain.toml`, пустые крейты из §4.1 с `lib.rs`, общие `[workspace.dependencies]` и `[workspace.lints]`. *Готово, когда:* `cargo build --workspace` проходит.
+- [x] **T-01-01** — Создать workspace: корневой `Cargo.toml`, `rust-toolchain.toml`, пустые крейты из §4.1 с `lib.rs`, общие `[workspace.dependencies]` и `[workspace.lints]`. *Готово, когда:* `cargo build --workspace` проходит.
 - [ ] **T-01-02** — `sk-core::events`: `Event`, `ScanPhase`, `EventSink`, `ThrottledSink`. *Зависит:* T-01-01, T-02-01. *Готово, когда:* тест троттлинга (1000 событий за 100 мс → ≤ 2 доставлено + последнее).
 - [ ] **T-01-03** — `sk-core::collector`: `Collector`, `PostCollector`, `CollectContext`, `CollectOutput`, `PathSet`. *Зависит:* T-02-02. *Готово, когда:* тесты `PathSet::covers()` для вложенных путей, регистра (Windows — регистронезависимо) и `\\?\`-префикса.
 - [ ] **T-01-04** — `sk-core::config`: схема §4.8.2, `load_or_default`, миграции, поиск data-dir (портативный или fallback). *Готово, когда:* unit-тесты из §6.

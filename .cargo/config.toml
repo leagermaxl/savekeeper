@@ -1,0 +1,4 @@
+# MSRV-aware dependency resolution (cargo >= 1.84): when updating Cargo.lock,
+# prefer versions whose `rust-version` is compatible with the workspace MSRV.
+[resolver]
+incompatible-rust-versions = "fallback"

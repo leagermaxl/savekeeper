@@ -1,0 +1,63 @@
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.80"
+license = "MIT"
+authors = ["Max Lyubchenko"]
+publish = false
+
+[workspace.dependencies]
+# Internal crates (allowed edges: SPEC-01 §4.2)
+sk-core = { path = "crates/sk-core" }
+sk-scan = { path = "crates/sk-scan" }
+sk-rules = { path = "crates/sk-rules" }
+sk-games = { path = "crates/sk-games" }
+sk-system = { path = "crates/sk-system" }
+sk-heuristics = { path = "crates/sk-heuristics" }
+sk-llm = { path = "crates/sk-llm" }
+sk-score = { path = "crates/sk-score" }
+sk-backup = { path = "crates/sk-backup" }
+sk-restore = { path = "crates/sk-restore" }
+sk-engine = { path = "crates/sk-engine" }
+sk-testkit = { path = "crates/sk-testkit" }
+
+# External crates used in P0 (SPEC-01 §4.2, SPEC-12 §4.2).
+# Feature-crate dependencies are added together with their specs.
+# Versions must stay compatible with rust-version (see .cargo/config.toml).
+anyhow = "1"
+async-trait = "0.1"
+blake3 = "1"
+clap = { version = "4", features = ["derive"] }
+indicatif = "0.17"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+time = "0.3"
+tokio = "1"
+tokio-util = "0.7"
+tracing = "0.1"
+tracing-appender = "0.2"
+tracing-subscriber = "0.3"
+uuid = "1"
+windows = "0.61"
+
+# Test-only
+assert_cmd = "2"
+insta = "1"
+predicates = "3"
+tempfile = "3"
+
+[workspace.lints.rust]
+unsafe_code = "deny" # allowed only in sk-core::win and sk-scan::win (SPEC-00 §7.1)
+missing_docs = "warn"
+rust_2018_idioms = { level = "warn", priority = -1 }
+
+[workspace.lints.clippy]
+unwrap_used = "warn"
+expect_used = "warn"
+dbg_macro = "warn"
+todo = "warn"

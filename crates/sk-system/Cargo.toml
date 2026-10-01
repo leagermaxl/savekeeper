@@ -1,0 +1,12 @@
+[package]
+name = "sk-system"
+description = "System exports: winget, registry, Wi-Fi, drivers and more (SPEC-06)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true

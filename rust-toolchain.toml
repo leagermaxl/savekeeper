@@ -1,0 +1,5 @@
+# Development toolchain. MSRV (1.80) is declared in Cargo.toml `rust-version`
+# and checked by the CI `msrv` job (SPEC-12 §4.8).
+[toolchain]
+channel = "stable"
+components = ["rustfmt", "clippy"]

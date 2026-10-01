@@ -1,0 +1,3 @@
+# unwrap()/expect() are forbidden in library code (SPEC-00 §7.1), allowed in tests.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
