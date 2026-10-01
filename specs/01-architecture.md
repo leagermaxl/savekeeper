@@ -8,7 +8,7 @@
 | Крейт(ы) | все, в первую очередь `sk-core`, `sk-engine`, `sk-cli` |
 | Зависит от | SPEC-00, SPEC-02 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-10-01 (MSRV 1.93; YAML: `serde-saphyr`; `FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; уточнение T-01-01) |
+| Последнее изменение | 2026-10-01 (T-01-03: `PathSet` вынесен в T-02-02; MSRV 1.93; YAML: `serde-saphyr`; `FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; уточнение T-01-01) |
 
 ## 1. Цель
 
@@ -378,7 +378,7 @@ savekeeper-cli env                      # вывести Environment (known fold
 
 - [x] **T-01-01** — Создать workspace: корневой `Cargo.toml`, `rust-toolchain.toml`, пустые крейты из `crates/` (§4.1): библиотеки с `lib.rs`, `sk-cli` — бинарник `savekeeper-cli` с `main.rs` (`xtask/` создаётся в T-12-01, `app/` — в SPEC-11), общие `[workspace.dependencies]` и `[workspace.lints]`. *Готово, когда:* `cargo build --workspace` проходит.
 - [ ] **T-01-02** — `sk-core::events`: `Event`, `ScanPhase`, `EventSink`, `ThrottledSink`. *Зависит:* T-01-01, T-02-01. *Готово, когда:* тест троттлинга (1000 событий за 100 мс → ≤ 2 доставлено + последнее).
-- [ ] **T-01-03** — `sk-core::collector`: `Collector`, `PostCollector`, `CollectContext`, `CollectOutput`, `PathSet`. *Зависит:* T-01-02, T-01-04, T-02-01, T-02-02, T-02-05, T-03-01 (трейт `FsScanner` в `sk-core::fs`). *Готово, когда:* тесты `PathSet::covers()` для вложенных путей, регистра (Windows — регистронезависимо) и `\\?\`-префикса.
+- [ ] **T-01-03** — `sk-core::collector`: `Collector`, `PostCollector`, `CollectContext`, `CollectOutput`, `PriorResults` (использует `PathSet` из `sk-core::path`, реализован в T-02-02). *Зависит:* T-01-02, T-01-04, T-02-01, T-02-02, T-02-05, T-03-01 (трейт `FsScanner` в `sk-core::fs`). *Готово, когда:* тест: фейковые `Collector` и `PostCollector` — `claimed_paths` первого собираются в `PathSet` и доходят до второго через `PriorResults` (тесты самого `PathSet` — в T-02-02).
 - [ ] **T-01-04** — `sk-core::config`: схема §4.8.2 со всеми секциями (поля и дефолты из SPEC-07 §4.9, SPEC-08 §4.4, SPEC-09 §4.1/§4.6, SPEC-10, SPEC-14), `load_or_default`, миграции, поиск data-dir (портативный или fallback). *Зависит:* T-02-01 (`Category`, `LlmMode`). *Готово, когда:* unit-тесты из §6 и insta-снапшот конфига по умолчанию (SPEC-12 §4.4).
 - [ ] **T-01-05** — Логирование: инициализация `tracing` в файл с ротацией и обезличиванием путей. *Зависит:* T-02-04.
 - [ ] **T-01-06** — `sk-engine::ScanPipeline` с фазами §4.4, параллельным запуском коллекторов, изоляцией паник, отменой. *Зависит:* T-01-02, T-01-03. *Готово, когда:* интеграционный тест с фейковыми коллекторами.

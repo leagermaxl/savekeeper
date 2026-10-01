@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-core` |
 | Зависит от | SPEC-00 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-10-01 (§8, T-02-09: снапшот контракта — TS-декларации вместо JSON Schema, `u64` → `number`; T-02-09: `xtask bindings`, зависит от T-11-01; определены `OsInfo`, `KnownFolder`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `CollectorToggles`, `LlmMode`; обязательные Known Folders; состав и зависимости T-02-01/05/08) |
+| Последнее изменение | 2026-10-01 (§5: API `sk-core::path` и `PathSet`; §8, T-02-09: снапшот контракта — TS-декларации вместо JSON Schema, `u64` → `number`; T-02-09: `xtask bindings`, зависит от T-11-01; определены `OsInfo`, `KnownFolder`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `CollectorToggles`, `LlmMode`; обязательные Known Folders; состав и зависимости T-02-01/05/08) |
 
 ## 1. Цель
 
@@ -349,7 +349,31 @@ pub enum Marker {
 ## 5. Пути и кодировки
 - Внутри программы используются `PathBuf`. Для JSON: `String` через `to_string_lossy()`. Если была потеря, добавляется тег `non_utf8_path` к находке.
 - Длинные пути: функция `sk-core::path::to_extended(&Path) -> PathBuf` добавляет `\\?\` (или `\\?\UNC\`) для всех операций ФС в `sk-scan`/`sk-backup`.
-- Сравнение путей на Windows регистронезависимое: `sk-core::path::eq_ci`, `starts_with_ci` (по компонентам, с Unicode case folding через `to_lowercase`).
+- Сравнение путей регистронезависимое (на всех ОС, чтобы кроссплатформенные тесты вели себя как Windows): `sk-core::path::eq_ci`, `starts_with_ci` (по компонентам, с Unicode case folding через `to_lowercase`). Сравнение лексическое, без обращения к ФС; префикс `\\?\` игнорируется, `..` не раскрывается.
+- `PathSet` — множество путей в виде префиксного дерева компонентов, с тем же сравнением:
+
+```rust
+// sk-core::path
+pub fn to_extended(path: &Path) -> PathBuf;
+pub fn eq_ci(a: &Path, b: &Path) -> bool;
+pub fn starts_with_ci(path: &Path, base: &Path) -> bool;   // path == base или под ним
+
+#[derive(Debug, Clone, Default)]
+pub struct PathSet { /* trie */ }
+impl PathSet {
+    pub fn new() -> Self;
+    pub fn insert(&mut self, path: impl Into<PathBuf>) -> bool;  // false, если равный путь уже есть
+    pub fn contains(&self, path: &Path) -> bool;                 // точное совпадение
+    pub fn covers(&self, path: &Path) -> bool;                   // path — элемент или лежит под элементом
+    pub fn has_descendant(&self, path: &Path) -> bool;           // есть элемент строго под path
+    pub fn descendants(&self, path: &Path) -> Vec<&Path>;        // элементы строго под path (SPEC-07 §4.2.4)
+    pub fn iter(&self) -> impl Iterator<Item = &Path>;
+    pub fn len(&self) -> usize;
+    pub fn is_empty(&self) -> bool;
+}
+impl<P: Into<PathBuf>> FromIterator<P> for PathSet;
+impl<P: Into<PathBuf>> Extend<P> for PathSet;
+```
 
 ## 6. ScanReport
 
