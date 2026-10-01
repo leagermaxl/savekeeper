@@ -533,7 +533,7 @@ pub enum LlmMode { Off, Local, Cloud }  // по умолчанию Off
 - [x] **T-02-01** — Модуль `sk-core::model`: `Finding`, `Target`, `Category`, `AppRef`, `Evidence`, `EvidenceSource`, `TargetStats`, `Sensitivity`, `Score`, `ScanIssue`, а также `CollectorToggles` и `LlmMode` из §6 (нужны конфигу, T-01-04) + serde/specta derive. *Готово, когда:* round-trip тесты и insta-снапшот.
 - [x] **T-02-02** — `sk-core::path`: `to_extended`, `eq_ci`, `starts_with_ci` (покомпонентно), `PathSet` (префиксное дерево, используется SPEC-01). *Готово, когда:* тесты §8.
 - [x] **T-02-03** — `PathTemplate`: синтаксис §3.1, `Token`, `TemplateError`, parse (+ проверка при десериализации), resolve (включая мульти-значные токены), from_path, поле `Environment.store_packages` и его заполнение в `detect()`. *Зависит:* T-02-02, T-02-05.
-- [ ] **T-02-04** — `sk-core::privacy::redact` и обезличивание путей для логов. *Зависит:* T-02-03.
+- [x] **T-02-04** — `sk-core::privacy::redact` и обезличивание путей для логов. *Зависит:* T-02-03.
 - [x] **T-02-05** — `Environment` (+ `OsInfo`, `KnownFolder`, `DriveInfo`, `CloudRoot`, `LauncherInfo`, `InstalledProgram` и вложенные типы §3.3): структура, `fake()`, `detect()` для Windows (`SHGetKnownFolderPath`, `GetUserNameW`, `IsUserAnAdmin`/token elevation, `GetLogicalDrives`+`GetDriveTypeW`+`GetVolumeInformationW`, версия ОС из `RtlGetVersion` / реестра `CurrentVersion`) OneDrive-корни, `running_processes` (`CreateToolhelp32Snapshot`, SPEC-04 §9), тип носителя (`IOCTL_STORAGE_QUERY_PROPERTY`) и заглушка для других ОС. *Готово, когда:* Windows-тест §8.
 - [ ] **T-02-06** — `FindingId` по §2.7. *Зависит:* T-02-01, T-02-03.
 - [ ] **T-02-07** — `FolderSummary`, `Marker`, `ExtStat`, `ChildStat` (только типы; вычисление в SPEC-03).
