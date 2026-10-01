@@ -1,0 +1,45 @@
+# cargo-deny configuration (SPEC-12 T-12-04).
+# CI: `cargo deny check bans licenses sources` fails the PR; advisories only warn
+# in PRs and fail in nightly (SPEC-12 §4.8).
+
+[graph]
+# Check optional dependencies too (e.g. `sk-llm` feature `mock`).
+all-features = true
+
+[advisories]
+version = 2
+yanked = "deny"
+ignore = []
+
+[licenses]
+version = 2
+# Compatible with the project license (MIT, SPEC-14 §9).
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "Unicode-3.0",
+    "MPL-2.0",
+]
+confidence-threshold = 0.8
+# The allow-list is fixed by SPEC-12; not every license is in use yet.
+unused-allowed-license = "allow"
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+# Workspace path dependencies have no version; allowed because all crates are `publish = false`.
+allow-wildcard-paths = true
+deny = [
+    { crate = "openssl-sys", reason = "use rustls instead of OpenSSL (SPEC-12 §4.6)" },
+    { crate = "openssl", reason = "use rustls instead of OpenSSL (SPEC-12 §4.6)" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

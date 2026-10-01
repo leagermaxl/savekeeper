@@ -29,7 +29,14 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --all --check
       - run: cargo xtask check-deps
-      # `cargo deny check` is added in T-12-04.
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check bans licenses sources
+      # Advisories only warn in PRs; nightly fails on them (SPEC-12 §4.8).
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        continue-on-error: true
+        with:
+          command: check advisories
 
   test:
     name: test (${{ matrix.os }})
