@@ -8,7 +8,7 @@
 | Крейт(ы) | `app/src-tauri`, `sk-core::win::elevation`, `xtask` (dist), `.github/workflows/release.yml` |
 | Зависит от | SPEC-00, SPEC-01, SPEC-06, SPEC-11, SPEC-12 |
 | Используется в | SPEC-10 (экспорты с правами), SPEC-13 (драйверы) |
-| Последнее изменение | 2026-09-28 |
+| Последнее изменение | 2026-10-01 (лицензия манифеста, лицензия проекта MIT) |
 
 ## 1. Цель
 
@@ -290,8 +290,8 @@ jobs:
 ## 9. Открытые вопросы
 
 - Подпись кода: SignPath Foundation (требует публичного OSS-репозитория и одобрения) или Azure Trusted Signing? Решение до v0.1.0 или осознанно выпускать неподписанный MVP.
-- Лицензирование манифеста Ludusavi: сам репозиторий под MIT, но данные собраны из PCGamingWiki (CC BY-NC-SA 3.0). Нужно уточнить условия распространения встроенной копии (`--bundle-manifest`). До выяснения — только скачивание пользователем (SPEC-05).
-- Лицензия самого SaveKeeper (MIT / Apache-2.0 / GPL-3.0)? Влияет на `deny.toml` и SignPath.
+- ~~Лицензирование манифеста Ludusavi~~ **Решено (2026-10-01):** проект некоммерческий, снапшот встраивается (SPEC-05 FR-05-11). Релизный job проверяет, что `THIRD_PARTY_LICENSES.html` содержит блок атрибуции PCGamingWiki/Ludusavi.
+- ~~Лицензия самого SaveKeeper~~ **Решено (2026-10-01):** MIT. Файл `LICENSE` в корне репозитория и в релизном zip. Allow-лист `deny.toml` (SPEC-12 T-12-04) с MIT совместим. Для SignPath Foundation (бесплатная подпись open-source) MIT подходит.
 - Предложение к SPEC-01 §4.8.2: добавить `updates: { check: false, interval_days: 7 }` в схему конфига.
 - Предложение к SPEC-01 §4.2 / SPEC-02: модуль `sk-core::win::elevation` (трейт `ElevationBroker` и `ElevatedTask`) размещается в `sk-core`, чтобы `sk-backup` и `sk-restore` не зависели от `app/`. Реализация `ShellRunasBroker` там же (`cfg(windows)`).
 - Предложение к SPEC-06: у экспортёров с `requires_elevation` описать, какую `ElevatedTask` они используют (сейчас только драйверы).

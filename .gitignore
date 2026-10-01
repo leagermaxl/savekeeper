@@ -1,0 +1,64 @@
+# --- Rust ---
+# Build output (also holds generated fixtures: target/fixtures, target/fixtures-cache — SPEC-12)
+/target/
+**/target/
+# Cargo.lock is committed: the workspace ships binaries
+*.rs.bk
+*.pdb
+
+# insta: pending snapshots (accepted .snap files are committed)
+*.snap.new
+*.pending-snap
+
+# Coverage / profiling
+*.profraw
+*.profdata
+lcov.info
+/coverage/
+
+# --- Tauri / frontend (app/) ---
+node_modules/
+/app/dist/
+/app/src-tauri/gen/schemas/
+.vite/
+*.tsbuildinfo
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+# app/src/bindings.ts is generated but committed (CI checks it is up to date — SPEC-12)
+
+# Playwright / e2e
+/app/test-results/
+/app/playwright-report/
+
+# --- Release / packaging (SPEC-14) ---
+/dist/
+
+# --- SaveKeeper runtime data (portable mode creates these next to the exe — SPEC-01 §4.8) ---
+savekeeper.config.json
+savekeeper.config.json.bak
+savekeeper-data/
+
+# Local backups made while testing
+*.zip.age
+*.partial
+
+# --- Secrets ---
+.env
+.env.*
+!.env.example
+
+# --- IDE / OS ---
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Local tooling ---
+.claude/settings.local.json
+.claude-flow/
+.swarm/

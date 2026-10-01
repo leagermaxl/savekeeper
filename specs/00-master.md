@@ -69,6 +69,7 @@
 | Типы для фронта | `specta` + `tauri-specta` | Автогенерация TS-типов |
 | LLM | Трейт `Classifier`. Провайдеры: Ollama, OpenAI-совместимый (llama.cpp / LM Studio), Anthropic | SPEC-08 |
 | Целевая ОС | Windows 10 22H2+, Windows 11, x86_64 (ARM64 — желательно) | |
+| Лицензия | MIT, бесплатно и некоммерчески | Встроенный манифест Ludusavi под CC BY-NC-SA (SPEC-05 FR-05-11) |
 | Среда разработки | Windows (основная) | Кроссплатформенные крейты тестируются и на Linux/macOS в CI |
 
 ## 4. Глоссарий

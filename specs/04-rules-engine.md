@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-rules`, каталог `rules/` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-07 (claimed_paths), SPEC-09, SPEC-11 (редактор правил, P4) |
-| Последнее изменение | 2026-09-28 |
+| Последнее изменение | 2026-10-01 (`from_json` в схеме v1) |
 
 ## 1. Цель
 
@@ -121,6 +121,53 @@ rules:
 | `optional` | bool | См. FR-04-03. |
 | `label_key` | string | Суффикс заголовка. |
 | `glob_root` | bool | Если `true`, `path` может содержать `*` в сегментах (`{APPDATA}\\Mozilla\\Firefox\\Profiles\\*`); каждое совпадение даёт отдельную находку. Глубина `*` не больше 2 сегментов. |
+| `from_json` | object | Динамические корни, прочитанные из JSON-конфига программы (§4.2.1). Взаимоисключающее с `path`/`registry`. |
+
+#### 4.2.1 Target `from_json` (динамические пути)
+
+Некоторые программы хранят расположение пользовательских данных в своём конфиге: vault'ы
+Obsidian, проекты Unity Hub. Правило с таким target'ом читает конфиг и превращает каждый
+найденный путь в отдельную находку.
+
+```yaml
+  - id: obsidian.vaults
+    app: { id: obsidian, name: Obsidian, kind: application }
+    category: user_files
+    title_key: rules.obsidian.vault          # label: имя папки vault'а подставляется в args.name
+    conditions: [ { exists: "{APPDATA}\\obsidian\\obsidian.json" } ]
+    targets:
+      - from_json:
+          file: "{APPDATA}\\obsidian\\obsidian.json"
+          format: json                       # json | jsonc (комментарии и висячие запятые допускаются)
+          select: "/vaults/*/path"           # JSON Pointer (RFC 6901) + сегмент `*` = все ключи объекта / элементы массива
+          max_matches: 50                    # по умолчанию 50
+        include: []                          # применяются к каждому найденному корню
+        exclude: [".trash/**"]
+        tags: [notes]
+```
+
+**Семантика:**
+1. `file` раскрывается как обычный `PathTemplate`. Если файла нет и target не `optional`, находок нет, issue не создаётся.
+2. Файл читается через `FsScanner::read_small(path, 1 MiB)` (SPEC-03 §4.1). Больше 1 MiB → `ScanIssue::Warning issue.rules.from_json_too_large`. Cloud-only файл не читается (SPEC-03 FR-03-03).
+3. Парсинг: `serde_json`. Для `jsonc` перед парсингом удаляются `//` и `/* */` комментарии и висячие запятые (свой минимальный препроцессор с учётом строк, без внешней зависимости).
+4. `select` вычисляется по дереву: обычные сегменты как в RFC 6901 (`~0`, `~1`), `*` разворачивается во все ключи объекта или элементы массива. Допускается не больше 3 сегментов `*`.
+5. Берутся только **строковые** значения. Нормализация:
+   - `file:///C:/x` → `C:\x` (percent-decoding);
+   - `/` → `\`;
+   - переменные `%VAR%` раскрываются через окружение процесса;
+   - относительный путь разрешается относительно папки `file`.
+6. Фильтры безопасности (значение отбрасывается с `ScanIssue::Info issue.rules.from_json_skipped`):
+   - не абсолютный путь после нормализации;
+   - UNC или сетевой диск (`DriveKind::Network`);
+   - внутри `{WINDIR}` или `{PROGRAMFILES*}`;
+   - путь не существует;
+   - дубль другого значения.
+7. Каждый оставшийся путь → `PathTemplate::from_path` (SPEC-02 §3.2) → `Target::FileSet` или `Target::File`. `FindingId` считается от шаблона, поэтому vault в `{DOCUMENTS}\Notes` получает одинаковый id на любой машине.
+8. Evidence: `EvidenceSource::Rule { rule_id }`, `message_key: "evidence.rule_from_json"`, `message_args: { file: <шаблон file>, select, name: <последний компонент пути> }`.
+9. Найденные корни добавляются в `claimed_paths`. Сам `file` тоже добавляется (конфиг объяснён, сохраняется отдельным target'ом `obsidian.config`).
+10. Больше `max_matches` значений → берутся первые по порядку в документе + warning.
+
+**Ограничения v1:** только JSON/JSONC. INI, XML, VDF, SQLite не поддерживаются. VDF Steam читает SPEC-05 своим парсером. Остальные форматы — в будущих версиях схемы.
 
 ### 4.3 Условия
 
@@ -149,7 +196,7 @@ rules:
    2. Для каждого target раскрыть шаблон (`resolve`, `glob_root` → `read_dir` по сегментам).
    3. Для каждого существующего пути создать `Finding { target, category, app, title, evidence, sensitivity, tags, default_selected: false /*SPEC-09*/, stats: None }`.
    4. Добавить корни targets и `claims` (раскрытые) в `claimed_paths`.
-   5. Проверить `process_running` через snapshot процессов (`CreateToolhelp32Snapshot`, один раз на скан, в `sk-rules::win::process_names()`).
+   5. Проверить `process_running` по `Environment.running_processes` (SPEC-02 §3.3, снимок делается один раз в фазе Environment).
 2. Конфликты: если два правила дают одинаковый `FindingId`, остаётся находка от правила с большим `priority`, evidence второго дописывается. Вложенность (правило A — `{APPDATA}\Foo`, правило B — `{APPDATA}\Foo\Bar`) не решается здесь, это задача SPEC-09 §merge.
 3. `Event::Progress { phase: Collect, current: rule_id }` каждые N правил.
 
@@ -220,7 +267,8 @@ include/exclude пишутся в YAML при реализации T-04-07..T-04
 #### 4.7.5 `rules/productivity.yaml`
 | id | Путь | Примечание |
 |---|---|---|
-| `obsidian.config` | `{APPDATA}\obsidian\obsidian.json` | `app_config`. Сами vault'ы находит SPEC-07 (путь vault'ов из obsidian.json → см. Открытые вопросы) |
+| `obsidian.config` | `{APPDATA}\obsidian\obsidian.json` | `app_config` |
+| `obsidian.vaults` | `from_json`: `{APPDATA}\obsidian\obsidian.json`, `/vaults/*/path` | `user_files`, tag `notes`; exclude `.trash/**` (пример §4.2.1) |
 | `keepass.config` | `{APPDATA}\KeePass` | `app_config` (`KeePass.config.xml`); сами `.kdbx` ищет SPEC-07 как `credentials` |
 | `keepassxc.config` | `{APPDATA}\KeePassXC` | `app_config` |
 | `notepadpp.config` | `{APPDATA}\Notepad++` | `app_config`; include `*.xml, userDefineLangs/**, themes/**, plugins/config/**, backup/**` (несохранённые вкладки!) |
@@ -234,6 +282,12 @@ include/exclude пишутся в YAML при реализации T-04-07..T-04
 | `qbittorrent.config` | `{APPDATA}\qBittorrent`, `{LOCALAPPDATA}\qBittorrent\BT_backup` | `app_data` (активные торренты) |
 | `figma.settings` | `{APPDATA}\Figma\settings.json` | `app_config`; claims `{APPDATA}\Figma` |
 | `adobe.settings` | `{APPDATA}\Adobe\Adobe Photoshop *\Adobe Photoshop * Settings` (glob_root), `{APPDATA}\Adobe\Lightroom\Presets`, `{APPDATA}\Adobe\CameraRaw\Settings` | `app_config`; claims `{APPDATA}\Adobe\Common\Media Cache*` |
+
+Правило `from_json` в `rules/dev.yaml`:
+
+| id | Target | Примечание |
+|---|---|---|
+| `unityhub.projects` | `from_json`: `{APPDATA}\UnityHub\projects-v1.json`, `/data/*/path` | `user_files`, tag `project`; exclude `Library/**, Temp/**, Logs/**, obj/**` (переустанавливаемое), claims эти подпапки |
 
 #### 4.7.6 `rules/hardware-tuning.yaml`
 | id | Путь | Категория |
@@ -285,6 +339,8 @@ OneDrive, Dropbox, Google Drive, iCloud, Yandex.Disk: локальные кэш�
 | Два пользовательских правила с одинаковым id | Побеждает последнее по алфавиту файлов + warning. |
 | Правило ссылается на `{STEAM}`, а Steam не установлен | resolve пустой → находки нет, без issue. |
 | `glob_root` дал > 50 совпадений | Берём первые 50 по mtime desc + warning (защита от патологий). |
+| `from_json`: файл битый, не тот формат или схема программы изменилась (`select` ничего не нашёл) | `ScanIssue::Warning issue.rules.from_json_parse` (с номером строки, если есть) / `Info issue.rules.from_json_empty`. Остальные targets правила работают. |
+| `from_json`: значение указывает на отключённый внешний диск | Путь не существует → пропуск + Info с шаблоном пути («vault на диске E:, диск не подключён»). |
 | Target — файл, а include задан | include игнорируется, warning при валидации. |
 | HKLM-ветка без прав на чтение | `registry_exists` = false, Info-issue. |
 | Портативная программа в нестандартной папке (Notepad++ portable) | Не покрывается правилами → SPEC-07. |
@@ -296,6 +352,8 @@ OneDrive, Dropbox, Google Drive, iCloud, Yandex.Disk: локальные кэш�
 - **Тест встроенной базы** (`builtin_rules_valid`): все файлы `rules/*.yaml` компилируются, id уникальны, `credentials` ⇒ `high`. Ломает CI (FR-04-07).
 - Collector на `MemFs` + `Environment::fake`: фикстура `fixtures/fs/profile-typical.yaml` (VS Code, Chrome с 2 профилями, Firefox, .ssh, OBS, Telegram) → ожидаемый snapshot находок (`insta`), включая `claimed_paths`.
 - `glob_root` для JetBrains с 3 версиями IDE → 3 находки.
+- `from_json`: фикстуры `obsidian.json` (2 vault'а, один на несуществующем диске, один как `file:///`), `projects-v1.json` Unity Hub, JSONC с комментариями и висячей запятой, `*` в массиве и объекте, экранирование `~1`, файл > 1 MiB, относительный путь, UNC (отброшен) → ожидаемые находки и issues.
+- Стабильность id: тот же `obsidian.json` на `Environment::fake` с другим именем пользователя → те же `FindingId`.
 - `conditions`: `installed` по regex на фейковом `installed_programs`.
 - Windows-интеграционный: `registry_exists` на реальной ветке `HKCU\Software\Microsoft`.
 - Бенч: 500 синтетических правил → NFR-04-01.
@@ -305,11 +363,12 @@ OneDrive, Dropbox, Google Drive, iCloud, Yandex.Disk: локальные кэш�
 - [ ] **T-04-01** — Serde-модель схемы v1 (§4.2, §4.3) с `deny_unknown_fields`. *Зависит:* T-02-01. *Готово, когда:* пример из §4.2 парсится.
 - [ ] **T-04-02** — Компиляция и валидация (§4.4), `RuleDiagnostic` с номерами строк (`serde_yaml::Location`). *Зависит:* T-04-01, T-02-03.
 - [ ] **T-04-03** — Загрузка builtin (`include_dir!`) + `rules.d`, слияние, disable. *Зависит:* T-04-02, T-01-04.
-- [ ] **T-04-04** — Оценщик условий с кэшем на скан, `process_names()` (Windows) + заглушка. *Зависит:* T-04-02, T-03-01.
+- [ ] **T-04-04** — Оценщик условий с кэшем на скан; `process_running` по `Environment.running_processes`. *Зависит:* T-04-02, T-03-01, T-02-05.
 - [ ] **T-04-05** — Раскрытие targets, `glob_root`, создание `Finding` и `claimed_paths`. *Зависит:* T-04-04. *Готово, когда:* snapshot-тест profile-typical.
 - [ ] **T-04-06** — `RulesCollector: Collector`, прогресс, конфликты FindingId. *Зависит:* T-04-05, T-01-03.
-- [ ] **T-04-07** — YAML-правила §4.7.1–§4.7.2 (браузеры, dev). *Зависит:* T-04-02. *Готово, когда:* проверены вручную на Windows-машине разработчика (чек-лист в PR).
-- [ ] **T-04-08** — YAML-правила §4.7.3–§4.7.7. *Зависит:* T-04-02.
+- [ ] **T-04-12** — Target `from_json` (§4.2.1): JSONC-препроцессор, вычисление `select` с `*`, нормализация и фильтры путей, создание находок и `claimed_paths`. *Зависит:* T-04-05, T-03-06. *Готово, когда:* тесты из §6 по `from_json` проходят.
+- [ ] **T-04-07** — YAML-правила §4.7.1–§4.7.2 (браузеры, dev, включая `unityhub.projects`). *Зависит:* T-04-02, T-04-12. *Готово, когда:* проверены вручную на Windows-машине разработчика (чек-лист в PR).
+- [ ] **T-04-08** — YAML-правила §4.7.3–§4.7.7 (включая `obsidian.vaults`). *Зависит:* T-04-02, T-04-12.
 - [ ] **T-04-09** — YAML-правила §4.7.8–§4.7.9. *Зависит:* T-04-02, T-05-03 (токены Steam).
 - [ ] **T-04-10** — CLI `rules validate` + вывод диагностики. *Зависит:* T-04-02, T-01-07.
 - [ ] **T-04-11** — i18n-ключи для всех `title_key`/`notes_key` (ru, en) в `app/src/i18n/*.json` (генерация списка ключей тестом). *Зависит:* T-04-07..09.
@@ -323,8 +382,7 @@ OneDrive, Dropbox, Google Drive, iCloud, Yandex.Disk: локальные кэш�
 
 ## 9. Открытые вопросы
 
-- **Динамические пути из конфигов** (vault'ы Obsidian в `obsidian.json`, библиотеки Steam, папка сохранений OBS-записей): предлагается тип target `from_json: { file, json_pointer, category }`. Добавить в схему v1 сразу или в v2? Предложение: v1, только JSON (без парсинга INI/XML).
-- **Предложение к SPEC-02 §2.1:** поле `notes_key: Option<String>` у `Finding` (подсказки «лучше синхронизировать аккаунтом»). Сейчас можно положить во второе `Evidence` с `confidence: 0`, но это семантически неверно.
-- **Предложение к SPEC-02 §3.1:** токен `{DRIVE:*}` (все фиксированные диски) для поиска портативных эмуляторов. Либо оставить это SPEC-07.
-- MS Store/UWP-пакеты (`{LOCALAPPDATA}\Packages\<PFN>`): нужен токен `{PACKAGE:<name>}`, раскрывающий PublisherId (`_8wekyb3d8bbwe`) автоматически? Пока пишем PFN целиком, а для неизвестных publisher-id используем `glob_root`.
-- `process_running` требует snapshot процессов. Нужно ли это в `Environment` (SPEC-02) для переиспользования в SPEC-10? Предложение: `Environment.running_processes: Vec<String>` (lowercase имена exe).
+- ~~Динамические пути из конфигов~~ **Решено (2026-10-01):** `from_json` входит в схему v1 (§4.2.1), только JSON/JSONC. Кандидаты на будущие форматы: INI (папка записей OBS в `basic.ini`, qBittorrent), XML.
+- ~~`notes_key` у `Finding`, токен `{DRIVE:*}`~~ **Приняты** в SPEC-02 (§2.1, §3.1).
+- ~~Токен `{PACKAGE:<name>}`~~ **Принят** в SPEC-02 §3.1. Правила для Store-приложений переписываются на него при реализации T-04-08.
+- ~~Snapshot процессов~~ **Принято:** `Environment.running_processes` (SPEC-02 §3.3), заполняется в `sk-core` (`CreateToolhelp32Snapshot`) в рамках T-02-05.
