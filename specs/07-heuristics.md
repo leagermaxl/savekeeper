@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-heuristics` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03, SPEC-04, SPEC-05 |
 | Используется в | SPEC-08, SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-09-28 |
+| Последнее изменение | 2026-10-01 (`HeuristicsConfig` — в `sk-core::config`) |
 
 ## 1. Цель
 
@@ -340,7 +340,7 @@ fn make_finding(root: &Path, v: &MarkerVerdict, s: &FolderSummary, h: &'static s
 
 ### 4.9 Конфигурация
 
-Секция `heuristics` в `savekeeper.config.json` (добавляется к SPEC-01 §4.8.2, см. §9):
+Секция `heuristics` в `savekeeper.config.json` (SPEC-01 §4.8.2). Тип `HeuristicsConfig` определён в `sk-core::config` (SPEC-01 §4.8.2) и реэкспортируется из `sk-heuristics`; поля и дефолты ниже нормативны:
 ```jsonc
 "heuristics": {
   "enabled": { "unk": true, "usr": true, "git": true, "junk": true, "web": true },
@@ -380,7 +380,7 @@ fn make_finding(root: &Path, v: &MarkerVerdict, s: &FolderSummary, h: &'static s
 
 ## 7. Задачи
 
-- [ ] **T-07-01** — Каркас `sk-heuristics`: `HeuristicsCollector`, трейт `Heuristic`, `HeuristicContext`, порядок выполнения и накопление `claimed`, `HeuristicsConfig` + дефолты §4.9. *Зависит:* T-01-03, T-01-04. *Готово, когда:* коллектор с пустыми эвристиками встроен в `ScanPipeline` и проходит интеграционный тест.
+- [ ] **T-07-01** — Каркас `sk-heuristics`: `HeuristicsCollector`, трейт `Heuristic`, `HeuristicContext`, порядок выполнения и накопление `claimed`, реэкспорт `HeuristicsConfig` (тип и дефолты §4.9 реализуются в SPEC-01 T-01-04). *Зависит:* T-01-03, T-01-04. *Готово, когда:* коллектор с пустыми эвристиками встроен в `ScanPipeline` и проходит интеграционный тест.
 - [ ] **T-07-02** — Данные: `vendors.txt`, `extensions.yaml` + загрузчик (include_bytes, валидация при старте). *Готово, когда:* unit-тест: все группы парсятся, нет дублей расширений.
 - [ ] **T-07-03** — `junk_verdict` (§4.5). *Зависит:* T-07-01. *Готово, когда:* тесты §6.
 - [ ] **T-07-04** — `classify_by_markers` (§4.7) с конфигурируемыми порогами. *Зависит:* T-07-03, T-02-07. *Готово, когда:* таблица ≥ 25 кейсов зелёная.
@@ -403,7 +403,7 @@ fn make_finding(root: &Path, v: &MarkerVerdict, s: &FolderSummary, h: &'static s
 
 ## 9. Открытые вопросы
 
-- **Предложение к SPEC-01 §4.8.2:** добавить секцию `heuristics` (§4.9) в схему конфига.
+- ~~**Предложение к SPEC-01 §4.8.2:** добавить секцию `heuristics` (§4.9) в схему конфига.~~ **Принято:** секция есть в SPEC-01 §4.8.2, тип — в `sk-core::config`.
 - **Предложение к SPEC-06:** зарегистрировать экспортёр `git-bundle` (params: `repo`), который выполняется при бэкапе, требует `git.exe` в PATH, иначе использует gix-реализацию bundle (если появится).
 - **Предложение к SPEC-03 §4.1:** в `summarize` нужен флаг `SummaryLimits::max_entries` и признак `truncated`, а для H-USR — `walk` с колбэком post-order или возможность агрегировать по директориям без хранения всех записей. Нужна ли в `FsScanner` функция `walk_dirs_aggregated`?
 - **Предложение к SPEC-02 §4.1:** маркер `UwpPackage` для `{LOCALAPPDATA}\Packages\*` упростил бы §4.2.3.

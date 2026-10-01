@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-core` |
 | Зависит от | SPEC-00 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-09-28 (интеграция предложений SPEC-03..14) |
+| Последнее изменение | 2026-10-01 (определены `OsInfo`, `KnownFolder`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `CollectorToggles`, `LlmMode`; обязательные Known Folders; состав и зависимости T-02-01/05/08) |
 
 ## 1. Цель
 
@@ -251,7 +251,25 @@ pub struct DriveInfo {
 }
 
 pub struct CloudRoot { pub provider: CloudProvider, pub path: PathBuf } // OneDrive | OneDriveBusiness | Dropbox | GoogleDrive | YandexDisk | ICloud | Other(String)
+
+pub struct OsInfo {
+    pub product: String,                // "Windows 11 Pro" (редакция входит в строку)
+    pub display_version: Option<String>,// "24H2" (DisplayVersion из HKLM\...\CurrentVersion)
+    pub build: String,                  // "26100.2033" = CurrentBuildNumber + "." + UBR
+    pub arch: String,                   // архитектура ОС (не процесса): "x86_64" | "aarch64" | "x86"
+    pub ui_language: String,            // язык интерфейса, BCP-47: "ru-RU"
+}
+
+/// Известные папки из §3.1, которые берутся из Known Folders API.
+/// Сериализуются именем токена (`"DOCUMENTS"`, `"SAVED_GAMES"`, `"PROGRAMFILES_X86"`) —
+/// исключение из правила snake_case §2: так ключи `known_folders` совпадают с токенами шаблонов.
+pub enum KnownFolder {
+    Home, AppData, LocalAppData, LocalLow, Documents, Desktop, Pictures, Music, Videos, Downloads,
+    SavedGames, ProgramData, Public, WinDir, ProgramFiles, ProgramFilesX86,
+}
 ```
+- `KnownFolder` ↔ токен ↔ `FOLDERID` — ровно строки таблицы §3.1. Токены из других источников (`{ONEDRIVE}`, `{STEAM}`, `{DRIVE:X}`, `{PACKAGE:...}` и т.п.) в `KnownFolder` не входят.
+- `OsInfo.product`: в `ProductName` у Windows 11 записано «Windows 10 …», поэтому при `build ≥ 22000` префикс заменяется на «Windows 11».
 
 Типы окружения, которые **заполняют фичевые крейты**, определяются в `sk-core`, чтобы не было
 зависимости `sk-core → sk-games/sk-system`. Поля соответствуют SPEC-05 §4.1 и SPEC-06 §4.4:
@@ -369,6 +387,34 @@ pub struct EnvironmentSnapshot {
     pub launchers: Vec<LauncherSnapshot>,            // id, root как шаблон, число игр
     pub is_elevated: bool,
 }
+
+pub struct DriveSnapshot {
+    pub letter: char,
+    pub kind: DriveKind,
+    pub fs: Option<String>,
+    pub label: Option<String>,
+    pub volume_serial: Option<u32>,     // SPEC-13: детект смены буквы диска (DifferentDriveLetter)
+}
+
+pub struct LauncherSnapshot {
+    pub id: String,                     // "steam", "epic" ...
+    pub root: Option<PathTemplate>,     // PathTemplate::from_path(LauncherInfo.root)
+    pub game_count: u32,                // LauncherInfo.games.len()
+}
+
+/// Параметры скана, с которыми построен отчёт (обезличенная копия ScanOptions, SPEC-01 §4.4).
+pub struct ScanOptionsSnapshot {
+    pub roots: Vec<PathTemplate>,       // ScanOptions.roots через PathTemplate::from_path
+    pub collectors: CollectorToggles,
+    pub llm: LlmMode,
+    pub max_depth: Option<u32>,
+}
+
+/// Вкл/выкл коллекторов по их id (SPEC-01 §4.3). По умолчанию все true.
+pub struct CollectorToggles { pub rules: bool, pub games: bool, pub system: bool, pub heuristics: bool }
+
+/// Режим LLM-классификации: значение `llm.mode` конфига (SPEC-01 §4.8.2) и `ScanOptions.llm` (SPEC-08 FR-08-01).
+pub enum LlmMode { Off, Local, Cloud }  // по умолчанию Off
 ```
 
 - Сохраняется в `savekeeper-data/scans/<scan_id>.json` (SPEC-01 §4.8.1).
@@ -391,18 +437,18 @@ pub struct EnvironmentSnapshot {
 - `PathTemplate::from_path` выбирает самый специфичный токен: `{LOCALLOW}` вместо `{HOME}\AppData\LocalLow`.
 - Покомпонентное сравнение: `C:\Users\maxim` не начинается с `C:\Users\max`.
 - `redact()`: email, токены, имя пользователя.
-- Windows-only: `Environment::detect()` возвращает все обязательные Known Folders; `{DOCUMENTS}` совпадает с `SHGetKnownFolderPath`.
+- Windows-only: `Environment::detect()` возвращает обязательные Known Folders (`Home`, `AppData`, `LocalAppData`, `LocalLow`, `Documents`, `ProgramData`, `WinDir`, `ProgramFiles`); `{DOCUMENTS}` совпадает с `SHGetKnownFolderPath`.
 
 ## 9. Задачи
 
-- [ ] **T-02-01** — Модуль `sk-core::model`: `Finding`, `Target`, `Category`, `AppRef`, `Evidence`, `EvidenceSource`, `TargetStats`, `Sensitivity`, `Score`, `ScanIssue` + serde/specta derive. *Готово, когда:* round-trip тесты и insta-снапшот.
+- [ ] **T-02-01** — Модуль `sk-core::model`: `Finding`, `Target`, `Category`, `AppRef`, `Evidence`, `EvidenceSource`, `TargetStats`, `Sensitivity`, `Score`, `ScanIssue`, а также `CollectorToggles` и `LlmMode` из §6 (нужны конфигу, T-01-04) + serde/specta derive. *Готово, когда:* round-trip тесты и insta-снапшот.
 - [ ] **T-02-02** — `sk-core::path`: `to_extended`, `eq_ci`, `starts_with_ci` (покомпонентно), `PathSet` (префиксное дерево, используется SPEC-01). *Готово, когда:* тесты §8.
 - [ ] **T-02-03** — `PathTemplate`: parse, resolve (включая мульти-значные токены), from_path. *Зависит:* T-02-02, T-02-05.
 - [ ] **T-02-04** — `sk-core::privacy::redact` и обезличивание путей для логов. *Зависит:* T-02-03.
-- [ ] **T-02-05** — `Environment`: структура, `fake()`, `detect()` для Windows (`SHGetKnownFolderPath`, `GetUserNameW`, `IsUserAnAdmin`/token elevation, `GetLogicalDrives`+`GetDriveTypeW`+`GetVolumeInformationW`, версия ОС из `RtlGetVersion` / реестра `CurrentVersion`) и заглушка для других ОС. *Готово, когда:* Windows-тест §8.
+- [ ] **T-02-05** — `Environment` (+ `OsInfo`, `KnownFolder`, `DriveInfo`, `CloudRoot`, `LauncherInfo`, `InstalledProgram` и вложенные типы §3.3): структура, `fake()`, `detect()` для Windows (`SHGetKnownFolderPath`, `GetUserNameW`, `IsUserAnAdmin`/token elevation, `GetLogicalDrives`+`GetDriveTypeW`+`GetVolumeInformationW`, версия ОС из `RtlGetVersion` / реестра `CurrentVersion`) и заглушка для других ОС. *Готово, когда:* Windows-тест §8.
 - [ ] **T-02-06** — `FindingId` по §2.7. *Зависит:* T-02-01, T-02-03.
 - [ ] **T-02-07** — `FolderSummary`, `Marker`, `ExtStat`, `ChildStat` (только типы; вычисление в SPEC-03).
-- [ ] **T-02-08** — `ScanReport`, `EnvironmentSnapshot`, `Totals` + версионирование. *Зависит:* T-02-01, T-02-05.
+- [ ] **T-02-08** — `ScanReport`, `EnvironmentSnapshot`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `Totals`, `CategoryTotals` + версионирование. *Зависит:* T-02-01, T-02-03, T-02-05, T-02-07.
 - [ ] **T-02-09** — Экспорт TS-типов через specta в `app/src/bindings.ts` (скрипт `cargo run -p sk-core --example export-types` или build step в `app/src-tauri`). *Готово, когда:* файл генерируется и компилируется `tsc`.
 
 ## 10. Критерии приёмки

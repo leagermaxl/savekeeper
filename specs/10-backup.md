@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-backup` (оркестрация — `sk-engine::BackupJob`) |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03, SPEC-06, SPEC-09 |
 | Используется в | SPEC-11, SPEC-13, SPEC-14 |
-| Последнее изменение | 2026-09-28 |
+| Последнее изменение | 2026-10-01 (пример `environment` в манифесте по SPEC-02 §6; закрыт вопрос по `EnvironmentSnapshot`) |
 
 ## 1. Цель
 
@@ -215,10 +215,12 @@ flowchart TD
   "finished_at": "2026-09-28T14:41:57Z",
   "container": { "format": "zip", "encrypted": false, "compression_level": 6 },
   "environment": {                      // EnvironmentSnapshot (SPEC-02 §6), обезличенный
-    "os": { "product": "Windows 11 Pro", "build": "26100.2033", "arch": "x86_64", "ui_language": "ru-RU" },
+    "os": { "product": "Windows 11 Pro", "display_version": "24H2", "build": "26100.2033", "arch": "x86_64", "ui_language": "ru-RU" },
     "machine_name": "DESKTOP-01",
     "known_folders": { "DOCUMENTS": "{ONEDRIVE}\\Документы", "SAVED_GAMES": "{HOME}\\Saved Games" },
-    "launchers": [{ "id": "steam", "root": "{PROGRAMFILES_X86}\\Steam" }]
+    "drives": [{ "letter": "D", "kind": "fixed", "fs": "NTFS", "label": "Data", "volume_serial": 305419896 }],
+    "launchers": [{ "id": "steam", "root": "{PROGRAMFILES_X86}\\Steam", "game_count": 12 }],
+    "is_elevated": false
   },
   "findings": [                         // снапшот выбранных Finding (SPEC-02 §2.1), без resolved-путей
     {
@@ -402,5 +404,5 @@ pub struct LockingProcess { pub pid: u32, pub name: String, pub app_name: String
 - Потоковое шифрование без промежуточного незашифрованного zip. Для этого верифицировать нужно через расшифровку: `zip → age` потоком, затем `age -d → zip reader` для проверки. Предложение: реализовать в T-10-12 как основной путь, если `zip::ZipWriter` над `age` writer работает (ZipWriter требует `Seek`; age stream не seekable → нужен `zip` streaming mode без seek, `ZipWriter::new_stream`). Исследовать.
 - Нужен ли в SPEC-06 метод оценки размера экспорта (`SystemExporter::estimate_bytes`) для точного `estimate`? Предложение к SPEC-06.
 - Предложение к SPEC-02: добавить в `TargetStats` поле `largest_file_bytes: Option<u64>` (заполняет SPEC-03 в фазе Measure) — нужно для проверки FAT32 (FR-10-04) без повторного обхода.
-- Предложение к SPEC-02 `EnvironmentSnapshot`: явно зафиксировать поля (`os`, `machine_name`, `known_folders` как шаблоны, `launchers`) — манифест бэкапа их использует и SPEC-13 на них опирается.
+- ~~Предложение к SPEC-02 `EnvironmentSnapshot`: явно зафиксировать поля (`os`, `machine_name`, `known_folders` как шаблоны, `launchers`) — манифест бэкапа их использует и SPEC-13 на них опирается.~~ **Принято:** поля, `OsInfo`, `DriveSnapshot`, `LauncherSnapshot` зафиксированы в SPEC-02 §3.3, §6.
 - Хранить ли в бэкапе копию `ScanReport` целиком (`scan-report.json`)? Полезно для диагностики и SPEC-19 (сравнение сканов), стоит ~мегабайты. Предварительно: да, обезличенную.

@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-restore` (оркестрация — `sk-engine::RestoreJob`), экран в `app/` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-06, SPEC-10, SPEC-11, SPEC-14 |
 | Используется в | — |
-| Последнее изменение | 2026-09-28 |
+| Последнее изменение | 2026-10-01 (закрыт вопрос по `environment.drives`: SPEC-02 §6) |
 
 ## 1. Цель
 
@@ -227,6 +227,6 @@ pub async fn rollback_files(log: &RestoreLog, events: EventSink, cancel: Cancell
 
 - Где хранить `.savekeeper-restore-backup`: в `{HOME}` (скрытая папка) или в data-dir рядом с exe (может быть флешка)? Предварительно — data-dir, fallback `{LOCALAPPDATA}\SaveKeeper`.
 - Предложение к SPEC-10: в `ManifestFinding` сохранять `app.process_names: Vec<String>` (имена exe) для FR-13-14 без Restart Manager по целевым путям. Требует поля в `AppRef` (SPEC-02) — предложение туда же.
-- Предложение к SPEC-10 §4.4: в `environment.drives` манифеста хранить серийный номер тома и метку, чтобы детектировать `DifferentDriveLetter` (сейчас `EnvironmentSnapshot` в SPEC-02 это явно не фиксирует).
+- ~~Предложение к SPEC-10 §4.4: в `environment.drives` манифеста хранить серийный номер тома и метку, чтобы детектировать `DifferentDriveLetter` (сейчас `EnvironmentSnapshot` в SPEC-02 это явно не фиксирует).~~ **Принято:** `DriveSnapshot { letter, kind, fs, label, volume_serial }` в SPEC-02 §6, пример в SPEC-10 §4.4.
 - Предложение к SPEC-06: экспортёр winget должен сохранять рядом `programs.csv` (Uninstall-ключи) для пакетов без winget-источника — используется в FR-13-10 отчёте «установить вручную».
 - Восстанавливать ли файлы в `Unresolved` находках в `{DESKTOP}\SaveKeeper-unresolved\<title>` по умолчанию, вместо пропуска? Решить после первых пользовательских тестов.

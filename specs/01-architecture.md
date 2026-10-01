@@ -8,7 +8,7 @@
 | Крейт(ы) | все, в первую очередь `sk-core`, `sk-engine`, `sk-cli` |
 | Зависит от | SPEC-00, SPEC-02 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-10-01 (MSRV 1.88; уточнение T-01-01: `sk-cli` — бинарник, `xtask/` и `app/` — в своих задачах) |
+| Последнее изменение | 2026-10-01 (`FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; MSRV 1.88; уточнение T-01-01) |
 
 ## 1. Цель
 
@@ -57,7 +57,7 @@ savekeeper/
 ├── rust-toolchain.toml        # stable, MSRV 1.88
 ├── deny.toml                  # cargo-deny: лицензии, advisories
 ├── crates/
-│   ├── sk-core/               # SPEC-02: доменные типы, PathTemplate, KnownFolders, конфиг, события, ошибки
+│   ├── sk-core/               # SPEC-02: доменные типы, PathTemplate, KnownFolders, конфиг, события, ошибки, трейт FsScanner
 │   ├── sk-scan/               # SPEC-03: обход ФС, замер, FolderSummary, исключения
 │   ├── sk-rules/              # SPEC-04: движок правил + встроенные правила
 │   ├── sk-games/              # SPEC-05: Ludusavi-манифест, лаунчеры
@@ -69,7 +69,7 @@ savekeeper/
 │   ├── sk-restore/            # SPEC-13 (P4)
 │   ├── sk-engine/             # этот документ §4.4: оркестрация конвейера
 │   ├── sk-cli/                # бинарник для разработки
-│   └── sk-testkit/            # SPEC-12: фикстуры, фейковые FsScanner/Environment/Classifier (только dev-dependency)
+│   └── sk-testkit/            # SPEC-12: FakeProfile, фикстуры, хелперы контекста и событий (только dev-dependency)
 ├── xtask/                     # SPEC-12: генерация фикстур, проверка графа крейтов, экспорт bindings.ts
 ├── rules/                     # SPEC-04: YAML-правила (встраиваются в бинарник через include_dir!)
 ├── app/                       # SPEC-11: Tauri 2
@@ -105,12 +105,15 @@ graph BT
 Правила (проверяются в CI скриптом `xtask check-deps`, SPEC-12):
 - **Крейты уровня фич не зависят друг от друга**, кроме явно указанных: `sk-scan` как утилита, `sk-backup → sk-system` для выполнения экспортов. Всё связывает `sk-engine`.
 - `sk-restore` (P4) зависит от `sk-core`, `sk-system`, `sk-backup` (формат манифеста).
-- `sk-testkit` подключается **только** как `[dev-dependencies]`.
+- `sk-testkit` зависит от `sk-core` и `sk-scan` и подключается **только** как `[dev-dependencies]`.
+- `xtask` не входит в релиз: может зависеть от любых крейтов workspace, но от него не зависит никто.
+- Допустимо ребро `A → B`, если `B` достижим из `A` по графу выше (транзитивное замыкание). Например, `sk-cli → sk-core` разрешено, а `sk-rules → sk-games` — нет.
+- Интерфейсы и типы, которые нужны в `sk-core` (`CollectContext`, `Config`), определяются в `sk-core`, реализации — в фичевых крейтах. Так `FsScanner` (SPEC-03 §4.1) объявлен в `sk-core::fs`, а реализован в `sk-scan`; секции конфига — в `sk-core::config` (§4.8.2).
 - Механизм повышения прав (`ElevationBroker`, `ElevatedTask`) живёт в `sk-core::win::elevation` (SPEC-14 §4), чтобы `sk-backup`/`sk-restore` не зависели от `app/`.
 
 | Крейт | Ответственность | Ключевые внешние зависимости |
 |---|---|---|
-| `sk-core` | Типы SPEC-02, `PathTemplate`, `KnownFolders`, `Config`, `Event`, `CancellationToken` (реэкспорт `tokio_util::sync`), общие ошибки | `serde`, `thiserror`, `windows`, `uuid`, `time`, `blake3` |
+| `sk-core` | Типы SPEC-02, `PathTemplate`, `KnownFolders`, `Config` со всеми секциями, `Event`, `CancellationToken` (реэкспорт `tokio_util::sync`), трейт `FsScanner` и его типы (SPEC-03 §4.1), общие ошибки | `serde`, `thiserror`, `windows`, `uuid`, `time`, `blake3`, `globset` |
 | `sk-scan` | Параллельный обход, `measure()`, `summarize()`, глобальные исключения | `jwalk`, `globset`, `rayon` |
 | `sk-rules` | Загрузка, валидация и матчинг YAML-правил | `serde_yaml`, `globset`, `include_dir` |
 | `sk-games` | Парсинг манифеста Ludusavi, детект лаунчеров, резолв путей игр | `serde_yaml`, `reqwest` (blocking=false), `keyvalues-parser` (VDF) |
@@ -122,7 +125,7 @@ graph BT
 | `sk-engine` | `ScanPipeline`, `BackupJob`, прогресс, отмена, сборка `ScanReport` | `tokio` |
 | `sk-cli` | CLI | `clap`, `anyhow`, `indicatif` |
 | `sk-restore` | Восстановление (P4, SPEC-13) | `winreg` |
-| `sk-testkit` | Тестовая инфраструктура (SPEC-12) | `tempfile`, `insta` |
+| `sk-testkit` | Тестовая инфраструктура (SPEC-12): `FakeProfile`, хелперы. Фейки живут рядом с трейтами: `MemFs` в `sk-scan`, `MockClassifier` в `sk-llm` | `tempfile`, `insta` |
 
 ### 4.3 Трейт Collector
 
@@ -133,7 +136,7 @@ use async_trait::async_trait;
 pub struct CollectContext {
     pub env: Arc<Environment>,          // SPEC-02 §3: известные папки, пользователь, диски
     pub config: Arc<Config>,            // §4.8
-    pub scanner: Arc<dyn FsScanner>,    // SPEC-03: доступ к ФС (мокается в тестах)
+    pub scanner: Arc<dyn FsScanner>,    // трейт в sk-core::fs, реализации RealFs/MemFs в sk-scan (SPEC-03 §4.1)
     pub events: EventSink,              // §4.5
     pub cancel: CancellationToken,
 }
@@ -211,8 +214,8 @@ sequenceDiagram
 // sk-engine
 pub struct ScanOptions {
     pub roots: Vec<PathBuf>,            // доп. корни для эвристик (диски D:\, E:\ ...). По умолчанию: профиль + системный диск вне Windows/Program Files
-    pub collectors: CollectorToggles,   // вкл/выкл каждый коллектор
-    pub llm: LlmMode,                   // Off | Local | Cloud (SPEC-08)
+    pub collectors: CollectorToggles,   // вкл/выкл каждый коллектор (SPEC-02 §6)
+    pub llm: LlmMode,                   // Off | Local | Cloud (SPEC-02 §6, SPEC-08)
     pub max_depth: Option<u32>,
 }
 
@@ -335,6 +338,7 @@ pub enum EngineError { #[error("cancelled")] Cancelled, #[error(transparent)] Co
   "updates": { "check": false, "interval_days": 7 }          // SPEC-14 FR-14-07
 }
 ```
+- Типы: `Config` и **все** его секции определены в `sk-core::config`: `UiConfig`, `ScanConfig`, `GamesConfig`, `SystemConfig`, `HeuristicsConfig` (поля и дефолты — SPEC-07 §4.9), `LlmConfig` (SPEC-08 §4.4), `ScoringConfig` (SPEC-09 §4.1, §4.6), `BackupConfig` (SPEC-10), `UpdatesConfig` (SPEC-14). Причина: конфиг целиком отдаётся в UI (SPEC-11 `get_config`/`set_config`), а `sk-core` не может зависеть от фичевых крейтов. Поля и дефолты нормативно описаны в указанных спеках, фичевые крейты реэкспортируют свою секцию.
 - Загрузка: `Config::load_or_default(path)`. Неизвестные поля игнорируются с предупреждением в логе, битый JSON приводит к бэкапу файла в `.bak` и дефолтам.
 - API-ключ **никогда** не хранится в конфиге открытым текстом. Варианты: переменная окружения или Windows Credential Manager (`keyring` crate), SPEC-08.
 - Миграции: `schema_version` + функции `migrate_vN_to_vN+1`.
@@ -374,8 +378,8 @@ savekeeper-cli env                      # вывести Environment (known fold
 
 - [x] **T-01-01** — Создать workspace: корневой `Cargo.toml`, `rust-toolchain.toml`, пустые крейты из `crates/` (§4.1): библиотеки с `lib.rs`, `sk-cli` — бинарник `savekeeper-cli` с `main.rs` (`xtask/` создаётся в T-12-01, `app/` — в SPEC-11), общие `[workspace.dependencies]` и `[workspace.lints]`. *Готово, когда:* `cargo build --workspace` проходит.
 - [ ] **T-01-02** — `sk-core::events`: `Event`, `ScanPhase`, `EventSink`, `ThrottledSink`. *Зависит:* T-01-01, T-02-01. *Готово, когда:* тест троттлинга (1000 событий за 100 мс → ≤ 2 доставлено + последнее).
-- [ ] **T-01-03** — `sk-core::collector`: `Collector`, `PostCollector`, `CollectContext`, `CollectOutput`, `PathSet`. *Зависит:* T-02-02. *Готово, когда:* тесты `PathSet::covers()` для вложенных путей, регистра (Windows — регистронезависимо) и `\\?\`-префикса.
-- [ ] **T-01-04** — `sk-core::config`: схема §4.8.2, `load_or_default`, миграции, поиск data-dir (портативный или fallback). *Готово, когда:* unit-тесты из §6.
+- [ ] **T-01-03** — `sk-core::collector`: `Collector`, `PostCollector`, `CollectContext`, `CollectOutput`, `PathSet`. *Зависит:* T-01-02, T-01-04, T-02-01, T-02-02, T-02-05, T-03-01 (трейт `FsScanner` в `sk-core::fs`). *Готово, когда:* тесты `PathSet::covers()` для вложенных путей, регистра (Windows — регистронезависимо) и `\\?\`-префикса.
+- [ ] **T-01-04** — `sk-core::config`: схема §4.8.2 со всеми секциями (поля и дефолты из SPEC-07 §4.9, SPEC-08 §4.4, SPEC-09 §4.1/§4.6, SPEC-10, SPEC-14), `load_or_default`, миграции, поиск data-dir (портативный или fallback). *Зависит:* T-02-01 (`Category`, `LlmMode`). *Готово, когда:* unit-тесты из §6 и insta-снапшот конфига по умолчанию (SPEC-12 §4.4).
 - [ ] **T-01-05** — Логирование: инициализация `tracing` в файл с ротацией и обезличиванием путей. *Зависит:* T-02-04.
 - [ ] **T-01-06** — `sk-engine::ScanPipeline` с фазами §4.4, параллельным запуском коллекторов, изоляцией паник, отменой. *Зависит:* T-01-02, T-01-03. *Готово, когда:* интеграционный тест с фейковыми коллекторами.
 - [ ] **T-01-07** — `sk-cli`: команды `scan`, `env`, `config` (остальные как заглушки `unimplemented` с понятным сообщением). *Зависит:* T-01-06.

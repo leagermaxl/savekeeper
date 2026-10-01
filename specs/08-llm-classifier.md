@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-llm` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-07 |
 | Используется в | SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-09-28 |
+| Последнее изменение | 2026-10-01 (`LlmConfig` — в `sk-core::config`; `MockClassifier` в `sk-llm` под feature `mock`) |
 
 ## 1. Цель
 
@@ -183,6 +183,11 @@ Rust не имеет официального Anthropic SDK, поэтому вс
 `MockClassifier` для тестов: возвращает ответы из таблицы (`HashMap<PathTemplate, Classification>`)
 и умеет симулировать задержку, ошибки 429/529, невалидный JSON и отмену.
 
+Живёт в `sk-llm` (модуль `mock`): публичен под feature `mock`, в тестах самого крейта доступен через `cfg(test)`.
+Другие крейты (`sk-engine`) подключают его как `sk-llm = { features = ["mock"] }` в `[dev-dependencies]`.
+В `sk-testkit` его нет: зависимость `sk-testkit → sk-llm` вместе с dev-зависимостью `sk-llm → sk-testkit`
+дала бы в unit-тестах `sk-llm` две копии крейта, и мок реализовывал бы «чужой» трейт `Classifier`.
+
 ### 4.3 Системный промпт (prompt_version = "v1")
 
 Хранится в `crates/sk-llm/prompts/classify_v1.txt` (include_str!). Изменение текста требует
@@ -242,7 +247,7 @@ Rules:
 
 ### 4.4 Конфигурация
 
-Секция `llm` (SPEC-01 §4.8.2), расширенная:
+Секция `llm` (SPEC-01 §4.8.2), расширенная. Тип `LlmConfig` (и `LlmMode`, SPEC-02 §6) определён в `sk-core::config` и реэкспортируется из `sk-llm`; поля и дефолты ниже нормативны:
 ```jsonc
 "llm": {
   "mode": "off",
@@ -404,7 +409,7 @@ Rules:
 
 ## 7. Задачи
 
-- [ ] **T-08-01** — Каркас `sk-llm`: типы §4.1, `LlmError`, `LlmConfig` + дефолты §4.4, `MockClassifier`. *Зависит:* T-02-01, T-01-04. *Готово, когда:* компилируется, unit-тесты mock.
+- [ ] **T-08-01** — Каркас `sk-llm`: типы §4.1, `LlmError`, реэкспорт `LlmConfig` (тип и дефолты §4.4 реализуются в SPEC-01 T-01-04), `MockClassifier` под feature `mock` (§4.2.4). *Зависит:* T-02-01, T-01-04. *Готово, когда:* компилируется, unit-тесты mock.
 - [ ] **T-08-02** — Промпт `classify_v1.txt`, `PROMPT_VERSION`, JSON-схема §4.5 как константа + тест соответствия `Category`. *Зависит:* T-08-01.
 - [ ] **T-08-03** — Валидация и нормализация §4.6 + `apply_classification`. *Зависит:* T-08-01.
 - [ ] **T-08-04** — Приватность: `final_check`, построение `summary_for_prompt` (усечение дат, лимиты длины), `RequestPreview`. *Зависит:* T-02-04. *Готово, когда:* тесты §6.1.

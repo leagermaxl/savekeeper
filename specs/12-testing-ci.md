@@ -8,7 +8,7 @@
 | Крейт(ы) | все, `fixtures/`, `xtask/`, `.github/workflows/` |
 | Зависит от | SPEC-00, SPEC-01, SPEC-02 |
 | Используется в | все спеки (§6 «Тестирование» каждой спеки опирается на эту) |
-| Последнее изменение | 2026-10-01 (§4.8: MSRV 1.88) |
+| Последнее изменение | 2026-10-01 (§4.2: состав `sk-testkit`, `collect_ctx` со сканером, правило unit-тестов; §4.5: `MockClassifier` в `sk-llm`; §4.6: транзитивные рёбра, `xtask`; зависимости T-12-02/04/05/06; §4.8: MSRV 1.88) |
 
 ## 1. Цель
 
@@ -69,6 +69,10 @@
 
 ### 4.2 Общие тестовые утилиты — крейт `sk-testkit`
 Dev-dependency для всех крейтов (не входит в релиз; правило графа §4.6 это разрешает).
+Сам зависит только от `sk-core` и `sk-scan` (SPEC-01 §4.2). Фейки живут рядом со своими трейтами:
+`MemFs` в `sk-scan` (SPEC-03 §4.1), `MockClassifier` в `sk-llm` под feature `mock` (SPEC-08 §4.2.4).
+Unit-тесты (`src/**`) крейтов `sk-core` и `sk-scan` не используют `sk-testkit`: в них была бы вторая
+копия крейта, и типы не совпали бы. `sk-testkit` в этих крейтах подключается только в `tests/`.
 
 ```rust
 // sk-testkit
@@ -82,7 +86,8 @@ impl FakeProfile {
     pub fn set_mtime(&self, template: &str, t: OffsetDateTime);
 }
 
-pub fn collect_ctx(profile: &FakeProfile, config: Config) -> CollectContext; // + канал событий для проверок
+/// Контекст коллектора над профилем + приёмник событий для проверок. Сканер передаётся явно (MemFs или RealFs).
+pub fn collect_ctx(profile: &FakeProfile, config: Config, scanner: Arc<dyn FsScanner>) -> (CollectContext, Receiver<Event>);
 pub fn drain_events(rx: &mut Receiver<Event>) -> Vec<Event>;
 pub fn tree_hash(dir: &Path) -> BTreeMap<String, String>;   // относительный путь → blake3 (сравнение деревьев в тестах бэкапа)
 pub struct RegTestKey { /* HKCU\Software\SaveKeeperTest\<uuid>, удаляется в Drop */ }  // #[cfg(windows)]
@@ -137,7 +142,7 @@ tree:
 - Что обязательно покрыть снапшотами: JSON Schema и пример `ScanReport`/`Finding` (SPEC-02), `Config` по умолчанию (SPEC-01), `BackupManifest` (SPEC-10), промпт и JSON Schema ответа LLM (SPEC-08), `report.html` фикстуры (SPEC-10).
 
 ### 4.5 LLM: моки и eval
-- `MockClassifier` (в `sk-testkit`): правила «шаблон пути → Classification», по умолчанию `Unknown`. Используется во всех тестах pipeline.
+- `MockClassifier` (в `sk-llm`, feature `mock`, SPEC-08 §4.2.4): правила «шаблон пути → Classification», по умолчанию `Unknown`. Используется во всех тестах pipeline.
 - `ReplayProvider` (в `sk-llm`, feature `replay`): читает `eval/cassettes/<provider>-<model>.jsonl` (запрос-хэш → ответ). Проверяет парсинг, ретраи, кэш без сети.
 - Eval-набор `crates/sk-llm/eval/dataset.jsonl`: ≥ 150 размеченных `FolderSummary` (из фикстуры `messy` + реальные, обезличенные вручную) с полями `expected_category`, `expected_app` (опционально), `must_not`: например `Cache` не должен быть `GameSave`.
 - `cargo xtask llm-eval --provider ollama|anthropic|openai-compat --model <m> [--record]`:
@@ -148,8 +153,9 @@ tree:
 
 ### 4.6 Проверка архитектуры (граф крейтов)
 `cargo xtask check-deps` на базе `cargo metadata --format-version 1`:
-- разрешённые рёбра — ровно граф SPEC-01 §4.2 (таблица в `xtask/src/deps_rules.rs`);
-- `sk-testkit` разрешён только как `dev-dependency`;
+- разрешённые рёбра между крейтами workspace — граф SPEC-01 §4.2 с транзитивным замыканием, плюс `sk-testkit → sk-core, sk-scan`; `xtask` может зависеть от любых крейтов (таблица в `xtask/src/deps_rules.rs`);
+- `sk-testkit` разрешён только как `dev-dependency`, от `xtask` не зависит никто;
+- крейт workspace, которого нет в таблице, — ошибка (новый крейт требует правки SPEC-01 §4.2);
 - `reqwest` (сеть) разрешён только в `sk-llm`, `sk-games` (NFR-01-03) и `app/src-tauri` (проверка обновлений SPEC-14, опционально);
 - запрещены `openssl-sys` (используем `rustls`) и дубли крупных зависимостей (`windows` — одна мажорная версия).
 Нарушение выводит ребро и правило, CI падает.
@@ -238,11 +244,11 @@ jobs:
 ## 7. Задачи
 
 - [x] **T-12-01** — Крейт `xtask` с алиасом, подкоманда-заглушка для каждой команды §4.9. *Зависит:* T-01-01.
-- [ ] **T-12-02** — CI `ci.yml`: jobs lint, test (win+linux), msrv. *Зависит:* T-12-01. *Готово, когда:* зелёный прогон на пустом workspace.
+- [ ] **T-12-02** — CI `ci.yml`: jobs lint, test (win+linux), msrv. *Зависит:* T-12-01, T-12-03 (lint-job вызывает `check-deps`). Шаг `cargo xtask fixtures` подключается в T-12-06, `cargo deny check` — в T-12-04. *Готово, когда:* зелёный прогон на пустом workspace.
 - [ ] **T-12-03** — `cargo xtask check-deps` по правилам §4.6. *Зависит:* T-12-01. *Готово, когда:* тест с запрещённым ребром.
-- [ ] **T-12-04** — `deny.toml`: лицензии (allow: MIT, Apache-2.0, BSD-2/3, ISC, Zlib, Unicode-3.0, MPL-2.0), bans, advisories, sources (только crates.io).
-- [ ] **T-12-05** — `sk-testkit`: `FakeProfile`, `collect_ctx`, `drain_events`, `tree_hash`, `RegTestKey`, `MockClassifier`. *Зависит:* T-02-05, T-01-03.
-- [ ] **T-12-06** — Генератор фикстур (`cargo xtask fixtures`) + профили `empty`, `gamer`, `developer` + `samples/`. *Зависит:* T-12-05. *Готово, когда:* детерминизм-тест.
+- [ ] **T-12-04** — `deny.toml`: лицензии (allow: MIT, Apache-2.0, BSD-2/3, ISC, Zlib, Unicode-3.0, MPL-2.0), bans, advisories, sources (только crates.io) + шаг `cargo deny check` в lint-job `ci.yml`. *Зависит:* T-12-02.
+- [ ] **T-12-05** — `sk-testkit`: `FakeProfile`, `collect_ctx`, `drain_events`, `tree_hash`, `RegTestKey` (`MockClassifier` — в SPEC-08 T-08-01). *Зависит:* T-02-05, T-01-03.
+- [ ] **T-12-06** — Генератор фикстур (`cargo xtask fixtures`) + профили `empty`, `gamer`, `developer` + `samples/` + шаг `cargo xtask fixtures` в `ci.yml`. *Зависит:* T-12-05, T-12-02. *Готово, когда:* детерминизм-тест.
 - [ ] **T-12-07** — Профили `office`, `messy`, `huge` + `expected/*.findings.yaml`. *Зависит:* T-12-06, фаза P1.
 - [ ] **T-12-08** — Ручной чек-лист `specs/checklists/reference-machine.md`. *Зависит:* —.
 - [ ] **T-12-09** — CI job `frontend` + `xtask bindings` + `xtask i18n-check`. *Зависит:* T-11-02.
@@ -261,4 +267,4 @@ jobs:
 
 - Бенчмарки (`criterion`) скана на `huge` как нерегулярный CI-гейт (раз в неделю, сравнение с baseline)? Предварительно: ручные в P1, автоматизировать при появлении регрессий.
 - Self-hosted Windows-раннер для admin-тестов (драйверы, VSS)? Пока ручной прогон перед релизом.
-- Предложение к SPEC-01 §4.1: добавить в структуру репозитория `xtask/` и `crates/sk-testkit/` (dev-only), а в §4.2 — правило «`sk-testkit` только как dev-dependency».
+- ~~Предложение к SPEC-01 §4.1: добавить в структуру репозитория `xtask/` и `crates/sk-testkit/` (dev-only), а в §4.2 — правило «`sk-testkit` только как dev-dependency».~~ **Принято** в SPEC-01 §4.1, §4.2.

@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-scan` |
 | Зависит от | SPEC-01, SPEC-02 |
 | Используется в | SPEC-04, SPEC-05, SPEC-07, SPEC-08, SPEC-10 |
-| Последнее изменение | 2026-09-28 |
+| Последнее изменение | 2026-10-01 (трейт `FsScanner` и его типы — в `sk-core::fs`; `WalkOptions.excludes` через трейт `PathFilter`) |
 
 ## 1. Цель
 
@@ -53,8 +53,14 @@
 
 ### 4.1 Публичный API
 
+Трейт `FsScanner` и типы его сигнатур (`EntryMeta`, `EntryKind`, `ReparseKind`, `CloudState`,
+`DirEntryInfo`, `WalkControl`, `Readability`, `WalkOptions`, `WalkStats`, `FsError`, `PathFilter`)
+определены в **`sk-core::fs`** и реэкспортируются из `sk-scan`. Причина: на трейт ссылается
+`CollectContext` (SPEC-01 §4.3), а `sk-core` не может зависеть от `sk-scan` (SPEC-01 §4.2).
+Реализации (`RealFs`, `MemFs`, `ExcludeSet`) и функции `measure`/`summarize` живут в `sk-scan`.
+
 ```rust
-// sk-scan/src/lib.rs
+// sk-core/src/fs.rs (реэкспорт: sk_scan::FsScanner и т.д.)
 pub trait FsScanner: Send + Sync {
     fn metadata(&self, path: &Path) -> Result<EntryMeta, FsError>;
     fn exists(&self, path: &Path) -> bool;                        // без ошибок: false при любой проблеме
@@ -89,7 +95,7 @@ pub struct WalkOptions {
     pub max_depth: u32,                // из config.scan.max_depth (32)
     pub max_entries: u64,              // лимит на корень, по умолчанию 2_000_000
     pub follow_links: bool,            // всегда false в MVP, поле для SPEC-17
-    pub excludes: Arc<ExcludeSet>,     // §4.5
+    pub excludes: Arc<dyn PathFilter>, // ExcludeSet, §4.5
     pub include: Option<GlobSet>,      // относительно root
     pub exclude: Option<GlobSet>,      // относительно root (из Target)
     pub threads: usize,
@@ -100,7 +106,7 @@ pub struct WalkStats { pub entries: u64, pub skipped_excluded: u64, pub errors: 
 #[derive(thiserror::Error, Debug)]
 pub enum FsError { NotFound, AccessDenied, SharingViolation, TooLarge, CloudOnly, Cancelled, Io(std::io::Error) }
 
-// Реализации
+// Реализации — sk-scan
 pub struct RealFs { /* drive kinds для выбора числа потоков */ }
 impl RealFs { pub fn new(env: &Environment) -> Self; }
 pub struct MemFs { /* BTreeMap<PathBuf, MemNode> */ }
@@ -124,12 +130,18 @@ pub fn summarize(fs: &dyn FsScanner, dir: &Path, env: &Environment, opts: &Summa
 
 pub struct MeasureOptions { pub probe_locks: bool /* по умолчанию true */, pub include_excluded: bool }
 pub struct SummaryOptions { pub max_entries: u64 /* 200_000 */, pub max_depth: u32 /* 12 */ }
+// sk-core::fs — фильтр исключений, через который WalkOptions не зависит от реализации §4.5
+pub trait PathFilter: Send + Sync {
+    fn is_excluded(&self, abs: &Path, name: &OsStr, is_dir: bool) -> bool;
+}
+
+// sk-scan
 pub struct ExcludeSet { /* globset + быстрый HashSet имён каталогов */ }
 impl ExcludeSet {
     pub fn builtin() -> Self;
     pub fn with_user(globs: &[String]) -> Result<Self, globset::Error>;
-    pub fn is_excluded(&self, abs: &Path, name: &OsStr, is_dir: bool) -> bool;
 }
+impl PathFilter for ExcludeSet { /* is_excluded */ }
 ```
 
 ### 4.2 Реализация `RealFs::walk`
@@ -248,7 +260,7 @@ Windows.old, Config.Msi, Recovery, MSOCache, PerfLogs
 
 ## 7. Задачи
 
-- [ ] **T-03-01** — Типы API §4.1 (`FsScanner`, `EntryMeta`, `DirEntryInfo`, `WalkOptions`, `FsError` ...). *Зависит:* T-02-01. *Готово, когда:* крейт компилируется, документация `///`.
+- [ ] **T-03-01** — Типы API §4.1 в `sk-core::fs` (`FsScanner`, `PathFilter`, `EntryMeta`, `DirEntryInfo`, `WalkOptions`, `FsError` ...) + реэкспорт из `sk-scan`. *Зависит:* T-02-01. Нужна в P0: от неё зависит SPEC-01 T-01-03. *Готово, когда:* крейты компилируются, документация `///`.
 - [ ] **T-03-02** — `MemFs` + загрузка YAML-фикстур (формат согласовать с SPEC-12). *Зависит:* T-03-01. *Готово, когда:* фикстура `electron-app.yaml` загружается, `walk` по ней проходит тест.
 - [ ] **T-03-03** — `ExcludeSet` (встроенный список §4.5 + пользовательские глобы, условные исключения `target`/`obj`/`venv`). *Зависит:* T-03-01. *Готово, когда:* unit-тесты на каждый пункт списка.
 - [ ] **T-03-04** — `RealFs::walk` на jwalk: reparse, cloud-атрибуты, исключения, отмена, лимиты, выбор потоков по типу диска. *Зависит:* T-03-03, T-02-02. *Готово, когда:* Windows-тесты junction/long path.
