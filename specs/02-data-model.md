@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-core` |
 | Зависит от | SPEC-00 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-10-01 (определены `OsInfo`, `KnownFolder`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `CollectorToggles`, `LlmMode`; обязательные Known Folders; состав и зависимости T-02-01/05/08) |
+| Последнее изменение | 2026-10-01 (T-02-09: `xtask bindings`, зависит от T-11-01; определены `OsInfo`, `KnownFolder`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `CollectorToggles`, `LlmMode`; обязательные Known Folders; состав и зависимости T-02-01/05/08) |
 
 ## 1. Цель
 
@@ -449,7 +449,7 @@ pub enum LlmMode { Off, Local, Cloud }  // по умолчанию Off
 - [ ] **T-02-06** — `FindingId` по §2.7. *Зависит:* T-02-01, T-02-03.
 - [ ] **T-02-07** — `FolderSummary`, `Marker`, `ExtStat`, `ChildStat` (только типы; вычисление в SPEC-03).
 - [ ] **T-02-08** — `ScanReport`, `EnvironmentSnapshot`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `Totals`, `CategoryTotals` + версионирование. *Зависит:* T-02-01, T-02-03, T-02-05, T-02-07.
-- [ ] **T-02-09** — Экспорт TS-типов через specta в `app/src/bindings.ts` (скрипт `cargo run -p sk-core --example export-types` или build step в `app/src-tauri`). *Готово, когда:* файл генерируется и компилируется `tsc`.
+- [ ] **T-02-09** — `cargo xtask bindings` (SPEC-12 §4.9): экспорт TS-типов `sk-core` через specta в `app/src/bindings.ts`. В SPEC-11 T-11-02 тот же экспорт дополняется командами и событиями `tauri-specta` (один генератор, один файл). *Зависит:* T-02-08, T-11-01 (`app/` и `tsconfig` для проверки), T-12-01. *Готово, когда:* файл генерируется и компилируется `tsc`.
 
 ## 10. Критерии приёмки
 

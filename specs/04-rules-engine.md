@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-rules`, каталог `rules/` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-07 (claimed_paths), SPEC-09, SPEC-11 (редактор правил, P4) |
-| Последнее изменение | 2026-10-01 (`from_json` в схеме v1) |
+| Последнее изменение | 2026-10-01 (YAML: `serde-saphyr` вместо `serde_yaml`; `from_json` в схеме v1) |
 
 ## 1. Цель
 
@@ -69,7 +69,7 @@ impl Collector for RulesCollector { /* id() = "rules" */ }
 pub struct RuleDiagnostic { pub file: PathBuf, pub line: Option<usize>, pub rule_id: Option<String>, pub message: String }
 
 #[derive(thiserror::Error, Debug)]
-pub enum RuleError { Yaml(serde_yaml::Error), Invalid { rule_id: String, reason: String }, DuplicateId(String) }
+pub enum RuleError { Yaml(serde_saphyr::Error), Invalid { rule_id: String, reason: String }, DuplicateId(String) }
 ```
 
 ### 4.2 Формат правила (схема v1)
@@ -185,7 +185,7 @@ Obsidian, проекты Unity Hub. Правило с таким target'ом ч�
 Пустой `conditions` означает «достаточно существования хотя бы одного target'а» (FR-04-03).
 
 ### 4.4 Компиляция и валидация
-1. Парсинг `serde_yaml` с `deny_unknown_fields` (опечатки ловятся сразу).
+1. Парсинг `serde-saphyr` с `deny_unknown_fields` (опечатки ловятся сразу).
 2. Проверки: `id` по regex и уникальность в пределах источника; `PathTemplate::parse` для всех путей (неизвестный токен — ошибка); глобы компилируются; `confidence ∈ [0,1]`; `category: credentials` ⇒ `sensitivity: high` (автоматически повышается с warning); `hive: hklm` ⇒ `category ∈ {system_settings, app_config}`; `*` в `path` только при `glob_root: true`.
 3. Результат `CompiledRule { rule, targets: Vec<CompiledTarget { template, include: GlobSet, exclude: GlobSet, ... }> }`.
 4. Слияние источников: builtin → user (по `id`: replace / disable). Итоговый порядок: `priority desc`, затем `id`.
@@ -361,7 +361,7 @@ OneDrive, Dropbox, Google Drive, iCloud, Yandex.Disk: локальные кэш�
 ## 7. Задачи
 
 - [ ] **T-04-01** — Serde-модель схемы v1 (§4.2, §4.3) с `deny_unknown_fields`. *Зависит:* T-02-01. *Готово, когда:* пример из §4.2 парсится.
-- [ ] **T-04-02** — Компиляция и валидация (§4.4), `RuleDiagnostic` с номерами строк (`serde_yaml::Location`). *Зависит:* T-04-01, T-02-03.
+- [ ] **T-04-02** — Компиляция и валидация (§4.4), `RuleDiagnostic` с номерами строк (позиции из ошибок `serde-saphyr`). *Зависит:* T-04-01, T-02-03.
 - [ ] **T-04-03** — Загрузка builtin (`include_dir!`) + `rules.d`, слияние, disable. *Зависит:* T-04-02, T-01-04.
 - [ ] **T-04-04** — Оценщик условий с кэшем на скан; `process_running` по `Environment.running_processes`. *Зависит:* T-04-02, T-03-01, T-02-05.
 - [ ] **T-04-05** — Раскрытие targets, `glob_root`, создание `Finding` и `claimed_paths`. *Зависит:* T-04-04. *Готово, когда:* snapshot-тест profile-typical.

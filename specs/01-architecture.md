@@ -8,7 +8,7 @@
 | Крейт(ы) | все, в первую очередь `sk-core`, `sk-engine`, `sk-cli` |
 | Зависит от | SPEC-00, SPEC-02 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-10-01 (`FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; MSRV 1.88; уточнение T-01-01) |
+| Последнее изменение | 2026-10-01 (YAML: `serde-saphyr`; `FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; MSRV 1.88; уточнение T-01-01) |
 
 ## 1. Цель
 
@@ -115,8 +115,8 @@ graph BT
 |---|---|---|
 | `sk-core` | Типы SPEC-02, `PathTemplate`, `KnownFolders`, `Config` со всеми секциями, `Event`, `CancellationToken` (реэкспорт `tokio_util::sync`), трейт `FsScanner` и его типы (SPEC-03 §4.1), общие ошибки | `serde`, `thiserror`, `windows`, `uuid`, `time`, `blake3`, `globset` |
 | `sk-scan` | Параллельный обход, `measure()`, `summarize()`, глобальные исключения | `jwalk`, `globset`, `rayon` |
-| `sk-rules` | Загрузка, валидация и матчинг YAML-правил | `serde_yaml`, `globset`, `include_dir` |
-| `sk-games` | Парсинг манифеста Ludusavi, детект лаунчеров, резолв путей игр | `serde_yaml`, `reqwest` (blocking=false), `keyvalues-parser` (VDF) |
+| `sk-rules` | Загрузка, валидация и матчинг YAML-правил | `serde-saphyr`, `globset`, `include_dir` |
+| `sk-games` | Парсинг манифеста Ludusavi, детект лаунчеров, резолв путей игр | `serde-saphyr` (большой манифест: feature `huge_documents` или увеличенный бюджет парсера), `reqwest` (blocking=false), `keyvalues-parser` (VDF) |
 | `sk-system` | Обнаружение и выполнение системных экспортов | `winreg`, `std::process` |
 | `sk-heuristics` | Неизвестные папки, git, пользовательские файлы, мусор | `gix` (git) |
 | `sk-llm` | Трейт `Classifier`, провайдеры, промпт, кэш (JSONL) | `reqwest`, `serde_json`, `keyring`, `secrecy`; dev: `wiremock` |
