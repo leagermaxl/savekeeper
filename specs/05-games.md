@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-games` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-04 (токены `{STEAM}`, `{STEAM_USERID}`), SPEC-07, SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-01 (решение по лицензии манифеста) |
+| Последнее изменение | 2026-10-01 (§4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
 
 ## 1. Цель
 
@@ -135,10 +135,10 @@ Serde-модель: `GameEntry { files: BTreeMap<String, FileRule>, registry: BT
 | `<winProgramData>` | `{PROGRAMDATA}` | |
 | `<winDir>` | `{WINDIR}` | исключение SPEC-03 не действует (явный корень) |
 | `<base>` | `{GAME_DIR}` | каталог установки игры (`ResolveContext.game_dir`) |
-| `<game>` | имя каталога установки (`install_dir.file_name()`) | подставляется строкой, не токен |
+| `<game>` | `{GAME_DIR_NAME}` = имя каталога установки (`install_dir.file_name()`, `ResolveContext.game_dir_name`) | токен (SPEC-02 §3.2) |
 | `<root>` | корень библиотеки лаунчера (`steamapps\common`’s parent и т.п.) | подставляется строкой |
 | `<storeUserId>` | `{STEAM_USERID}` для Steam, иначе `*` (glob-сегмент) | |
-| `<storeGameId>` | `store_game_id` установленной игры | |
+| `<storeGameId>` | `{STORE_GAME_ID}` = `store_game_id` установленной игры (`ResolveContext.store_game_id`) | токен (SPEC-02 §3.2) |
 | `<osUserName>` | `Environment.user_name` | подставляется строкой |
 | `<xdgData>`, `<xdgConfig>`, `<regHkcu>`, `<regHklm>` | не поддерживаются | запись пропускается |
 
