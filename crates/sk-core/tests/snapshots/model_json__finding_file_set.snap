@@ -1,0 +1,85 @@
+---
+source: crates/sk-core/tests/model_json.rs
+expression: game_save()
+---
+{
+  "id": "3fa2c9e01b7d44aa",
+  "target": {
+    "kind": "file_set",
+    "root": "{APPDATA}\\EldenRing",
+    "resolved": "C:\\Users\\max\\AppData\\Roaming\\EldenRing",
+    "include": [],
+    "exclude": [
+      "*.bak"
+    ]
+  },
+  "category": "game_save",
+  "app": {
+    "id": "elden-ring",
+    "name": "ELDEN RING",
+    "kind": "game",
+    "source_ids": {
+      "ludusavi": "ELDEN RING",
+      "steam": "1245620"
+    },
+    "installed": true,
+    "process_names": [
+      "eldenring.exe"
+    ]
+  },
+  "title": "ELDEN RING — сохранения",
+  "evidence": [
+    {
+      "source": {
+        "kind": "ludusavi",
+        "game": "ELDEN RING",
+        "manifest_version": "2026-09-01"
+      },
+      "message_key": "evidence.ludusavi_match",
+      "message_args": {
+        "game": "ELDEN RING"
+      },
+      "confidence": 0.95,
+      "importance": null
+    },
+    {
+      "source": {
+        "kind": "launcher",
+        "launcher": "steam"
+      },
+      "message_key": "evidence.launcher_installed",
+      "message_args": {},
+      "confidence": 0.8,
+      "importance": null
+    }
+  ],
+  "stats": {
+    "total_bytes": 28311552,
+    "file_count": 4,
+    "dir_count": 1,
+    "newest_mtime": "2026-09-27T21:14:05Z",
+    "oldest_mtime": "2024-03-02T10:00:00.5Z",
+    "locked_files": 1,
+    "cloud_only_bytes": 0,
+    "cloud_only_files": 0,
+    "largest_file_bytes": 28000000,
+    "truncated": false
+  },
+  "sensitivity": "none",
+  "score": {
+    "value": 0.92,
+    "components": {
+      "irreplaceability": 0.9,
+      "recency": 0.1
+    }
+  },
+  "default_selected": true,
+  "requires_elevation": false,
+  "tags": [
+    "steam"
+  ],
+  "children": [
+    "0011223344556677"
+  ],
+  "notes_key": null
+}

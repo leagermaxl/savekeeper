@@ -1,0 +1,49 @@
+---
+source: crates/sk-core/tests/model_json.rs
+expression: single_file()
+---
+{
+  "id": "1a2b3c4d5e6f7a8b",
+  "target": {
+    "kind": "file",
+    "path": "{HOME}\\.gitconfig",
+    "resolved": "C:\\Users\\max\\.gitconfig"
+  },
+  "category": "dev_environment",
+  "app": null,
+  "title": "Git — global config",
+  "evidence": [
+    {
+      "source": {
+        "kind": "llm",
+        "provider": "ollama",
+        "model": "qwen2.5:7b-instruct"
+      },
+      "message_key": "evidence.llm",
+      "message_args": {
+        "reason": "Global git settings"
+      },
+      "confidence": 0.75,
+      "importance": 0.6
+    }
+  ],
+  "stats": {
+    "total_bytes": 512,
+    "file_count": 1,
+    "dir_count": 0,
+    "newest_mtime": null,
+    "oldest_mtime": null,
+    "locked_files": 0,
+    "cloud_only_bytes": 0,
+    "cloud_only_files": 0,
+    "largest_file_bytes": null,
+    "truncated": false
+  },
+  "sensitivity": "low",
+  "score": null,
+  "default_selected": true,
+  "requires_elevation": false,
+  "tags": [],
+  "children": [],
+  "notes_key": null
+}

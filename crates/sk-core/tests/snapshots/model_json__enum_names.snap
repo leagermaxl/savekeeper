@@ -1,0 +1,84 @@
+---
+source: crates/sk-core/tests/model_json.rs
+expression: "json!({\n    \"category\": categories, \"evidence_source\": sources, \"severity\":\n    [IssueSeverity::Info, IssueSeverity::Warning, IssueSeverity::Error],\n    \"app_kind\":\n    [AppKind::Game, AppKind::Application, AppKind::System, AppKind::DevTool],\n    \"sensitivity\": [Sensitivity::None, Sensitivity::Low, Sensitivity::High],\n    \"reg_hive\": [RegHive::Hkcu, RegHive::Hklm], \"llm_mode\":\n    [LlmMode::Off, LlmMode::Local, LlmMode::Cloud], \"scan_issue\": issue,\n})"
+---
+{
+  "app_kind": [
+    "game",
+    "application",
+    "system",
+    "dev_tool"
+  ],
+  "category": [
+    "game_save",
+    "game_config",
+    "app_config",
+    "app_data",
+    "user_files",
+    "dev_environment",
+    "credentials",
+    "system_settings",
+    "reinstallable",
+    "cache",
+    "unknown"
+  ],
+  "evidence_source": [
+    {
+      "kind": "rule",
+      "rule_id": "r"
+    },
+    {
+      "game": "g",
+      "kind": "ludusavi",
+      "manifest_version": "v"
+    },
+    {
+      "kind": "launcher",
+      "launcher": "l"
+    },
+    {
+      "exporter_id": "e",
+      "kind": "system"
+    },
+    {
+      "heuristic_id": "h",
+      "kind": "heuristic"
+    },
+    {
+      "kind": "llm",
+      "model": "m",
+      "provider": "p"
+    },
+    {
+      "kind": "user"
+    }
+  ],
+  "llm_mode": [
+    "off",
+    "local",
+    "cloud"
+  ],
+  "reg_hive": [
+    "hkcu",
+    "hklm"
+  ],
+  "scan_issue": {
+    "message_args": {
+      "count": "3"
+    },
+    "message_key": "issue.locked",
+    "path": "{LOCALAPPDATA}\\Foo",
+    "severity": "warning",
+    "source": "scan"
+  },
+  "sensitivity": [
+    "none",
+    "low",
+    "high"
+  ],
+  "severity": [
+    "info",
+    "warning",
+    "error"
+  ]
+}

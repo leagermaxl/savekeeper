@@ -1,0 +1,36 @@
+---
+source: crates/sk-core/tests/model_json.rs
+expression: registry()
+---
+{
+  "id": "5c1e0a9d3b2f7e61",
+  "target": {
+    "kind": "registry",
+    "hive": "hkcu",
+    "key": "Software\\SimonTatham\\PuTTY",
+    "recursive": true
+  },
+  "category": "app_config",
+  "app": null,
+  "title": "PuTTY — сессии",
+  "evidence": [
+    {
+      "source": {
+        "kind": "rule",
+        "rule_id": "putty"
+      },
+      "message_key": "evidence.rule_match",
+      "message_args": {},
+      "confidence": 1.0,
+      "importance": null
+    }
+  ],
+  "stats": null,
+  "sensitivity": "low",
+  "score": null,
+  "default_selected": false,
+  "requires_elevation": false,
+  "tags": [],
+  "children": [],
+  "notes_key": "notes.putty_keys"
+}

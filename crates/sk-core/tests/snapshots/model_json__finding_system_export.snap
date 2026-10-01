@@ -1,0 +1,41 @@
+---
+source: crates/sk-core/tests/model_json.rs
+expression: system_export()
+---
+{
+  "id": "9d8c7b6a5f4e3d2c",
+  "target": {
+    "kind": "system_export",
+    "exporter_id": "wifi",
+    "params": {
+      "include_keys": true,
+      "profiles": [
+        "Home",
+        "Office"
+      ]
+    }
+  },
+  "category": "system_settings",
+  "app": null,
+  "title": "Wi-Fi profiles",
+  "evidence": [
+    {
+      "source": {
+        "kind": "system",
+        "exporter_id": "wifi"
+      },
+      "message_key": "evidence.system_export",
+      "message_args": {},
+      "confidence": 1.0,
+      "importance": 0.7
+    }
+  ],
+  "stats": null,
+  "sensitivity": "high",
+  "score": null,
+  "default_selected": true,
+  "requires_elevation": true,
+  "tags": [],
+  "children": [],
+  "notes_key": null
+}

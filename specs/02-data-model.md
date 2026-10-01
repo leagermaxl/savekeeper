@@ -3,7 +3,7 @@
 | Поле | Значение |
 |---|---|
 | ID | SPEC-02 |
-| Статус | approved |
+| Статус | in-progress |
 | Фаза | P0 |
 | Крейт(ы) | `sk-core` |
 | Зависит от | SPEC-00 |
@@ -441,7 +441,7 @@ pub enum LlmMode { Off, Local, Cloud }  // по умолчанию Off
 
 ## 9. Задачи
 
-- [ ] **T-02-01** — Модуль `sk-core::model`: `Finding`, `Target`, `Category`, `AppRef`, `Evidence`, `EvidenceSource`, `TargetStats`, `Sensitivity`, `Score`, `ScanIssue`, а также `CollectorToggles` и `LlmMode` из §6 (нужны конфигу, T-01-04) + serde/specta derive. *Готово, когда:* round-trip тесты и insta-снапшот.
+- [x] **T-02-01** — Модуль `sk-core::model`: `Finding`, `Target`, `Category`, `AppRef`, `Evidence`, `EvidenceSource`, `TargetStats`, `Sensitivity`, `Score`, `ScanIssue`, а также `CollectorToggles` и `LlmMode` из §6 (нужны конфигу, T-01-04) + serde/specta derive. *Готово, когда:* round-trip тесты и insta-снапшот.
 - [ ] **T-02-02** — `sk-core::path`: `to_extended`, `eq_ci`, `starts_with_ci` (покомпонентно), `PathSet` (префиксное дерево, используется SPEC-01). *Готово, когда:* тесты §8.
 - [ ] **T-02-03** — `PathTemplate`: parse, resolve (включая мульти-значные токены), from_path. *Зависит:* T-02-02, T-02-05.
 - [ ] **T-02-04** — `sk-core::privacy::redact` и обезличивание путей для логов. *Зависит:* T-02-03.
