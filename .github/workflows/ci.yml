@@ -1,0 +1,67 @@
+# CI for every PR and push to main (SPEC-12 §4.8).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: "1"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all --check
+      - run: cargo xtask check-deps
+      # `cargo deny check` is added in T-12-04.
+
+  test:
+    name: test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            exclude: ""
+          # The Tauri app is built and tested on Windows only.
+          - os: ubuntu-latest
+            exclude: --exclude savekeeper-app
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      INSTA_UPDATE: "no"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy --workspace ${{ matrix.exclude }} --all-targets --locked -- -D warnings
+      # `cargo xtask fixtures` is added in T-12-06.
+      - run: cargo test --workspace ${{ matrix.exclude }} --locked
+
+  msrv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@1.88
+      - uses: Swatinem/rust-cache@v2
+      # `+1.88` overrides the `stable` channel from rust-toolchain.toml.
+      - run: cargo +1.88 check --workspace --exclude savekeeper-app --locked
