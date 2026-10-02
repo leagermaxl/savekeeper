@@ -1,0 +1,90 @@
+# Developer profile (SPEC-12 §4.3): SSH keys, .gitconfig, VS Code, JetBrains,
+# three git repositories (clean / dirty / unpushed) and node_modules.
+tree:
+  # --- SSH and git ---
+  - path: "{HOME}/.ssh/id_ed25519"
+    size: 411
+    mtime: "-200d"
+  - path: "{HOME}/.ssh/id_ed25519.pub"
+    size: 98
+    mtime: "-200d"
+  - path: "{HOME}/.ssh/known_hosts"
+    size: 2 KiB
+  - path: "{HOME}/.ssh/config"
+    size: 300
+  - path: "{HOME}/.gitconfig"
+    size: 512
+  - path: "{HOME}/.npmrc"
+    size: 64
+
+  # --- VS Code ---
+  - path: "{APPDATA}/Code/User/settings.json"
+    size: 3 KiB
+    mtime: "-1d"
+  - path: "{APPDATA}/Code/User/keybindings.json"
+    size: 1 KiB
+  - path: "{APPDATA}/Code/User/snippets/rust.json"
+    size: 2 KiB
+  - path: "{APPDATA}/Code/User/globalStorage/state.vscdb"
+    size: 256 KiB
+  - path: "{APPDATA}/Code/Cache/Cache_Data/f_000001"
+    size: 8 KiB
+    repeat: 50
+  - path: "{APPDATA}/Code/CachedData/1a2b3c4d/chrome/js/index-01.code"
+    size: 16 KiB
+    repeat: 10
+  - path: "{HOME}/.vscode/extensions/rust-lang.rust-analyzer-0.3.2000-win32-x64/package.json"
+    size: 40 KiB
+  - path: "{HOME}/.vscode/extensions/rust-lang.rust-analyzer-0.3.2000-win32-x64/server/rust-analyzer.exe"
+    size: 2 MiB
+  - path: "{HOME}/.vscode/extensions/extensions.json"
+    size: 4 KiB
+
+  # --- JetBrains IntelliJ IDEA ---
+  - path: "{APPDATA}/JetBrains/IntelliJIdea2024.2/options/editor.xml"
+    size: 2 KiB
+  - path: "{APPDATA}/JetBrains/IntelliJIdea2024.2/options/keymap.xml"
+    size: 1 KiB
+  - path: "{APPDATA}/JetBrains/IntelliJIdea2024.2/keymaps/My Keymap.xml"
+    size: 3 KiB
+  - path: "{APPDATA}/JetBrains/IntelliJIdea2024.2/idea64.exe.vmoptions"
+    size: 200
+  - path: "{LOCALAPPDATA}/JetBrains/IntelliJIdea2024.2/caches/content.dat"
+    size: 1 MiB
+  - path: "{LOCALAPPDATA}/JetBrains/IntelliJIdea2024.2/index/stubs/stubs.dat"
+    size: 512 KiB
+  - path: "{LOCALAPPDATA}/JetBrains/IntelliJIdea2024.2/log/idea.log"
+    size: 128 KiB
+
+  # --- Git repositories ---
+  # Clean: everything committed and pushed.
+  - path: "{HOME}/Projects/clean-lib/.git"
+    git: { commits: 3, dirty: false, remote: "https://github.com/example/clean-lib.git" }
+  # Dirty: a modified tracked file and untracked files, node_modules ignored.
+  - path: "{HOME}/Projects/dirty-app/.git"
+    git: { commits: 5, dirty: true, remote: "https://github.com/example/dirty-app.git" }
+  - path: "{HOME}/Projects/dirty-app/.gitignore"
+    sample: "dev/node.gitignore"
+  - path: "{HOME}/Projects/dirty-app/package.json"
+    size: 1 KiB
+  - path: "{HOME}/Projects/dirty-app/node_modules/left-pad/index.js"
+    size: 2 KiB
+  - path: "{HOME}/Projects/dirty-app/node_modules/left-pad/package.json"
+    size: 1 KiB
+  - path: "{HOME}/Projects/dirty-app/node_modules/lodash/lodash.js"
+    size: 540 KiB
+  - path: "{HOME}/Projects/dirty-app/node_modules/lodash/fp/module-001.js"
+    size: 4 KiB
+    repeat: 100
+  # Unpushed: two of four commits are not on origin/main.
+  - path: "{HOME}/Projects/unpushed-tool/.git"
+    git: { commits: 4, remote: "https://github.com/example/unpushed-tool.git", unpushed: 2 }
+
+  # --- Toolchains ---
+  - path: "{HOME}/.cargo/config.toml"
+    size: 200
+  - path: "{HOME}/.cargo/registry/cache/index.crates.io-1949cf8c6b5b557f/serde-1.0.200.crate"
+    size: 80 KiB
+  - path: "{LOCALAPPDATA}/npm-cache/_cacache/content-v2/sha512/00/0000000001"
+    size: 4 KiB
+    repeat: 30

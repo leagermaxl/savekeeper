@@ -2,20 +2,25 @@
 //!
 //! - [`FakeProfile`]: a user profile from `fixtures/profiles/<name>.yaml`
 //!   materialized in a temporary folder, with a matching `Environment::fake`.
+//! - [`materialize_profile`]: the same into a given folder (`cargo xtask fixtures`).
 //! - [`collect_ctx`], [`drain_events`]: a collector context and its events.
 //! - [`tree_hash`]: content hashes of a folder tree.
 //! - `RegTestKey` (Windows): a registry key deleted on drop.
 //!
 //! Helpers panic on failure: they are meant for tests only.
 
+mod cache;
 mod context;
 mod fixture;
+mod git;
+mod materialize;
 mod profile;
 #[cfg(windows)]
 mod reg;
 mod tree;
 
 pub use context::{collect_ctx, drain_events};
+pub use materialize::materialize_profile;
 pub use profile::FakeProfile;
 #[cfg(windows)]
 pub use reg::{RegTestKey, REG_TEST_PARENT};

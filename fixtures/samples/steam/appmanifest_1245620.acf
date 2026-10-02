@@ -1,0 +1,41 @@
+"AppState"
+{
+	"appid"		"1245620"
+	"universe"		"1"
+	"LauncherPath"		"C:\\Program Files (x86)\\Steam\\steam.exe"
+	"name"		"ELDEN RING"
+	"StateFlags"		"4"
+	"installdir"		"ELDEN RING"
+	"LastUpdated"		"1726152000"
+	"LastPlayed"		"1727600000"
+	"SizeOnDisk"		"51352018534"
+	"StagingSize"		"0"
+	"buildid"		"15607311"
+	"LastOwner"		"76561197972611406"
+	"DownloadType"		"1"
+	"UpdateResult"		"0"
+	"BytesToDownload"		"0"
+	"BytesDownloaded"		"0"
+	"BytesToStage"		"0"
+	"BytesStaged"		"0"
+	"TargetBuildID"		"0"
+	"AutoUpdateBehavior"		"0"
+	"AllowOtherDownloadsWhileRunning"		"0"
+	"ScheduledAutoUpdate"		"0"
+	"InstalledDepots"
+	{
+		"1245621"
+		{
+			"manifest"		"7153424426218591230"
+			"size"		"51352018534"
+		}
+	}
+	"UserConfig"
+	{
+		"language"		"english"
+	}
+	"MountedConfig"
+	{
+		"language"		"english"
+	}
+}

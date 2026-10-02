@@ -1,10 +1,11 @@
 //! Profile description format of `fixtures/profiles/*.yaml` (SPEC-12 §4.3).
 //!
-//! This module parses a description and expands it into a flat list of files.
-//! Supported keys: `known_folders` and `tree` entries with `path`, `size`,
-//! `mtime` and `repeat`. Unknown keys are rejected.
+//! This module parses a description and expands it into a flat list of items
+//! to create. Keys: `known_folders`, `launchers` and `tree` entries with
+//! `path` plus either content (`size` or `sample`, with `mtime`, `repeat`,
+//! `attrs`) or a git repository (`git`). Unknown keys are rejected.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::io::Write;
 
 use serde::Deserialize;
@@ -18,9 +19,24 @@ pub(crate) struct ProfileSpec {
     /// Known folder overrides: token name without braces → folder relative to the root.
     #[serde(default)]
     pub known_folders: BTreeMap<String, String>,
-    /// Files of the profile.
+    /// Game launchers: launcher id (`steam`, `epic` ...) → its description.
+    #[serde(default)]
+    pub launchers: BTreeMap<String, LauncherSpec>,
+    /// Files and repositories of the profile.
     #[serde(default)]
     pub tree: Vec<TreeEntry>,
+}
+
+/// One `launchers` entry.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct LauncherSpec {
+    /// Launcher root folder relative to the profile root; `{STEAM}` for Steam.
+    #[serde(default)]
+    pub root: Option<String>,
+    /// Store account ids; for Steam the id3 (`{STEAM_USERID}`).
+    #[serde(default)]
+    pub users: Vec<String>,
 }
 
 /// One `tree` entry.
@@ -32,12 +48,21 @@ pub(crate) struct TreeEntry {
     /// File size; the content is pseudo-random, seeded by the path.
     #[serde(default)]
     pub size: Option<Size>,
+    /// Content copied from `fixtures/samples/<sample>`.
+    #[serde(default)]
+    pub sample: Option<String>,
     /// Modification time: relative to "now" (`-1d`) or RFC 3339.
     #[serde(default)]
     pub mtime: Option<String>,
     /// Number of files: the last number in the file name is incremented.
     #[serde(default)]
     pub repeat: Option<u32>,
+    /// File attributes, applied on Windows only.
+    #[serde(default)]
+    pub attrs: Vec<Attr>,
+    /// A git repository; `path` is its `.git` folder.
+    #[serde(default)]
+    pub git: Option<GitSpec>,
 }
 
 /// A size: a number of bytes or a string such as `12 KiB`.
@@ -50,15 +75,75 @@ pub(crate) enum Size {
     Text(String),
 }
 
+/// A file attribute (`attrs: [hidden, readonly]`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum Attr {
+    /// `FILE_ATTRIBUTE_HIDDEN`.
+    Hidden,
+    /// `FILE_ATTRIBUTE_READONLY`.
+    Readonly,
+    /// `FILE_ATTRIBUTE_SYSTEM`.
+    System,
+}
+
+/// A generated git repository (`git: { commits: 3, dirty: true, remote: null }`).
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct GitSpec {
+    /// Number of commits on `main`.
+    #[serde(default)]
+    pub commits: u32,
+    /// The work tree has an uncommitted change of a tracked file
+    /// (an untracked file if there are no commits).
+    #[serde(default)]
+    pub dirty: bool,
+    /// URL of the `origin` remote; `null` for no remote.
+    #[serde(default)]
+    pub remote: Option<String>,
+    /// How many of the last commits are not on `origin/main`.
+    #[serde(default)]
+    pub unpushed: u32,
+}
+
+/// Content of a generated file.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum Content {
+    /// Pseudo-random bytes of this size, seeded by the path template.
+    Random(u64),
+    /// A copy of `fixtures/samples/<name>`.
+    Sample(String),
+}
+
 /// A file to create, after `repeat` expansion.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct FileSpec {
     /// Path template of this file.
     pub path: String,
-    /// Size in bytes.
-    pub size: u64,
+    /// Its content.
+    pub content: Content,
     /// Modification time to set, if any.
     pub mtime: Option<OffsetDateTime>,
+    /// Attributes, sorted and without duplicates.
+    pub attrs: Vec<Attr>,
+}
+
+/// A git repository to create.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct RepoSpec {
+    /// Path template of the `.git` folder; the work tree is its parent.
+    pub path: String,
+    /// Repository state.
+    pub git: GitSpec,
+}
+
+/// Something to create in the profile, in description order.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum Item {
+    /// A file.
+    File(FileSpec),
+    /// A git repository.
+    Repo(RepoSpec),
 }
 
 impl ProfileSpec {
@@ -67,28 +152,103 @@ impl ProfileSpec {
         serde_saphyr::from_str(src).map_err(|e| e.to_string())
     }
 
-    /// Expands `tree` into files; relative `mtime` values count from `now`.
-    pub fn files(&self, now: OffsetDateTime) -> Result<Vec<FileSpec>, String> {
-        let mut files = Vec::new();
-        for entry in &self.tree {
-            let size = match &entry.size {
-                None => 0,
-                Some(Size::Bytes(n)) => *n,
-                Some(Size::Text(s)) => parse_size(s)?,
-            };
-            let mtime = entry
-                .mtime
-                .as_deref()
-                .map(|s| parse_mtime(s, now))
-                .transpose()?;
-            let paths = match entry.repeat {
-                None => vec![entry.path.clone()],
-                Some(n) => expand_repeat(&entry.path, n)?,
-            };
-            files.extend(paths.into_iter().map(|path| FileSpec { path, size, mtime }));
-        }
-        Ok(files)
+    /// Names of the samples the description uses, sorted.
+    pub fn samples(&self) -> BTreeSet<&str> {
+        self.tree
+            .iter()
+            .filter_map(|e| e.sample.as_deref())
+            .collect()
     }
+
+    /// Expands `tree` into items; relative `mtime` values count from `now`.
+    pub fn items(&self, now: OffsetDateTime) -> Result<Vec<Item>, String> {
+        let mut items = Vec::new();
+        for entry in &self.tree {
+            match &entry.git {
+                Some(git) => items.push(Item::Repo(repo_item(entry, git)?)),
+                None => items.extend(file_items(entry, now)?.into_iter().map(Item::File)),
+            }
+        }
+        Ok(items)
+    }
+}
+
+fn repo_item(entry: &TreeEntry, git: &GitSpec) -> Result<RepoSpec, String> {
+    let path = &entry.path;
+    let has_other_keys = entry.size.is_some()
+        || entry.sample.is_some()
+        || entry.mtime.is_some()
+        || entry.repeat.is_some()
+        || !entry.attrs.is_empty();
+    if has_other_keys {
+        return Err(format!(
+            "{path:?}: `git` cannot be combined with `size`, `sample`, `mtime`, `repeat` or `attrs`"
+        ));
+    }
+    let name = path.rsplit(['/', '\\']).next().unwrap_or_default();
+    if name != ".git" {
+        return Err(format!("{path:?}: a `git` entry must be a `.git` folder"));
+    }
+    if git.remote.is_none() && git.unpushed > 0 {
+        return Err(format!("{path:?}: `unpushed` needs a `remote`"));
+    }
+    if git.unpushed > git.commits {
+        return Err(format!("{path:?}: `unpushed` is greater than `commits`"));
+    }
+    Ok(RepoSpec {
+        path: path.clone(),
+        git: git.clone(),
+    })
+}
+
+fn file_items(entry: &TreeEntry, now: OffsetDateTime) -> Result<Vec<FileSpec>, String> {
+    let content = match (&entry.size, &entry.sample) {
+        (Some(_), Some(_)) => {
+            return Err(format!(
+                "{:?}: `size` and `sample` are mutually exclusive",
+                entry.path
+            ))
+        }
+        (None, None) => Content::Random(0),
+        (Some(Size::Bytes(n)), None) => Content::Random(*n),
+        (Some(Size::Text(s)), None) => Content::Random(parse_size(s)?),
+        (None, Some(sample)) => Content::Sample(sample_name(sample)?),
+    };
+    let mtime = entry
+        .mtime
+        .as_deref()
+        .map(|s| parse_mtime(s, now))
+        .transpose()?;
+    let mut attrs = entry.attrs.clone();
+    attrs.sort();
+    attrs.dedup();
+    let paths = match entry.repeat {
+        None => vec![entry.path.clone()],
+        Some(n) => expand_repeat(&entry.path, n)?,
+    };
+    Ok(paths
+        .into_iter()
+        .map(|path| FileSpec {
+            path,
+            content: content.clone(),
+            mtime,
+            attrs: attrs.clone(),
+        })
+        .collect())
+}
+
+/// A sample name: a relative `/`-separated path inside `fixtures/samples`.
+fn sample_name(sample: &str) -> Result<String, String> {
+    let parts: Vec<&str> = sample.split(['/', '\\']).collect();
+    let valid = parts
+        .iter()
+        .all(|p| !p.is_empty() && *p != "." && *p != ".." && !p.contains(':'));
+    if !valid {
+        return Err(format!(
+            "sample {sample:?} must be a relative path inside fixtures/samples"
+        ));
+    }
+    Ok(parts.join("/"))
 }
 
 /// Parses `28311552`, `12 KiB`, `1MiB`, `3 GiB`, `10 B`.
@@ -193,114 +353,5 @@ pub(crate) fn write_content(out: &mut impl Write, seed: &str, size: u64) -> std:
 }
 
 #[cfg(test)]
-mod tests {
-    use time::macros::datetime;
-
-    use super::*;
-
-    #[test]
-    fn sizes() {
-        assert_eq!(parse_size("28311552"), Ok(28_311_552));
-        assert_eq!(parse_size("12 KiB"), Ok(12 * 1024));
-        assert_eq!(parse_size("1MiB"), Ok(1024 * 1024));
-        assert_eq!(parse_size("2 GiB"), Ok(2 << 30));
-        assert_eq!(parse_size("10 B"), Ok(10));
-        assert!(parse_size("12 KB").is_err());
-        assert!(parse_size("KiB").is_err());
-        assert!(parse_size("99999999999999999999 GiB").is_err());
-    }
-
-    #[test]
-    fn mtimes() {
-        let now = datetime!(2026-10-02 12:00 UTC);
-        assert_eq!(parse_mtime("-1d", now), Ok(datetime!(2026-10-01 12:00 UTC)));
-        assert_eq!(parse_mtime("-2h", now), Ok(datetime!(2026-10-02 10:00 UTC)));
-        assert_eq!(
-            parse_mtime("+30m", now),
-            Ok(datetime!(2026-10-02 12:30 UTC))
-        );
-        assert_eq!(parse_mtime("-1w", now), Ok(datetime!(2026-09-25 12:00 UTC)));
-        assert_eq!(
-            parse_mtime("2020-01-02T03:04:05Z", now),
-            Ok(datetime!(2020-01-02 03:04:05 UTC))
-        );
-        assert!(parse_mtime("-1y", now).is_err());
-        assert!(parse_mtime("-d", now).is_err());
-        assert!(parse_mtime("yesterday", now).is_err());
-    }
-
-    #[test]
-    fn repeat_keeps_width_and_counts_from_value() {
-        assert_eq!(
-            expand_repeat("{LOCALAPPDATA}/discord/Cache/f_000001", 3).unwrap(),
-            [
-                "{LOCALAPPDATA}/discord/Cache/f_000001",
-                "{LOCALAPPDATA}/discord/Cache/f_000002",
-                "{LOCALAPPDATA}/discord/Cache/f_000003",
-            ]
-        );
-        assert_eq!(
-            expand_repeat("{HOME}/v2/save9.dat", 2).unwrap(),
-            ["{HOME}/v2/save9.dat", "{HOME}/v2/save10.dat"]
-        );
-        assert!(expand_repeat("{HOME}/dir2/file.dat", 2).is_err());
-    }
-
-    #[test]
-    fn content_is_deterministic_and_sized() {
-        let mut a = Vec::new();
-        let mut b = Vec::new();
-        write_content(&mut a, "{APPDATA}/x", 100_000).unwrap();
-        write_content(&mut b, "{APPDATA}/x", 100_000).unwrap();
-        assert_eq!(a.len(), 100_000);
-        assert_eq!(a, b);
-        let mut c = Vec::new();
-        write_content(&mut c, "{APPDATA}/y", 100_000).unwrap();
-        assert_ne!(a, c);
-    }
-
-    #[test]
-    fn unknown_keys_are_rejected() {
-        let err = ProfileSpec::parse("tree:\n  - path: \"{HOME}/a\"\n    color: red\n");
-        assert!(err.is_err());
-    }
-
-    #[test]
-    fn expands_tree() {
-        let spec = ProfileSpec::parse(
-            r#"
-known_folders:
-  DOCUMENTS: "OneDrive/Documents"
-tree:
-  - path: "{APPDATA}/Game/save.sl2"
-    size: 12 KiB
-    mtime: "-1d"
-  - path: "{LOCALAPPDATA}/c/f_01"
-    size: 3
-    repeat: 2
-  - path: "{HOME}/empty.txt"
-"#,
-        )
-        .unwrap();
-        assert_eq!(spec.known_folders["DOCUMENTS"], "OneDrive/Documents");
-        let now = datetime!(2026-10-02 12:00 UTC);
-        let files = spec.files(now).unwrap();
-        let summary: Vec<_> = files
-            .iter()
-            .map(|f| (f.path.as_str(), f.size, f.mtime))
-            .collect();
-        assert_eq!(
-            summary,
-            [
-                (
-                    "{APPDATA}/Game/save.sl2",
-                    12 * 1024,
-                    Some(datetime!(2026-10-01 12:00 UTC))
-                ),
-                ("{LOCALAPPDATA}/c/f_01", 3, None),
-                ("{LOCALAPPDATA}/c/f_02", 3, None),
-                ("{HOME}/empty.txt", 0, None),
-            ]
-        );
-    }
-}
+#[path = "fixture_tests.rs"]
+mod tests;

@@ -116,8 +116,10 @@ fn invalid_descriptions_are_errors() {
         "tree:\n  - path: \"{NOPE}/a\"\n",
         "tree:\n  - path: \"{STEAM}/a\"\n",
         "tree:\n  - path: \"{HOME}/a\"\n    size: 1 KB\n",
-        "tree:\n  - path: \"{HOME}/a\"\n    git: { commits: 1 }\n",
-        "launchers: {}\n",
+        "tree:\n  - path: \"{HOME}/a\"\n    sample: \"no/such.vdf\"\n",
+        "launchers:\n  steam: { root: \"../Steam\" }\n",
+        "launchers:\n  steam: { root: \"Steam\", games: [] }\n",
+        "tree:\n  - path: \"{HOME}/r/.git\"\n    git: { commits: 1, unpushed: 1 }\n",
     ] {
         assert!(FakeProfile::from_yaml(src).is_err(), "{src}");
     }

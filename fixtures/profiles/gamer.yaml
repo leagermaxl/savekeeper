@@ -1,0 +1,126 @@
+# Gamer profile (SPEC-12 §4.3): Steam with one account and 5 games whose saves
+# live in the typical places (AppData, Unity LocalLow, Unreal SaveGames,
+# Documents\My Games, Saved Games), plus Discord and OBS.
+# Steam account: id3 12345678 = id64 76561197972611406.
+launchers:
+  steam: { root: "Program Files (x86)/Steam", users: ["12345678"] }
+tree:
+  # --- Steam ---
+  - path: "{STEAM}/steam.exe"
+    size: 4 MiB
+  - path: "{STEAM}/config/libraryfolders.vdf"
+    sample: "steam/libraryfolders.vdf"
+  - path: "{STEAM}/config/loginusers.vdf"
+    sample: "steam/loginusers.vdf"
+  - path: "{STEAM}/steamapps/libraryfolders.vdf"
+    sample: "steam/libraryfolders.vdf"
+  - path: "{STEAM}/steamapps/appmanifest_1245620.acf"
+    sample: "steam/appmanifest_1245620.acf"
+  - path: "{STEAM}/steamapps/common/ELDEN RING/Game/eldenring.exe"
+    size: 2 MiB
+  - path: "{STEAM}/userdata/12345678/config/localconfig.vdf"
+    size: 24 KiB
+    mtime: "-1d"
+  - path: "{STEAM}/userdata/12345678/1245620/remote/ER0000.sl2"
+    size: 64 KiB
+    mtime: "-1d"
+  - path: "{STEAM}/appcache/httpcache/00/0000000000000001"
+    size: 8 KiB
+    repeat: 40
+
+  # --- ELDEN RING: save in Roaming AppData under the Steam id64 ---
+  - path: "{APPDATA}/EldenRing/76561197972611406/ER0000.sl2"
+    size: 28311552
+    mtime: "-1d"
+  - path: "{APPDATA}/EldenRing/76561197972611406/ER0000.sl2.bak"
+    size: 28311552
+    mtime: "-2d"
+  - path: "{APPDATA}/EldenRing/76561197972611406/GraphicsConfig.xml"
+    size: 2 KiB
+    mtime: "-30d"
+
+  # --- Hollow Knight: Unity, LocalLow ---
+  - path: "{LOCALLOW}/Team Cherry/Hollow Knight/user1.dat"
+    size: 12 KiB
+    mtime: "-3d"
+  - path: "{LOCALLOW}/Team Cherry/Hollow Knight/user1.dat.bak1"
+    size: 12 KiB
+    mtime: "-4d"
+  - path: "{LOCALLOW}/Team Cherry/Hollow Knight/shared.dat"
+    size: 1 KiB
+  - path: "{LOCALLOW}/Team Cherry/Hollow Knight/output_log.txt"
+    size: 30 KiB
+
+  # --- Satisfactory: Unreal, Saved/SaveGames ---
+  - path: "{LOCALAPPDATA}/FactoryGame/Saved/SaveGames/76561197972611406/Factory_autosave_0.sav"
+    size: 3 MiB
+    mtime: "-2h"
+  - path: "{LOCALAPPDATA}/FactoryGame/Saved/SaveGames/76561197972611406/Factory_autosave_1.sav"
+    size: 3 MiB
+    mtime: "-5h"
+  - path: "{LOCALAPPDATA}/FactoryGame/Saved/Config/Windows/GameUserSettings.ini"
+    size: 3 KiB
+  - path: "{LOCALAPPDATA}/FactoryGame/Saved/Logs/FactoryGame.log"
+    size: 256 KiB
+  - path: "{LOCALAPPDATA}/FactoryGame/Saved/Crashes/UECC-Windows-0001/CrashContext.runtime-xml"
+    size: 40 KiB
+
+  # --- Skyrim Special Edition: Documents\My Games ---
+  - path: "{DOCUMENTS}/My Games/Skyrim Special Edition/Saves/Save1_0A1B2C3D_0_4C796473_Tamriel_000012_20240101120000_1_1.ess"
+    size: 6 MiB
+    mtime: "-10d"
+  - path: "{DOCUMENTS}/My Games/Skyrim Special Edition/Saves/Save1_0A1B2C3D_0_4C796473_Tamriel_000012_20240101120000_1_1.skse"
+    size: 4 KiB
+    mtime: "-10d"
+  - path: "{DOCUMENTS}/My Games/Skyrim Special Edition/Skyrim.ini"
+    size: 2 KiB
+  - path: "{DOCUMENTS}/My Games/Skyrim Special Edition/SkyrimPrefs.ini"
+    size: 4 KiB
+    attrs: [readonly]
+
+  # --- Cyberpunk 2077: Saved Games ---
+  - path: "{SAVED_GAMES}/CD Projekt Red/Cyberpunk 2077/ManualSave-0/sav.dat"
+    size: 5 MiB
+    mtime: "-7d"
+  - path: "{SAVED_GAMES}/CD Projekt Red/Cyberpunk 2077/ManualSave-0/metadata.9.json"
+    size: 6 KiB
+    mtime: "-7d"
+  - path: "{SAVED_GAMES}/CD Projekt Red/Cyberpunk 2077/ManualSave-0/screenshot.png"
+    size: 300 KiB
+    mtime: "-7d"
+  - path: "{LOCALAPPDATA}/CD Projekt Red/Cyberpunk 2077/UserSettings.json"
+    size: 20 KiB
+
+  # --- Discord: settings and a large cache ---
+  - path: "{APPDATA}/discord/settings.json"
+    size: 1 KiB
+  - path: "{APPDATA}/discord/Local Storage/leveldb/000003.log"
+    size: 64 KiB
+  - path: "{APPDATA}/discord/Cache/Cache_Data/f_000001"
+    size: 16 KiB
+    repeat: 500
+  - path: "{APPDATA}/discord/Code Cache/js/index"
+    size: 24 KiB
+  - path: "{LOCALAPPDATA}/Discord/app-1.0.9165/Discord.exe"
+    size: 1 MiB
+
+  # --- OBS Studio ---
+  - path: "{APPDATA}/obs-studio/global.ini"
+    size: 2 KiB
+  - path: "{APPDATA}/obs-studio/basic/profiles/Untitled/basic.ini"
+    size: 3 KiB
+  - path: "{APPDATA}/obs-studio/basic/profiles/Untitled/recordEncoder.json"
+    size: 200
+  - path: "{APPDATA}/obs-studio/basic/scenes/Untitled.json"
+    size: 18 KiB
+    mtime: "-1d"
+  - path: "{APPDATA}/obs-studio/logs/2024-01-01 12-00-00.txt"
+    size: 40 KiB
+    repeat: 5
+  - path: "{APPDATA}/obs-studio/crashes/Crash 2024-01-01 12-00-00.txt"
+    size: 30 KiB
+
+  # --- Windows folder customization file ---
+  - path: "{DESKTOP}/desktop.ini"
+    size: 282
+    attrs: [hidden, system]

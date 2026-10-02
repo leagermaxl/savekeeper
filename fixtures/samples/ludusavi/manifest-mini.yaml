@@ -1,0 +1,328 @@
+# Ludusavi manifest excerpt: 20 games in the format of
+# https://github.com/mtkennerly/ludusavi-manifest (data/manifest.yaml).
+# Entries are trimmed to Windows paths; used by SPEC-05 tests.
+Baldur's Gate 3:
+  files:
+    <winLocalAppData>/Larian Studios/Baldur's Gate 3/PlayerProfiles:
+      tags:
+        - save
+        - config
+      when:
+        - os: windows
+    <winLocalAppData>/Larian Studios/Baldur's Gate 3/LevelCache:
+      when:
+        - os: windows
+  installDir:
+    Baldurs Gate 3: {}
+  steam:
+    id: 1086940
+  gog:
+    id: 1456460669
+Celeste:
+  files:
+    <base>/Saves:
+      tags:
+        - save
+      when:
+        - os: windows
+    <base>/Saves/settings.celeste:
+      tags:
+        - config
+      when:
+        - os: windows
+  installDir:
+    Celeste: {}
+  steam:
+    id: 504230
+Cyberpunk 2077:
+  files:
+    <home>/Saved Games/CD Projekt Red/Cyberpunk 2077:
+      tags:
+        - save
+      when:
+        - os: windows
+    <winLocalAppData>/CD Projekt Red/Cyberpunk 2077/UserSettings.json:
+      tags:
+        - config
+      when:
+        - os: windows
+  installDir:
+    Cyberpunk 2077: {}
+  steam:
+    id: 1091500
+  gog:
+    id: 1423049311
+DARK SOULS III:
+  files:
+    <winAppData>/DarkSoulsIII:
+      tags:
+        - save
+        - config
+      when:
+        - os: windows
+  installDir:
+    DARK SOULS III: {}
+  steam:
+    id: 374320
+Deep Rock Galactic:
+  files:
+    <base>/FSD/Saved/SaveGames:
+      tags:
+        - save
+      when:
+        - os: windows
+          store: steam
+    <base>/FSD/Saved/Config/WindowsNoEditor:
+      tags:
+        - config
+      when:
+        - os: windows
+  installDir:
+    Deep Rock Galactic: {}
+  steam:
+    id: 548430
+ELDEN RING:
+  files:
+    <winAppData>/EldenRing:
+      tags:
+        - save
+        - config
+      when:
+        - os: windows
+  installDir:
+    ELDEN RING: {}
+  steam:
+    id: 1245620
+Factorio:
+  files:
+    <winAppData>/Factorio/saves:
+      tags:
+        - save
+      when:
+        - os: windows
+    <winAppData>/Factorio/config/config.ini:
+      tags:
+        - config
+      when:
+        - os: windows
+    <winAppData>/Factorio/player-data.json:
+      tags:
+        - save
+      when:
+        - os: windows
+  installDir:
+    Factorio: {}
+  steam:
+    id: 427520
+  gog:
+    id: 1418224081
+Grand Theft Auto V:
+  files:
+    <winDocuments>/Rockstar Games/GTA V/Profiles:
+      tags:
+        - save
+        - config
+      when:
+        - os: windows
+  installDir:
+    Grand Theft Auto V: {}
+  steam:
+    id: 271590
+Hades:
+  files:
+    <winDocuments>/Saved Games/Hades:
+      tags:
+        - save
+        - config
+      when:
+        - os: windows
+  installDir:
+    Hades: {}
+  steam:
+    id: 1145360
+  gog:
+    id: 1308320804
+Hogwarts Legacy:
+  files:
+    <winLocalAppData>/Hogwarts Legacy/Saved/SaveGames:
+      tags:
+        - save
+      when:
+        - os: windows
+    <winLocalAppData>/Hogwarts Legacy/Saved/Config/WindowsNoEditor:
+      tags:
+        - config
+      when:
+        - os: windows
+  installDir:
+    Hogwarts Legacy: {}
+  steam:
+    id: 990080
+Hollow Knight:
+  files:
+    <winLocalAppDataLow>/Team Cherry/Hollow Knight/*.dat:
+      tags:
+        - save
+      when:
+        - os: windows
+  installDir:
+    Hollow Knight: {}
+  registry:
+    HKEY_CURRENT_USER/Software/Team Cherry/Hollow Knight:
+      tags:
+        - config
+  steam:
+    id: 367520
+Portal 2:
+  files:
+    <base>/portal2/SAVE:
+      tags:
+        - save
+      when:
+        - os: windows
+    <base>/portal2/cfg/config.cfg:
+      tags:
+        - config
+      when:
+        - os: windows
+    <root>/userdata/<storeUserId>/620/remote:
+      tags:
+        - save
+      when:
+        - store: steam
+  installDir:
+    Portal 2: {}
+  steam:
+    id: 620
+Red Dead Redemption 2:
+  files:
+    <winDocuments>/Rockstar Games/Red Dead Redemption 2/Profiles:
+      tags:
+        - save
+      when:
+        - os: windows
+    <winDocuments>/Rockstar Games/Red Dead Redemption 2/Settings/system.xml:
+      tags:
+        - config
+      when:
+        - os: windows
+  installDir:
+    Red Dead Redemption 2: {}
+  steam:
+    id: 1174180
+Satisfactory:
+  files:
+    <winLocalAppData>/FactoryGame/Saved/SaveGames:
+      tags:
+        - save
+      when:
+        - os: windows
+    <winLocalAppData>/FactoryGame/Saved/Config/Windows:
+      tags:
+        - config
+      when:
+        - os: windows
+  installDir:
+    Satisfactory: {}
+  steam:
+    id: 526870
+Sekiro™ Shadows Die Twice:
+  files:
+    <winAppData>/Sekiro:
+      tags:
+        - save
+        - config
+      when:
+        - os: windows
+  installDir:
+    Sekiro: {}
+  steam:
+    id: 814380
+Slay the Spire:
+  files:
+    <base>/saves:
+      tags:
+        - save
+      when:
+        - os: windows
+    <base>/preferences:
+      tags:
+        - config
+      when:
+        - os: windows
+  installDir:
+    SlayTheSpire: {}
+  steam:
+    id: 646570
+Stardew Valley:
+  files:
+    <winAppData>/StardewValley/Saves:
+      tags:
+        - save
+      when:
+        - os: windows
+    <winAppData>/StardewValley/startup_preferences:
+      tags:
+        - config
+      when:
+        - os: windows
+  installDir:
+    Stardew Valley: {}
+  steam:
+    id: 413150
+  gog:
+    id: 1453375253
+Subnautica:
+  files:
+    <base>/SNAppData/SavedGames:
+      tags:
+        - save
+      when:
+        - os: windows
+  installDir:
+    Subnautica: {}
+  registry:
+    HKEY_CURRENT_USER/Software/Unknown Worlds/Subnautica:
+      tags:
+        - config
+  steam:
+    id: 264710
+Terraria:
+  files:
+    <winDocuments>/My Games/Terraria/Players:
+      tags:
+        - save
+      when:
+        - os: windows
+    <winDocuments>/My Games/Terraria/Worlds:
+      tags:
+        - save
+      when:
+        - os: windows
+    <winDocuments>/My Games/Terraria/config.json:
+      tags:
+        - config
+      when:
+        - os: windows
+  installDir:
+    Terraria: {}
+  steam:
+    id: 105600
+  gog:
+    id: 1207665503
+"The Elder Scrolls V: Skyrim Special Edition":
+  files:
+    <winDocuments>/My Games/Skyrim Special Edition/Saves:
+      tags:
+        - save
+      when:
+        - os: windows
+    <winDocuments>/My Games/Skyrim Special Edition/*.ini:
+      tags:
+        - config
+      when:
+        - os: windows
+  installDir:
+    Skyrim Special Edition: {}
+  steam:
+    id: 489830
