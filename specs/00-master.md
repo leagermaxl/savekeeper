@@ -94,7 +94,7 @@
 | SPEC-00 | [00-master.md](00-master.md) | Эта спека | — | — | approved |
 | SPEC-01 | [01-architecture.md](01-architecture.md) | Архитектура, крейты, конвейер, конфиг, data-dir | P0 | все | done |
 | SPEC-02 | [02-data-model.md](02-data-model.md) | Доменные типы, шаблоны путей, форматы | P0 | `sk-core` | in-progress |
-| SPEC-03 | [03-scanner.md](03-scanner.md) | Обход ФС, замер размеров, FolderSummary, исключения | P1 | `sk-scan` | in-progress |
+| SPEC-03 | [03-scanner.md](03-scanner.md) | Обход ФС, замер размеров, FolderSummary, исключения | P1 | `sk-scan` | done |
 | SPEC-04 | [04-rules-engine.md](04-rules-engine.md) | Правила известных мест (YAML) + встроенная база | P1 | `sk-rules` | approved |
 | SPEC-05 | [05-games.md](05-games.md) | Сохранения игр: манифест Ludusavi, лаунчеры | P1 | `sk-games` | approved |
 | SPEC-06 | [06-system-export.md](06-system-export.md) | winget, реестр, Wi-Fi, драйверы, прочие системные экспорты | P1 | `sk-system` | approved |
