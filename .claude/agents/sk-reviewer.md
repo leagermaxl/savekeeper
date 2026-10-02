@@ -19,6 +19,8 @@ You review the **uncommitted** working-tree change for one SaveKeeper task (`T-X
 5. **Code rules:** no `unwrap`/`expect` in library code, `unsafe` only in allowed modules with `// SAFETY:`, `cfg(windows)` isolation with stubs, files ≤ 500 lines, public items documented.
 6. **Checks:** run `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace` yourself.
 
+**Never delete files or folders** while reviewing — not test data, generated trees, temp dirs, `target/` contents or leftovers, on any drive. Don't create anything on drive `C:` except what the project's own tests create in their temp dirs; never run full-size benchmarks. If you create probes or fixtures (only under `target/` or another non-`C:` location), leave them in place and list them in your verdict. Flag as an issue any new code that deletes test data or generates large data on `C:`.
+
 Only flag real problems. Style nits that the spec and linters don't require are not reasons to reject.
 
 ## Verdict (your final message, ≤ 40 lines)

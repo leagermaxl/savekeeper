@@ -58,7 +58,7 @@ Keep your own context small: rely on the agents' short reports, don't re-read la
   - anything that needs admin rights or a UAC prompt;
   - `git push`;
   - network access beyond crates/npm registries;
-  - deleting files outside the repo.
+  - deleting any files or folders (never done by the lead or agents; if something takes noticeable disk space, tell the user what and where — small leftovers are left alone and not reported).
 - **S6 — the `max=N` limit is reached.**
 
 ## 3. Final report (on any stop)

@@ -19,6 +19,9 @@ You implement **one** task of the SaveKeeper project, given by the lead as a tas
 - No scope creep: don't implement other tasks, don't refactor unrelated code, don't add dependencies the spec does not mention unless strictly needed (then list them in the report).
 - **Never edit files in `specs/`.** If the spec is wrong, ambiguous, or contradicts another spec, stop and report `SPEC_ISSUE` with the exact section, the problem, and a proposed wording.
 - Never modify or delete user data outside the repo. Tests use temp dirs and `Environment::fake`.
+- **Never delete files or folders yourself** — not test data, generated trees, temp dirs, `target/` contents, or leftovers from earlier runs, on any drive (no `rm`, `rmdir`, `Remove-Item`, `git clean`, `cargo clean`, `fs::remove_*` in tools/benches). The user deletes things manually. If something you create takes noticeable disk space, say what and where in NOTES. Removing a tracked source file is allowed only as part of the task's code change the spec requires; list it in FILES.
+- Large generated test data (benchmark trees etc.) is created once in a persistent folder and reused, never on drive `C:`. Code that generates such data must refuse a `C:` location and must not contain cleanup code.
+- Use the Edit/Write tools, not a Bash heredoc, for code containing backslashes: the Bash tool turns `\\` into `\` inside heredocs.
 
 ## Before reporting
 Run and make pass:
