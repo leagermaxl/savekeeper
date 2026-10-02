@@ -259,7 +259,7 @@ jobs:
 - [x] **T-12-05** — `sk-testkit`: `FakeProfile` (ключи формата §4.3: `known_folders`, `tree` с `path`/`size`/`mtime`/`repeat`), `collect_ctx`, `drain_events`, `tree_hash`, `RegTestKey` (`MockClassifier` — в SPEC-08 T-08-01). *Зависит:* T-02-05, T-01-03. *Готово, когда:* тест детерминизма на встроенном YAML (две загрузки → одинаковый `tree_hash`).
 - [x] **T-12-06** — Генератор фикстур (`cargo xtask fixtures`) + остальные ключи §4.3 (`launchers`, `git`, `sample`, `attrs`) в общем материализаторе + кэш `target/fixtures-cache` в `FakeProfile::load` + профили `empty`, `gamer`, `developer` + `samples/` + шаг `cargo xtask fixtures` в `ci.yml`. *Зависит:* T-12-05, T-12-02. *Готово, когда:* тест детерминизма §6 на `FakeProfile::load("gamer")`.
 - [ ] **T-12-07** — Профили `office`, `messy`, `huge` + `expected/*.findings.yaml`. *Зависит:* T-12-06, фаза P1.
-- [ ] **T-12-08** — Ручной чек-лист `specs/checklists/reference-machine.md`. *Зависит:* —.
+- [x] **T-12-08** — Ручной чек-лист `specs/checklists/reference-machine.md`. *Зависит:* —.
 - [ ] **T-12-09** — CI job `frontend` + `xtask bindings` + `xtask i18n-check`. *Зависит:* T-11-02.
 - [ ] **T-12-10** — CI job `build-windows` (артефакт exe). *Зависит:* T-11-01.
 - [ ] **T-12-11** — E2E: feature `e2e` (`SK_E2E_PROFILE`, `SK_E2E_OUT`, `SK_LANG`), WebdriverIO + tauri-driver, smoke-сценарий §4.7, `nightly.yml`. *Зависит:* T-11-11, T-12-06.
