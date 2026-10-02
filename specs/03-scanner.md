@@ -3,12 +3,12 @@
 | Поле | Значение |
 |---|---|
 | ID | SPEC-03 |
-| Статус | approved |
+| Статус | in-progress |
 | Фаза | P1 |
 | Крейт(ы) | `sk-scan` |
 | Зависит от | SPEC-01, SPEC-02 |
 | Используется в | SPEC-04, SPEC-05, SPEC-07, SPEC-08, SPEC-10 |
-| Последнее изменение | 2026-10-01 (§9: OneDrive-корни заполняет `sk-core`; трейт `FsScanner` и его типы — в `sk-core::fs`; `WalkOptions.excludes` через трейт `PathFilter`) |
+| Последнее изменение | 2026-10-02 (§4.1: `CloudState` без `Pinned`, как в определении enum; §9: OneDrive-корни заполняет `sk-core`; трейт `FsScanner` и его типы — в `sk-core::fs`; `WalkOptions.excludes` через трейт `PathFilter`) |
 
 ## 1. Цель
 
@@ -82,7 +82,7 @@ pub struct EntryMeta {
     pub mtime: Option<OffsetDateTime>,
     pub ctime: Option<OffsetDateTime>,
     pub attrs: u32,                    // сырые FILE_ATTRIBUTE_* (0 на не-Windows)
-    pub cloud: CloudState,             // Local | CloudOnly | Pinned
+    pub cloud: CloudState,             // Local | CloudOnly (по атрибутам §4.2)
 }
 pub enum ReparseKind { Symlink, Junction, CloudPlaceholder, AppExecLink, Other(u32) }
 pub enum CloudState { Local, CloudOnly }
@@ -260,7 +260,7 @@ Windows.old, Config.Msi, Recovery, MSOCache, PerfLogs
 
 ## 7. Задачи
 
-- [ ] **T-03-01** — Типы API §4.1 в `sk-core::fs` (`FsScanner`, `PathFilter`, `EntryMeta`, `DirEntryInfo`, `WalkOptions`, `FsError` ...) + реэкспорт из `sk-scan`. *Зависит:* T-02-01. Нужна в P0: от неё зависит SPEC-01 T-01-03. *Готово, когда:* крейты компилируются, документация `///`.
+- [x] **T-03-01** — Типы API §4.1 в `sk-core::fs` (`FsScanner`, `PathFilter`, `EntryMeta`, `DirEntryInfo`, `WalkOptions`, `FsError` ...) + реэкспорт из `sk-scan`. *Зависит:* T-02-01. Нужна в P0: от неё зависит SPEC-01 T-01-03. *Готово, когда:* крейты компилируются, документация `///`.
 - [ ] **T-03-02** — `MemFs` + загрузка YAML-фикстур (формат согласовать с SPEC-12). *Зависит:* T-03-01. *Готово, когда:* фикстура `electron-app.yaml` загружается, `walk` по ней проходит тест.
 - [ ] **T-03-03** — `ExcludeSet` (встроенный список §4.5 + пользовательские глобы, условные исключения `target`/`obj`/`venv`). *Зависит:* T-03-01. *Готово, когда:* unit-тесты на каждый пункт списка.
 - [ ] **T-03-04** — `RealFs::walk` на jwalk: reparse, cloud-атрибуты, исключения, отмена, лимиты, выбор потоков по типу диска. *Зависит:* T-03-03, T-02-02. *Готово, когда:* Windows-тесты junction/long path.

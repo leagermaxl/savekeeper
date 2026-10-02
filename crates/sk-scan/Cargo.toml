@@ -8,5 +8,8 @@ license.workspace = true
 authors.workspace = true
 publish.workspace = true
 
+[dependencies]
+sk-core.workspace = true
+
 [lints]
 workspace = true
