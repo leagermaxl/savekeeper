@@ -8,7 +8,7 @@
 | Крейт(ы) | все, в первую очередь `sk-core`, `sk-engine`, `sk-cli` |
 | Зависит от | SPEC-00, SPEC-02 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-10-02 (§4.4: `max_depth` для Measure из `ScanOptions` с откатом на конфиг, `measure.panicked`; §4.4: подключение фазы `Measure`; §4.2: `sk-scan` без `jwalk`; §8: ручная проверка Ctrl+C перенесена в SPEC-04 T-04-07; §4.2: `windows` в зависимостях `sk-scan`; §4.2: `xtask` может подключать `sk-testkit` как обычную зависимость; статус done; §8: Ctrl+C принят по тесту, ручная проверка перенесена в SPEC-03 T-03-04; §4.10: API `sk-core::win::single_instance` и кто берёт блокировку; §4.4: внедрение зависимостей `ScanPipeline`, поведение `run` по фазам, сохранение отчётов, заглушка сканера; §4.7: варианты `EngineError`; §4.8.3: API `sk-core::logging`, обезличивание в писателе, имя файла лога; §4.8.2: API `Config`/`LoadedConfig`/`ConfigWarning`/`DataDir`, правила загрузки, типы значений; §4.5: `ScanPhase`, `LogLevel`, API и правила `ThrottledSink`; T-01-03: `PathSet` вынесен в T-02-02; MSRV 1.93; YAML: `serde-saphyr`; `FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; уточнение T-01-01) |
+| Последнее изменение | 2026-10-02 (§4.9: `debug summarize`; §4.4: `max_depth` для Measure из `ScanOptions` с откатом на конфиг, `measure.panicked`; §4.4: подключение фазы `Measure`; §4.2: `sk-scan` без `jwalk`; §8: ручная проверка Ctrl+C перенесена в SPEC-04 T-04-07; §4.2: `windows` в зависимостях `sk-scan`; §4.2: `xtask` может подключать `sk-testkit` как обычную зависимость; статус done; §8: Ctrl+C принят по тесту, ручная проверка перенесена в SPEC-03 T-03-04; §4.10: API `sk-core::win::single_instance` и кто берёт блокировку; §4.4: внедрение зависимостей `ScanPipeline`, поведение `run` по фазам, сохранение отчётов, заглушка сканера; §4.7: варианты `EngineError`; §4.8.3: API `sk-core::logging`, обезличивание в писателе, имя файла лога; §4.8.2: API `Config`/`LoadedConfig`/`ConfigWarning`/`DataDir`, правила загрузки, типы значений; §4.5: `ScanPhase`, `LogLevel`, API и правила `ThrottledSink`; T-01-03: `PathSet` вынесен в T-02-02; MSRV 1.93; YAML: `serde-saphyr`; `FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; уточнение T-01-01) |
 
 ## 1. Цель
 
@@ -435,8 +435,11 @@ savekeeper-cli rules validate [path...]
 savekeeper-cli manifest update
 savekeeper-cli config show|path
 savekeeper-cli env                      # вывести Environment (known folders, лаунчеры) — для отладки
+savekeeper-cli debug summarize <path> [--pretty]   # FolderSummary папки (SPEC-03 §4.4) как JSON — для отладки
 ```
 Коды выхода: `0` — успех, `1` — ошибка, `2` — отменено, `3` — успех с предупреждениями (есть issues).
+
+`debug summarize` только читает (P1): `env = Environment::detect()`, `fs = RealFs::new(&env)`, `SummaryOptions::new(Arc::new(ExcludeSet::with_user(&env, &config.scan.exclude_globs)))`, остальные поля по умолчанию. Если глобы не разбираются — предупреждение в stderr и `ExcludeSet::builtin(&env)`, как в фазе `Measure`. Относительный `<path>` разрешается от текущего каталога (`std::path::absolute`). Вывод — JSON `FolderSummary` в stdout, компактный, с `--pretty` — с отступами. Коды: `0` — успех (в т.ч. `truncated = true`); `1` — `NotFound`, путь — файл (`FsError::Io`), прочая `FsError`; `2` — Ctrl+C (`Cancelled`). Лог не пишется, блокировка §4.10 не берётся.
 
 ### 4.10 Единственный экземпляр (`sk-core::win::single_instance`)
 
