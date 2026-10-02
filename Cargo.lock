@@ -2035,6 +2035,12 @@ version = "0.1.0"
 [[package]]
 name = "sk-rules"
 version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde-saphyr",
+ "sk-core",
+ "thiserror",
+]
 
 [[package]]
 name = "sk-scan"
