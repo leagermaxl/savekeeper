@@ -92,7 +92,7 @@
 | ID | Файл | Область | Фаза | Крейт(ы) | Статус |
 |---|---|---|---|---|---|
 | SPEC-00 | [00-master.md](00-master.md) | Эта спека | — | — | approved |
-| SPEC-01 | [01-architecture.md](01-architecture.md) | Архитектура, крейты, конвейер, конфиг, data-dir | P0 | все | in-progress |
+| SPEC-01 | [01-architecture.md](01-architecture.md) | Архитектура, крейты, конвейер, конфиг, data-dir | P0 | все | done |
 | SPEC-02 | [02-data-model.md](02-data-model.md) | Доменные типы, шаблоны путей, форматы | P0 | `sk-core` | in-progress |
 | SPEC-03 | [03-scanner.md](03-scanner.md) | Обход ФС, замер размеров, FolderSummary, исключения | P1 | `sk-scan` | in-progress |
 | SPEC-04 | [04-rules-engine.md](04-rules-engine.md) | Правила известных мест (YAML) + встроенная база | P1 | `sk-rules` | approved |
