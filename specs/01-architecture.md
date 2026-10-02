@@ -8,7 +8,7 @@
 | Крейт(ы) | все, в первую очередь `sk-core`, `sk-engine`, `sk-cli` |
 | Зависит от | SPEC-00, SPEC-02 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-10-02 (§4.8.3: API `sk-core::logging`, обезличивание в писателе, имя файла лога; §4.8.2: API `Config`/`LoadedConfig`/`ConfigWarning`/`DataDir`, правила загрузки, типы значений; §4.5: `ScanPhase`, `LogLevel`, API и правила `ThrottledSink`; T-01-03: `PathSet` вынесен в T-02-02; MSRV 1.93; YAML: `serde-saphyr`; `FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; уточнение T-01-01) |
+| Последнее изменение | 2026-10-02 (§4.4: внедрение зависимостей `ScanPipeline`, поведение `run` по фазам, сохранение отчётов, заглушка сканера; §4.7: варианты `EngineError`; §4.8.3: API `sk-core::logging`, обезличивание в писателе, имя файла лога; §4.8.2: API `Config`/`LoadedConfig`/`ConfigWarning`/`DataDir`, правила загрузки, типы значений; §4.5: `ScanPhase`, `LogLevel`, API и правила `ThrottledSink`; T-01-03: `PathSet` вынесен в T-02-02; MSRV 1.93; YAML: `serde-saphyr`; `FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; уточнение T-01-01) |
 
 ## 1. Цель
 
@@ -223,6 +223,13 @@ pub struct ScanPipeline { /* collectors, post_collectors, classifier, scorer */ 
 
 impl ScanPipeline {
     pub fn new(config: Arc<Config>) -> Self;          // регистрирует коллекторы из конфигурации
+    // Подмена зависимостей (тесты, CLI-отладка):
+    pub fn with_collector(self, c: Arc<dyn Collector>) -> Self;
+    pub fn with_post_collector(self, c: Arc<dyn PostCollector>) -> Self;
+    pub fn with_scanner(self, s: Arc<dyn FsScanner>) -> Self;
+    pub fn with_environment(self, env: Environment) -> Self;   // вместо Environment::detect()
+    pub fn with_scans_dir(self, dir: PathBuf) -> Self;          // куда сохранять отчёты (DataDir::scans)
+    pub fn with_app_version(self, v: String) -> Self;           // по умолчанию версия sk-engine
     pub async fn run(&self, opts: ScanOptions, events: EventSink, cancel: CancellationToken)
         -> Result<ScanReport, EngineError>;
     /// Оценка одной папки, добавленной пользователем вручную в UI (SPEC-11):
@@ -233,6 +240,15 @@ impl ScanPipeline {
 
 pub struct BackupJob;  // SPEC-10 §4.1: run(report, selection, target, events, cancel)
 ```
+
+Поведение `run`:
+- Каждая фаза шлёт `PhaseStarted`/`PhaseFinished`. Между фазами и во время `Collect` проверяется `cancel`: отмена прерывает задачи коллекторов и возвращает `EngineError::Cancelled` без сохранения отчёта.
+- `Collect`: каждый включённый коллектор — отдельная задача `tokio::spawn`. `CollectorToggles` фильтрует по `id` (`rules`, `games`, `system`, `heuristics`), коллекторы с другими `id` работают всегда. `Err` коллектора → `ScanIssue { severity: Error, source: id, message_key: "collector.failed", args: { error } }`, паника → то же с `"collector.panicked"`. Каждый issue дублируется событием `Event::Issue`, находки — `Event::FindingsAdded`.
+- `Heuristics`: post-коллекторы по очереди, `PriorResults.claimed` — `PathSet` из `claimed_paths` всех коллекторов и предыдущих post-коллекторов.
+- `Measure`, `Classify`, `Score` в P0 только шлют события фазы; работу добавляют SPEC-03 (T-03-07), SPEC-08 и SPEC-09 (в том числе `Totals`). До этого `totals` = `Totals::default()`.
+- `Done`: находки сортируются по порядку `Category`, затем по `score` по убыванию; отчёт сохраняется в `<scans_dir>/<scan_id>.json` (если задан), в каталоге остаются 10 самых новых отчётов по `finished_at`.
+- Сканер по умолчанию до SPEC-03 T-03-04 — заглушка, которая на любой вызов возвращает `FsError::Io` («сканер ещё не реализован»); T-03-04 заменяет её на `RealFs`.
+- `evaluate_single` реализуется вместе с SPEC-04/07 (нужны `rules` и `heuristics`), в T-01-06 не входит.
 
 ### 4.5 События и прогресс
 
@@ -283,7 +299,8 @@ impl ThrottledSink {
 pub enum CollectorError { #[error("io: {0}")] Io(#[from] std::io::Error), #[error("{0}")] Other(String) }
 
 #[derive(thiserror::Error, Debug)]
-pub enum EngineError { #[error("cancelled")] Cancelled, #[error(transparent)] Collector(#[from] CollectorError), /* ... */ }
+pub enum EngineError { #[error("cancelled")] Cancelled, #[error(transparent)] Collector(#[from] CollectorError),
+                       #[error(transparent)] Environment(#[from] EnvError), #[error("report: {0}")] Report(String) }
 ```
 
 Нефатальные проблемы превращаются в `ScanIssue` (SPEC-02 §2.6) и никогда не приводят к `Err`.
