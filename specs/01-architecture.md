@@ -8,7 +8,7 @@
 | Крейт(ы) | все, в первую очередь `sk-core`, `sk-engine`, `sk-cli` |
 | Зависит от | SPEC-00, SPEC-02 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-10-02 (§4.4: внедрение зависимостей `ScanPipeline`, поведение `run` по фазам, сохранение отчётов, заглушка сканера; §4.7: варианты `EngineError`; §4.8.3: API `sk-core::logging`, обезличивание в писателе, имя файла лога; §4.8.2: API `Config`/`LoadedConfig`/`ConfigWarning`/`DataDir`, правила загрузки, типы значений; §4.5: `ScanPhase`, `LogLevel`, API и правила `ThrottledSink`; T-01-03: `PathSet` вынесен в T-02-02; MSRV 1.93; YAML: `serde-saphyr`; `FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; уточнение T-01-01) |
+| Последнее изменение | 2026-10-02 (§4.10: API `sk-core::win::single_instance` и кто берёт блокировку; §4.4: внедрение зависимостей `ScanPipeline`, поведение `run` по фазам, сохранение отчётов, заглушка сканера; §4.7: варианты `EngineError`; §4.8.3: API `sk-core::logging`, обезличивание в писателе, имя файла лога; §4.8.2: API `Config`/`LoadedConfig`/`ConfigWarning`/`DataDir`, правила загрузки, типы значений; §4.5: `ScanPhase`, `LogLevel`, API и правила `ThrottledSink`; T-01-03: `PathSet` вынесен в T-02-02; MSRV 1.93; YAML: `serde-saphyr`; `FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; уточнение T-01-01) |
 
 ## 1. Цель
 
@@ -436,6 +436,22 @@ savekeeper-cli config show|path
 savekeeper-cli env                      # вывести Environment (known folders, лаунчеры) — для отладки
 ```
 Коды выхода: `0` — успех, `1` — ошибка, `2` — отменено, `3` — успех с предупреждениями (есть issues).
+
+### 4.10 Единственный экземпляр (`sk-core::win::single_instance`)
+
+Модуль доступен на всех ОС; вне Windows `acquire()` всегда возвращает `Ok` (заглушка).
+
+```rust
+pub const MUTEX_NAME: &str = r"Global\SaveKeeperSingleton";
+#[must_use] pub struct InstanceGuard;   // Send + Sync; Drop освобождает блокировку
+#[derive(thiserror::Error, Debug)]
+pub enum SingleInstanceError { AlreadyRunning, Os { code: i32 } }
+pub fn acquire() -> Result<InstanceGuard, SingleInstanceError>;
+```
+
+- Блокировка — это сам факт существования мьютекса (`CreateMutexW(None, false, MUTEX_NAME)`), владеть им не нужно. Поэтому при завершении или падении процесса Windows снимает её сама.
+- `ERROR_ALREADY_EXISTS` → `AlreadyRunning`. `ERROR_ACCESS_DENIED` (мьютекс другого пользователя или процесса с повышенными правами) → тоже `AlreadyRunning`. Любая другая ошибка → `Os`.
+- Кто берёт блокировку: CLI — только `backup` (`AlreadyRunning` → код 1); GUI — при старте на всё время жизни (SPEC-11 §4.9). `scan`, `env`, `config` блокировку не берут.
 
 ## 5. Ошибки и граничные случаи
 
