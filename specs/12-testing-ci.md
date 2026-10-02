@@ -8,7 +8,7 @@
 | Крейт(ы) | все, `fixtures/`, `xtask/`, `.github/workflows/` |
 | Зависит от | SPEC-00, SPEC-01, SPEC-02 |
 | Используется в | все спеки (§6 «Тестирование» каждой спеки опирается на эту) |
-| Последнее изменение | 2026-10-02 (§4.2: `UnboundedReceiver` в `collect_ctx`/`drain_events`, API `RegTestKey` и `REG_TEST_PARENT`; §7: граница T-12-05/T-12-06 по ключам формата фикстур и кэшу; 2026-10-01: §4.4: снапшот TS-деклараций вместо JSON Schema для SPEC-02; §4.8: Node 24 LTS; §4.2: состав `sk-testkit`, `collect_ctx` со сканером, правило unit-тестов; §4.5: `MockClassifier` в `sk-llm`; §4.6: транзитивные рёбра, `xtask`; зависимости T-12-02/04/05/06; §4.8: MSRV 1.93) |
+| Последнее изменение | 2026-10-02 (§4.2: `materialize_profile`; §4.3: ключи `git.unpushed`, `attrs: system`, правила `size`/`sample`/`launchers`, повторяемый `--profile`, ключ кэша, `samples/dev/node.gitignore`; §4.6: исключение `xtask` для `sk-testkit`; §4.2: `UnboundedReceiver` в `collect_ctx`/`drain_events`, API `RegTestKey` и `REG_TEST_PARENT`; §7: граница T-12-05/T-12-06 по ключам формата фикстур и кэшу; 2026-10-01: §4.4: снапшот TS-деклараций вместо JSON Schema для SPEC-02; §4.8: Node 24 LTS; §4.2: состав `sk-testkit`, `collect_ctx` со сканером, правило unit-тестов; §4.5: `MockClassifier` в `sk-llm`; §4.6: транзитивные рёбра, `xtask`; зависимости T-12-02/04/05/06; §4.8: MSRV 1.93) |
 
 ## 1. Цель
 
@@ -92,6 +92,10 @@ pub fn drain_events(rx: &mut UnboundedReceiver<Event>) -> Vec<Event>; // уже 
 pub fn tree_hash(dir: &Path) -> BTreeMap<String, String>;   // относительный путь → blake3 (сравнение деревьев в тестах бэкапа)
 pub struct RegTestKey { /* HKCU\Software\SaveKeeperTest\<uuid>, удаляется вместе с подключами в Drop */ } // #[cfg(windows)]: new()/Default, key() -> &winreg::RegKey, subkey() (относительно HKCU), path() ("HKCU\…" для reg.exe)
 pub const REG_TEST_PARENT: &str = r"Software\SaveKeeperTest"; // #[cfg(windows)]
+
+/// Общий материализатор §4.3: пишет профиль fixtures/profiles/<name>.yaml в пустой dest через кэш target/fixtures-cache.
+/// Используется FakeProfile::load и `cargo xtask fixtures`. Ошибка — текст (dev-only крейт).
+pub fn materialize_profile(name: &str, dest: &Path) -> Result<Environment, String>;
 ```
 
 ### 4.3 Фикстуры ФС
@@ -108,7 +112,8 @@ fixtures/
 ├── samples/                  # маленькие реальные образцы форматов
 │   ├── steam/libraryfolders.vdf, loginusers.vdf, appmanifest_1245620.acf
 │   ├── ludusavi/manifest-mini.yaml   # 20 игр из реального манифеста
-│   └── reg/putty-sessions.reg
+│   ├── reg/putty-sessions.reg
+│   └── dev/node.gitignore    # .gitignore репозитория dirty-app в developer.yaml
 └── expected/                 # ожидаемые находки: <profile>.findings.yaml (id шаблона, category, app.id)
 ```
 
@@ -129,12 +134,15 @@ tree:
     size: 1 MiB
     repeat: 500                     # f_000001..f_000500
   - path: "{HOME}/Projects/app/.git"
-    git: { commits: 3, dirty: true, remote: null }   # генератор создаёт настоящий git-репо через gix
+    git: { commits: 3, dirty: true, remote: null, unpushed: 0 }   # генератор создаёт настоящий git-репо через gix
   - path: "{STEAM}/config/libraryfolders.vdf"
     sample: "steam/libraryfolders.vdf"
 ```
-- `cargo xtask fixtures [--profile gamer] [--out target/fixtures]` материализует профили. `FakeProfile::load` делает то же в `TempDir` (с кэшем по хэшу YAML в `target/fixtures-cache`, копированием).
-- На Windows генератор выставляет атрибуты (`hidden`, `readonly`), если они указаны в YAML (`attrs: [hidden]`).
+- `git: { commits, dirty, remote, unpushed }`: `unpushed` — сколько последних коммитов нет в `origin/main` (≤ `commits`, требует `remote`; при `unpushed = commits` у ветки нет upstream). `path` оканчивается на `.git`; `git` не сочетается с `size`/`sample`/`mtime`/`repeat`/`attrs`.
+- `size` и `sample` взаимоисключающие; `sample` — относительный путь внутри `fixtures/samples`.
+- `launchers.<id>: { root?: путь от root, users: [...] }`; для `steam` `users` — id3, `alt_id` (id64) вычисляется.
+- `cargo xtask fixtures [--profile gamer]... [--out target/fixtures]` материализует профили; `--profile` можно повторять, без него — все профили. `FakeProfile::load` делает то же в `TempDir` через `materialize_profile` (с кэшем в `target/fixtures-cache`, копированием). Ключ кэша — хэш версии генератора, YAML профиля и использованных `samples`.
+- На Windows генератор выставляет атрибуты, если они указаны в YAML (`attrs: [hidden, readonly, system]`).
 - `expected/*.findings.yaml` — «золотые» ожидания для pipeline-тестов: тест проверяет, что каждая ожидаемая находка присутствует (recall), и выводит список лишних (без падения, как warning в отчёте теста).
 
 ### 4.4 Snapshot-тесты
@@ -155,7 +163,7 @@ tree:
 ### 4.6 Проверка архитектуры (граф крейтов)
 `cargo xtask check-deps` на базе `cargo metadata --format-version 1`:
 - разрешённые рёбра между крейтами workspace — граф SPEC-01 §4.2 с транзитивным замыканием, плюс `sk-testkit → sk-core, sk-scan`; `xtask` может зависеть от любых крейтов (таблица в `xtask/src/deps_rules.rs`);
-- `sk-testkit` разрешён только как `dev-dependency`, от `xtask` не зависит никто;
+- `sk-testkit` разрешён только как `dev-dependency` (исключение — `xtask`), от `xtask` не зависит никто;
 - крейт workspace, которого нет в таблице, — ошибка (новый крейт требует правки SPEC-01 §4.2);
 - `reqwest` (сеть) разрешён только в `sk-llm`, `sk-games` (NFR-01-03) и `app/src-tauri` (проверка обновлений SPEC-14, опционально);
 - запрещены `openssl-sys` (используем `rustls`) и дубли крупных зависимостей (`windows` — одна мажорная версия).

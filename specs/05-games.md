@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-games` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-04 (токены `{STEAM}`, `{STEAM_USERID}`), SPEC-07, SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-01 (§4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
+| Последнее изменение | 2026-10-02 (§6: пути фикстур `fixtures/samples/...` и 20 игр, как в SPEC-12 §4.3; 2026-10-01: §4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
 
 ## 1. Цель
 
@@ -214,8 +214,8 @@ Serde-модель: `GameEntry { files: BTreeMap<String, FileRule>, registry: BT
 ## 6. Тестирование
 
 - Unit: `translate` для каждого плейсхолдера §4.3, `*`-разбиение на root+include, фильтр `when`.
-- VDF/ACF-парсинг на фикстурах `fixtures/games/steam/{libraryfolders.vdf, appmanifest_1245620.acf, loginusers.vdf}`, Epic `.item`.
-- Индекс якорей: мини-манифест из 50 игр (`fixtures/games/manifest-mini.yaml`) + `MemFs` → ожидаемые кандидаты. Проверка, что число `exists`-вызовов ≤ порога (счётчик MemFs).
+- VDF/ACF-парсинг на фикстурах `fixtures/samples/steam/{libraryfolders.vdf, appmanifest_1245620.acf, loginusers.vdf}`, Epic `.item`.
+- Индекс якорей: мини-манифест из 20 игр (`fixtures/samples/ludusavi/manifest-mini.yaml`, SPEC-12 §4.3) + `MemFs` → ожидаемые кандидаты. Проверка, что число `exists`-вызовов ≤ порога (счётчик MemFs).
 - Сопоставление по имени: `"ELDEN RING™"` ↔ `"ELDEN RING"`, неоднозначность.
 - `ManifestStore`: mock HTTP (`wiremock`): 200 + etag, 304, 500 → fallback, битый YAML → старый кэш.
 - Snapshot находок `insta` для фикстуры `fixtures/fs/gamer-profile.yaml` (Steam с 3 играми, одна удалённая с сохранениями в `{LOCALLOW}`, Epic-игра, Skyrim в Documents).
