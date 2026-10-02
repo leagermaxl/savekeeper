@@ -3,25 +3,33 @@
 //! Manual run only (SPEC-12 §2.2), never part of `cargo test`:
 //!
 //! ```text
-//! cargo bench -p sk-scan --bench walk
+//! SK_BENCH_DIR='D:\savekeeper-bench' cargo bench -p sk-scan --bench walk
 //! ```
 //!
 //! Environment variables:
+//! - `SK_BENCH_DIR` — folder for the tree, **required**: without it the
+//!   benchmark prints a message and does nothing. On Windows a folder on
+//!   drive `C:` is refused before anything is created;
 //! - `SK_BENCH_FILES` — number of files in the tree (default 1 000 000 under
-//!   `cargo bench`, 1 000 when the target is run in test mode);
-//! - `SK_BENCH_DIR` — folder in which the temporary tree is created (default:
-//!   the system temp folder). Use it to pick the drive being measured.
+//!   `cargo bench`, 1 000 when the target is run in test mode).
 //!
-//! The tree is created in a fresh temp dir and removed afterwards, also when
-//! the benchmark panics (the `TempDir` guard). Files are empty, so the tree
-//! costs only file system metadata. Before handing over to criterion, one
-//! timed walk is reported together with the NFR-03-01 verdict (≥ 20 000
-//! entries/s), the drive and the number of walk threads.
+//! The tree is persistent: it is generated once in `SK_BENCH_DIR\walk-<N>`
+//! and reused by later runs. The marker `SK_BENCH_DIR\walk-<N>.marker`
+//! (next to the tree, so walks do not count it) describes the tree's shape
+//! and is written last, so an interrupted generation is reported instead of
+//! being reused. The benchmark never deletes or overwrites anything; a folder
+//! without a matching marker is an error that the user resolves by hand.
+//! Files are empty, so the tree costs only file system metadata.
+//!
+//! Before handing over to criterion, one timed walk is reported together with
+//! the NFR-03-01 verdict (≥ 20 000 entries/s), the drive and the number of
+//! walk threads.
 
 #![allow(clippy::expect_used, clippy::unwrap_used)] // benchmark binary: fail loudly
 
 use std::ffi::OsStr;
-use std::fs::{self, File};
+use std::fs::{self, OpenOptions};
+use std::io::{self, Write};
 use std::path::{Component, Path, PathBuf, Prefix};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -33,7 +41,6 @@ use sk_scan::{
     CancellationToken, ExcludeSet, Exclusion, FsScanner, PathFilter, RealFs, WalkControl,
     WalkOptions,
 };
-use tempfile::TempDir;
 
 /// NFR-03-01: minimal walk speed on an SSD, entries per second.
 const NFR_ENTRIES_PER_SEC: f64 = 20_000.0;
@@ -45,6 +52,8 @@ const SMOKE_FILES: u64 = 1_000;
 const FILES_PER_DIR: u64 = 100;
 /// Subfolders of one inner folder.
 const FAN_OUT: u64 = 10;
+/// Version of the generator; bump it when the layout of the tree changes.
+const GENERATOR_VERSION: u32 = 1;
 
 /// Shape of a generated tree: `levels` of folders with [`FAN_OUT`] children
 /// each, files only in the `leaves` folders of the last level.
@@ -96,38 +105,132 @@ impl TreeShape {
     fn files_in(&self, k: u64) -> u64 {
         FILES_PER_DIR.min(self.files - k * FILES_PER_DIR)
     }
+
+    /// Contents of the marker file that describes this tree.
+    fn marker(&self) -> String {
+        format!(
+            "savekeeper sk-scan walk bench tree\ngenerator={GENERATOR_VERSION}\nfiles={}\n\
+             files_per_dir={FILES_PER_DIR}\nfan_out={FAN_OUT}\nlevels={}\n",
+            self.files, self.levels
+        )
+    }
 }
 
-/// Creates the tree below `root` in parallel; files are empty.
-fn generate(shape: &TreeShape, root: &Path) -> std::io::Result<()> {
+/// Creates a new file; fails if it already exists (never overwrites).
+fn create_new(path: &Path) -> io::Result<fs::File> {
+    OpenOptions::new().write(true).create_new(true).open(path)
+}
+
+/// Creates the tree below the empty folder `root` in parallel; files are empty.
+fn generate(shape: &TreeShape, root: &Path) -> io::Result<()> {
     (0..shape.leaves).into_par_iter().try_for_each(|k| {
         let dir = shape.leaf_path(root, k);
         fs::create_dir_all(&dir)?;
         for f in 0..shape.files_in(k) {
-            File::create(dir.join(format!("f{f:03}.dat")))?;
+            create_new(&dir.join(format!("f{f:03}.dat")))?;
         }
         Ok(())
     })
 }
 
-/// Removes the leaves in parallel, then the temp dir itself.
-fn remove(shape: &TreeShape, tmp: TempDir) -> std::io::Result<()> {
-    let root = tmp.path().to_path_buf();
-    (0..shape.leaves)
-        .into_par_iter()
-        .try_for_each(|k| fs::remove_dir_all(shape.leaf_path(&root, k)))?;
-    tmp.close()
+/// The tree of `shape` in `base`: reused when its marker matches, generated
+/// when neither the tree nor its marker exists. Returns the tree's root and
+/// the generation time (`None` when reused). Never deletes or overwrites.
+fn prepare_tree(base: &Path, shape: &TreeShape) -> Result<(PathBuf, Option<Duration>), String> {
+    let root = base.join(format!("walk-{}", shape.files));
+    let marker = base.join(format!("walk-{}.marker", shape.files));
+    let fix = format!(
+        "nothing was changed; delete {} and {} yourself to regenerate the tree, \
+         or set SK_BENCH_DIR to another folder",
+        root.display(),
+        marker.display()
+    );
+    let root_exists = exists(&root)?;
+    let marker_text = match fs::read_to_string(&marker) {
+        Ok(text) => Some(text),
+        Err(e) if e.kind() == io::ErrorKind::NotFound => None,
+        Err(e) => return Err(format!("cannot read {}: {e}", marker.display())),
+    };
+    match (root_exists, marker_text) {
+        (true, Some(text)) if text == shape.marker() => {
+            if root.is_dir() {
+                Ok((root, None))
+            } else {
+                Err(format!("{} is not a folder; {fix}", root.display()))
+            }
+        }
+        (true, Some(_)) => Err(format!(
+            "{} describes a different tree than requested; {fix}",
+            marker.display()
+        )),
+        (true, None) => Err(format!(
+            "{} exists but has no marker {} (an interrupted generation or a foreign \
+             folder); {fix}",
+            root.display(),
+            marker.display()
+        )),
+        (false, Some(_)) => Err(format!(
+            "marker {} exists without its tree {}; {fix}",
+            marker.display(),
+            root.display()
+        )),
+        (false, None) => {
+            let start = Instant::now();
+            let io_err = |what: &str, e: io::Error| format!("{what}: {e}");
+            fs::create_dir_all(base).map_err(|e| io_err("cannot create SK_BENCH_DIR", e))?;
+            fs::create_dir(&root).map_err(|e| io_err("cannot create the tree folder", e))?;
+            generate(shape, &root).map_err(|e| io_err("tree generation failed", e))?;
+            create_new(&marker)
+                .and_then(|mut f| f.write_all(shape.marker().as_bytes()))
+                .map_err(|e| io_err("cannot write the marker", e))?;
+            Ok((root, Some(start.elapsed())))
+        }
+    }
 }
 
-/// Uppercase drive letter of `path`.
+/// Whether anything (also a link) exists at `path`.
+fn exists(path: &Path) -> Result<bool, String> {
+    match fs::symlink_metadata(path) {
+        Ok(_) => Ok(true),
+        Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(false),
+        Err(e) => Err(format!("cannot inspect {}: {e}", path.display())),
+    }
+}
+
+/// Uppercase drive letter of `C:\...`, `\\?\C:\...` or `\\.\C:\...`.
 fn drive_letter(path: &Path) -> Option<char> {
     match path.components().next()? {
         Component::Prefix(p) => match p.kind() {
             Prefix::Disk(d) | Prefix::VerbatimDisk(d) => Some(char::from(d).to_ascii_uppercase()),
+            Prefix::DeviceNS(name) => {
+                let name = name.to_str()?;
+                let mut chars = name.chars();
+                match (chars.next(), chars.next(), chars.next()) {
+                    (Some(d), Some(':'), None) if d.is_ascii_alphabetic() => {
+                        Some(d.to_ascii_uppercase())
+                    }
+                    _ => None,
+                }
+            }
             _ => None,
         },
         _ => None,
     }
+}
+
+/// `SK_BENCH_DIR` as an absolute path; on Windows refused on drive `C:`
+/// (subst drives, junctions and UNC paths to `C:` are not resolved).
+fn bench_dir(raw: &OsStr) -> Result<PathBuf, String> {
+    let dir = std::path::absolute(raw)
+        .map_err(|e| format!("cannot resolve SK_BENCH_DIR {raw:?}: {e}"))?;
+    if cfg!(windows) && drive_letter(&dir) == Some('C') {
+        return Err(format!(
+            "SK_BENCH_DIR {} is on drive C:, which is not allowed for generated test data; \
+             choose a folder on another drive",
+            dir.display()
+        ));
+    }
+    Ok(dir)
 }
 
 /// The drive of `root` and the walk threads NFR-03-03 gives it.
@@ -154,8 +257,8 @@ fn drive_report(env: &Environment, root: &Path) -> (String, usize) {
 }
 
 /// The built-in exclusions; without full-path ones when they cover the
-/// tree itself (it lives in `%LOCALAPPDATA%\Temp` by default), as `measure`
-/// does for an explicit root (SPEC-03 §4.5).
+/// tree itself (e.g. below `%LOCALAPPDATA%\Temp`), as `measure` does for an
+/// explicit root (SPEC-03 §4.5).
 fn excludes(env: &Environment, root: &Path) -> Arc<dyn PathFilter> {
     let full = ExcludeSet::builtin(env);
     let probe = root.join("d0");
@@ -182,33 +285,22 @@ fn walk_once(fs: &RealFs, root: &Path, opts: &WalkOptions, expected: u64) -> Dur
     elapsed
 }
 
-fn bench_walk(c: &mut Criterion, full_run: bool) {
-    let files = std::env::var("SK_BENCH_FILES")
-        .ok()
-        .map(|v| v.parse::<u64>().expect("SK_BENCH_FILES is a number"))
-        .unwrap_or(if full_run { FULL_FILES } else { SMOKE_FILES });
+fn bench_walk(c: &mut Criterion, base: &Path, files: u64) -> Result<(), String> {
     let shape = TreeShape::new(files);
-    let mut builder = tempfile::Builder::new();
-    builder.prefix("sk-bench-walk-");
-    let tmp = match std::env::var_os("SK_BENCH_DIR") {
-        Some(base) => builder.tempdir_in(base),
-        None => builder.tempdir(),
-    }
-    .expect("temp dir for the tree");
-    let root = tmp.path().to_path_buf();
-
-    let start = Instant::now();
-    generate(&shape, &root).expect("generate the tree");
+    let (root, generated) = prepare_tree(base, &shape)?;
+    let origin = match generated {
+        Some(t) => format!("generated in {:.1} s", t.as_secs_f64()),
+        None => "reused".to_owned(),
+    };
     println!(
-        "tree: {} files, {} folders, {} entries in {} (generated in {:.1} s)",
+        "tree: {} files, {} folders, {} entries in {} ({origin})",
         shape.files,
         shape.dirs(),
         shape.entries(),
         root.display(),
-        start.elapsed().as_secs_f64()
     );
 
-    let env = Environment::detect().expect("detect the environment");
+    let env = Environment::detect().map_err(|e| format!("cannot detect the environment: {e}"))?;
     let (drive, threads) = drive_report(&env, &root);
     let fs = RealFs::new(&env);
     let opts = WalkOptions {
@@ -247,17 +339,37 @@ fn bench_walk(c: &mut Criterion, full_run: bool) {
         b.iter(|| walk_once(&fs, &root, &opts, shape.entries()));
     });
     group.finish();
+    Ok(())
+}
 
-    let start = Instant::now();
-    remove(&shape, tmp).expect("remove the tree");
-    println!("tree removed in {:.1} s", start.elapsed().as_secs_f64());
+fn run() -> Result<(), String> {
+    let Some(raw) = std::env::var_os("SK_BENCH_DIR") else {
+        println!(
+            "walk bench skipped: set SK_BENCH_DIR to a folder for the persistent test tree \
+             (not on drive C:), e.g. SK_BENCH_DIR='D:\\savekeeper-bench'"
+        );
+        return Ok(());
+    };
+    let base = bench_dir(&raw)?;
+    // `cargo bench` passes `--bench`; without it the target runs in test mode
+    // (`cargo test --benches`) and a small tree is walked.
+    let full_run = std::env::args().any(|a| a == "--bench");
+    let files = match std::env::var("SK_BENCH_FILES") {
+        Ok(v) => v
+            .parse::<u64>()
+            .map_err(|e| format!("SK_BENCH_FILES {v:?} is not a number: {e}"))?,
+        Err(_) if full_run => FULL_FILES,
+        Err(_) => SMOKE_FILES,
+    };
+    let mut c = Criterion::default().configure_from_args();
+    bench_walk(&mut c, &base, files)?;
+    c.final_summary();
+    Ok(())
 }
 
 fn main() {
-    // `cargo bench` passes `--bench`; without it the target runs in test mode
-    // (`cargo test --benches`) and only a small tree is walked.
-    let full_run = std::env::args().any(|a| a == "--bench");
-    let mut c = Criterion::default().configure_from_args();
-    bench_walk(&mut c, full_run);
-    c.final_summary();
+    if let Err(e) = run() {
+        eprintln!("walk bench: error: {e}");
+        std::process::exit(1);
+    }
 }
