@@ -8,7 +8,7 @@
 | Крейт(ы) | все, `fixtures/`, `xtask/`, `.github/workflows/` |
 | Зависит от | SPEC-00, SPEC-01, SPEC-02 |
 | Используется в | все спеки (§6 «Тестирование» каждой спеки опирается на эту) |
-| Последнее изменение | 2026-10-01 (§4.4: снапшот TS-деклараций вместо JSON Schema для SPEC-02; §4.8: Node 24 LTS; §4.2: состав `sk-testkit`, `collect_ctx` со сканером, правило unit-тестов; §4.5: `MockClassifier` в `sk-llm`; §4.6: транзитивные рёбра, `xtask`; зависимости T-12-02/04/05/06; §4.8: MSRV 1.93) |
+| Последнее изменение | 2026-10-02 (§4.2: `UnboundedReceiver` в `collect_ctx`/`drain_events`, API `RegTestKey` и `REG_TEST_PARENT`; §7: граница T-12-05/T-12-06 по ключам формата фикстур и кэшу; 2026-10-01: §4.4: снапшот TS-деклараций вместо JSON Schema для SPEC-02; §4.8: Node 24 LTS; §4.2: состав `sk-testkit`, `collect_ctx` со сканером, правило unit-тестов; §4.5: `MockClassifier` в `sk-llm`; §4.6: транзитивные рёбра, `xtask`; зависимости T-12-02/04/05/06; §4.8: MSRV 1.93) |
 
 ## 1. Цель
 
@@ -87,10 +87,11 @@ impl FakeProfile {
 }
 
 /// Контекст коллектора над профилем + приёмник событий для проверок. Сканер передаётся явно (MemFs или RealFs).
-pub fn collect_ctx(profile: &FakeProfile, config: Config, scanner: Arc<dyn FsScanner>) -> (CollectContext, Receiver<Event>);
-pub fn drain_events(rx: &mut Receiver<Event>) -> Vec<Event>;
+pub fn collect_ctx(profile: &FakeProfile, config: Config, scanner: Arc<dyn FsScanner>) -> (CollectContext, UnboundedReceiver<Event>); // tokio::sync::mpsc, пара EventSink (SPEC-01 §4.5); новый CancellationToken
+pub fn drain_events(rx: &mut UnboundedReceiver<Event>) -> Vec<Event>; // уже пришедшие события, без ожидания (try_recv)
 pub fn tree_hash(dir: &Path) -> BTreeMap<String, String>;   // относительный путь → blake3 (сравнение деревьев в тестах бэкапа)
-pub struct RegTestKey { /* HKCU\Software\SaveKeeperTest\<uuid>, удаляется в Drop */ }  // #[cfg(windows)]
+pub struct RegTestKey { /* HKCU\Software\SaveKeeperTest\<uuid>, удаляется вместе с подключами в Drop */ } // #[cfg(windows)]: new()/Default, key() -> &winreg::RegKey, subkey() (относительно HKCU), path() ("HKCU\…" для reg.exe)
+pub const REG_TEST_PARENT: &str = r"Software\SaveKeeperTest"; // #[cfg(windows)]
 ```
 
 ### 4.3 Фикстуры ФС
@@ -247,8 +248,8 @@ jobs:
 - [x] **T-12-02** — CI `ci.yml`: jobs lint, test (win+linux), msrv. *Зависит:* T-12-01, T-12-03 (lint-job вызывает `check-deps`). Шаг `cargo xtask fixtures` подключается в T-12-06, `cargo deny check` — в T-12-04. *Готово, когда:* зелёный прогон на пустом workspace.
 - [x] **T-12-03** — `cargo xtask check-deps` по правилам §4.6. *Зависит:* T-12-01. *Готово, когда:* тест с запрещённым ребром.
 - [x] **T-12-04** — `deny.toml`: лицензии (allow: MIT, Apache-2.0, BSD-2/3, ISC, Zlib, Unicode-3.0, MPL-2.0), bans, advisories, sources (только crates.io) + шаг `cargo deny check` в lint-job `ci.yml`. *Зависит:* T-12-02.
-- [ ] **T-12-05** — `sk-testkit`: `FakeProfile`, `collect_ctx`, `drain_events`, `tree_hash`, `RegTestKey` (`MockClassifier` — в SPEC-08 T-08-01). *Зависит:* T-02-05, T-01-03.
-- [ ] **T-12-06** — Генератор фикстур (`cargo xtask fixtures`) + профили `empty`, `gamer`, `developer` + `samples/` + шаг `cargo xtask fixtures` в `ci.yml`. *Зависит:* T-12-05, T-12-02. *Готово, когда:* детерминизм-тест.
+- [ ] **T-12-05** — `sk-testkit`: `FakeProfile` (ключи формата §4.3: `known_folders`, `tree` с `path`/`size`/`mtime`/`repeat`), `collect_ctx`, `drain_events`, `tree_hash`, `RegTestKey` (`MockClassifier` — в SPEC-08 T-08-01). *Зависит:* T-02-05, T-01-03. *Готово, когда:* тест детерминизма на встроенном YAML (две загрузки → одинаковый `tree_hash`).
+- [ ] **T-12-06** — Генератор фикстур (`cargo xtask fixtures`) + остальные ключи §4.3 (`launchers`, `git`, `sample`, `attrs`) в общем материализаторе + кэш `target/fixtures-cache` в `FakeProfile::load` + профили `empty`, `gamer`, `developer` + `samples/` + шаг `cargo xtask fixtures` в `ci.yml`. *Зависит:* T-12-05, T-12-02. *Готово, когда:* тест детерминизма §6 на `FakeProfile::load("gamer")`.
 - [ ] **T-12-07** — Профили `office`, `messy`, `huge` + `expected/*.findings.yaml`. *Зависит:* T-12-06, фаза P1.
 - [ ] **T-12-08** — Ручной чек-лист `specs/checklists/reference-machine.md`. *Зависит:* —.
 - [ ] **T-12-09** — CI job `frontend` + `xtask bindings` + `xtask i18n-check`. *Зависит:* T-11-02.
