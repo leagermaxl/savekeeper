@@ -42,9 +42,19 @@ pub trait FsScanner: Send + Sync {
 
     /// The first `max` bytes of a file (signatures, VDF/ACF, markers).
     /// Never reads cloud-only files.
+    ///
+    /// For both reads (SPEC-03 §4.1): the entry itself is checked without
+    /// opening it; cloud-only is [`FsError::CloudOnly`] (not opened), a
+    /// folder or a reparse point other than a cloud placeholder is
+    /// [`FsError::Io`] (links are not followed), a path with `*`/`?` is
+    /// [`FsError::NotFound`]; a sharing violation is
+    /// [`FsError::SharingViolation`], no access [`FsError::AccessDenied`].
     fn read_head(&self, path: &Path, max: usize) -> Result<Vec<u8>, FsError>;
 
-    /// The whole file if it is at most `max` bytes, else [`FsError::TooLarge`].
+    /// The whole file if it is at most `max` bytes, else [`FsError::TooLarge`]
+    /// (by the size in metadata, or if more than `max` bytes are read; at
+    /// most `max + 1` bytes are read). The rules of
+    /// [`read_head`](Self::read_head) apply.
     fn read_small(&self, path: &Path, max: usize) -> Result<Vec<u8>, FsError>;
 
     /// Trial open for reading with full sharing; `Locked` on a sharing violation.

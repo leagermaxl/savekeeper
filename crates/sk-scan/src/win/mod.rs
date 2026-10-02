@@ -5,9 +5,10 @@
 //! `reparse_tag` reads the tag of a reparse point from directory enumeration
 //! data (`FindFirstFileExW`), [`find_meta`] the metadata of one entry the same
 //! way, [`listing_meta`] turns the metadata of a listing entry into
-//! [`RawMeta`], and [`probe_readable`] makes a trial open with full sharing.
-//! None of them ever opens a file to read it, and [`probe_readable`] does not
-//! open cloud-only files at all (FR-03-03).
+//! [`RawMeta`], [`probe_readable`] makes a trial open with full sharing, and
+//! [`read_file`] reads the head of a file or a whole small file (SPEC-03
+//! §4.1). Only [`read_file`] reads content, and only of a local file that is
+//! not a link: cloud-only entries are never opened (FR-03-03).
 //!
 //! The attribute and tag classification below is plain logic and compiles on
 //! every OS. Outside Windows the calls are stubs over `std::fs`: there are
@@ -23,22 +24,22 @@ mod other;
 mod tests;
 
 #[cfg(windows)]
-pub(crate) use ffi::{find_meta, listing_meta, probe_readable};
+pub(crate) use ffi::{find_meta, listing_meta, probe_readable, read_file};
 #[cfg(all(windows, test))]
 pub(crate) use ffi::{reparse_tag, set_attributes};
 #[cfg(all(not(windows), test))]
 pub(crate) use other::reparse_tag;
 #[cfg(not(windows))]
-pub(crate) use other::{find_meta, listing_meta, probe_readable};
+pub(crate) use other::{find_meta, listing_meta, probe_readable, read_file};
 
-use sk_core::fs::{CloudState, EntryKind, EntryMeta, Readability, ReparseKind};
+use std::io::{self, Read};
+
+use sk_core::fs::{CloudState, EntryKind, EntryMeta, FsError, Readability, ReparseKind};
 use time::OffsetDateTime;
 
 /// `FILE_ATTRIBUTE_DIRECTORY`.
-#[cfg_attr(not(windows), allow(dead_code))]
 pub(crate) const FILE_ATTRIBUTE_DIRECTORY: u32 = 0x10;
 /// `FILE_ATTRIBUTE_REPARSE_POINT`.
-#[cfg_attr(not(windows), allow(dead_code))]
 pub(crate) const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x400;
 /// `FILE_ATTRIBUTE_OFFLINE`.
 pub(crate) const FILE_ATTRIBUTE_OFFLINE: u32 = 0x1000;
@@ -170,4 +171,52 @@ pub(crate) fn readability_from_error(code: u32) -> Readability {
         }
         _ => Readability::Denied,
     }
+}
+
+/// The checks of SPEC-03 §4.1 on the entry itself, before it is opened for
+/// reading: a cloud-only entry is `CloudOnly` (FR-03-03), a folder is not
+/// read, and a reparse point other than a cloud placeholder is not read and
+/// not followed (FR-03-02).
+pub(crate) fn check_readable(raw: &RawMeta) -> Result<(), FsError> {
+    if cloud_state(raw.attrs) == CloudState::CloudOnly {
+        return Err(FsError::CloudOnly);
+    }
+    if raw.is_dir {
+        return Err(FsError::Io(io::Error::new(
+            io::ErrorKind::IsADirectory,
+            "a folder is not read",
+        )));
+    }
+    match raw.kind() {
+        EntryKind::Reparse(kind) if kind != ReparseKind::CloudPlaceholder => Err(FsError::Io(
+            io::Error::new(io::ErrorKind::InvalidInput, "reparse points are not read"),
+        )),
+        _ => Ok(()),
+    }
+}
+
+/// Reads an opened file of `size` bytes (by metadata): its first `max` bytes,
+/// or with `whole` the whole file, which is `TooLarge` if more than `max`
+/// bytes are read. Never reads more than `max + 1` bytes (SPEC-03 §4.1).
+pub(crate) fn read_limited(
+    file: impl Read,
+    size: u64,
+    max: usize,
+    whole: bool,
+) -> Result<Vec<u8>, FsError> {
+    /// Preallocation cap: `size` may be stale and `max` may be huge.
+    const MAX_PREALLOC: u64 = 1 << 20;
+    let max64 = u64::try_from(max).unwrap_or(u64::MAX);
+    let limit = if whole {
+        max64.saturating_add(1)
+    } else {
+        max64
+    };
+    let capacity = usize::try_from(size.min(max64).min(MAX_PREALLOC)).unwrap_or(0);
+    let mut buf = Vec::with_capacity(capacity);
+    file.take(limit).read_to_end(&mut buf)?;
+    if whole && buf.len() > max {
+        return Err(FsError::TooLarge);
+    }
+    Ok(buf)
 }

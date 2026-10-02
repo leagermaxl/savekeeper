@@ -1,9 +1,12 @@
 //! FFI calls: `FindFirstFileExW` for reparse tags and entry metadata,
-//! `GetFileAttributesW` and `CreateFileW` for trial opens.
+//! `GetFileAttributesW` and `CreateFileW` for trial opens, `CreateFileW` for
+//! reads.
 
 use std::ffi::{c_void, OsStr};
+use std::fs::File;
 use std::os::windows::ffi::OsStrExt;
 use std::os::windows::fs::MetadataExt;
+use std::os::windows::io::{FromRawHandle, RawHandle};
 use std::path::{Component, Path};
 
 use sk_core::fs::{CloudState, FsError, Readability};
@@ -19,8 +22,8 @@ use windows::Win32::Storage::FileSystem::{
 };
 
 use super::{
-    cloud_state, readability_from_error, std_times, RawMeta, FILE_ATTRIBUTE_DIRECTORY,
-    FILE_ATTRIBUTE_REPARSE_POINT,
+    check_readable, cloud_state, read_limited, readability_from_error, std_times, RawMeta,
+    FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_REPARSE_POINT,
 };
 
 /// NUL-terminated UTF-16 copy of a path, for `PCWSTR` arguments.
@@ -234,4 +237,43 @@ pub(crate) fn probe_readable(path: &Path) -> Readability {
         }
         Err(e) => readability_from_error(win32_code(&e)),
     }
+}
+
+/// The first `max` bytes of the file at `path`, or with `whole` the whole
+/// file if it is at most `max` bytes, else `TooLarge` (SPEC-03 §4.1).
+///
+/// The attributes are those of the entry itself, from enumeration data
+/// ([`find_meta`]); the checks of [`check_readable`] run before anything is
+/// opened, so a cloud-only file is never opened (FR-03-03) and a link at the
+/// last component is not followed. `whole` with a size above `max` is
+/// `TooLarge` without opening. The file is opened by `CreateFileW` with
+/// `GENERIC_READ`, sharing `READ | WRITE | DELETE`, `OPEN_EXISTING` and
+/// `FILE_FLAG_OPEN_NO_RECALL | FILE_FLAG_OPEN_REPARSE_POINT`, so an entry
+/// replaced after the check is neither recalled nor followed either.
+pub(crate) fn read_file(path: &Path, max: usize, whole: bool) -> Result<Vec<u8>, FsError> {
+    let raw = find_meta(path)?;
+    check_readable(&raw)?;
+    if whole && raw.size > u64::try_from(max).unwrap_or(u64::MAX) {
+        return Err(FsError::TooLarge);
+    }
+    let name = wide(to_extended(path).as_os_str());
+    // SAFETY: `name` is NUL-terminated and outlives the call; no security
+    // attributes and no template file are passed.
+    let opened = unsafe {
+        CreateFileW(
+            PCWSTR(name.as_ptr()),
+            GENERIC_READ.0,
+            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+            None,
+            OPEN_EXISTING,
+            FILE_FLAG_OPEN_NO_RECALL | FILE_FLAG_OPEN_REPARSE_POINT,
+            None,
+        )
+    };
+    let handle = opened
+        .map_err(|e| FsError::from(std::io::Error::from_raw_os_error(win32_code(&e) as i32)))?;
+    // SAFETY: `handle` is a valid file handle just opened above and owned by
+    // nobody else; the `File` takes ownership and closes it exactly once.
+    let file = unsafe { File::from_raw_handle(handle.0 as RawHandle) };
+    read_limited(file, raw.size, max, whole)
 }

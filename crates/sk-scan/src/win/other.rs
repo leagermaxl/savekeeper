@@ -1,11 +1,11 @@
-//! Stubs outside Windows: no reparse tags and no cloud attributes, metadata
-//! and trial opens through `std::fs`.
+//! Stubs outside Windows: no reparse tags and no cloud attributes, metadata,
+//! trial opens and reads through `std::fs`.
 
 use std::path::Path;
 
 use sk_core::fs::{FsError, Readability};
 
-use super::{std_times, RawMeta};
+use super::{check_readable, read_limited, std_times, RawMeta};
 
 /// Always `None` for an existing entry: other platforms have no reparse tags.
 #[cfg(test)]
@@ -53,4 +53,20 @@ pub(crate) fn probe_readable(path: &Path) -> Readability {
         Err(FsError::SharingViolation) => Readability::Locked,
         Err(_) => Readability::Denied,
     }
+}
+
+/// The first `max` bytes of the file at `path`, or with `whole` the whole
+/// file if it is at most `max` bytes, else `TooLarge` (SPEC-03 §4.1).
+///
+/// The same rules as on Windows: the entry itself is checked first
+/// ([`find_meta`] does not follow links), so a folder and a symbolic link at
+/// the last component are not read. There are no cloud attributes here.
+pub(crate) fn read_file(path: &Path, max: usize, whole: bool) -> Result<Vec<u8>, FsError> {
+    let raw = find_meta(path)?;
+    check_readable(&raw)?;
+    if whole && raw.size > u64::try_from(max).unwrap_or(u64::MAX) {
+        return Err(FsError::TooLarge);
+    }
+    let file = std::fs::File::open(path)?;
+    read_limited(file, raw.size, max, whole)
 }

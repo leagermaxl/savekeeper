@@ -221,6 +221,43 @@ fn locked_cloud_only_and_reparse_entries_are_not_read() {
     assert_ne!(cloud.attrs & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS, 0);
 }
 
+/// The read rules of SPEC-03 §4.1, the same as in `RealFs`.
+#[test]
+fn reads_follow_the_spec_rules() {
+    let mut fs = sample();
+    fs.add_file("/r/odd*name", 1, "", None)
+        .add_file("/r/short.txt", 10, "", Some(b"abc"))
+        .add_dir("/r/cloud")
+        .set_cloud_only("/r/cloud")
+        .add_file("/r/hydrated.txt", 2, "", Some(b"ok"))
+        .add_reparse("/r/hydrated.txt", ReparseKind::CloudPlaceholder)
+        .add_reparse("/r/link.txt", ReparseKind::Symlink)
+        .add_reparse("/r/a/b", ReparseKind::Junction);
+    let p = Path::new;
+    let io = |r: Result<Vec<u8>, FsError>| matches!(r, Err(FsError::Io(_)));
+    // Wildcards name nothing, even a node added with one.
+    for path in ["/r/odd*name", "/r/top.*", r"\\?\r\top.sa?"] {
+        assert!(matches!(fs.read_head(p(path), 4), Err(FsError::NotFound)));
+        assert!(matches!(fs.read_small(p(path), 4), Err(FsError::NotFound)));
+    }
+    // Cloud-only goes before the folder check.
+    assert!(matches!(
+        fs.read_head(p("/r/cloud"), 4),
+        Err(FsError::CloudOnly)
+    ));
+    assert!(io(fs.read_small(p("/r/a"), 4)));
+    assert!(io(fs.read_head(p("/r/link.txt"), 4)));
+    assert!(io(fs.read_small(p("/r/a/b"), 4)));
+    assert_eq!(fs.read_small(p("/r/hydrated.txt"), 2).unwrap(), b"ok");
+    // Too large by metadata size, even if the content is shorter.
+    assert!(matches!(
+        fs.read_small(p("/r/short.txt"), 9),
+        Err(FsError::TooLarge)
+    ));
+    assert_eq!(fs.read_small(p("/r/short.txt"), 10).unwrap(), b"abc");
+    assert_eq!(fs.read_head(p("/r/short.txt"), 2).unwrap(), b"ab");
+}
+
 #[test]
 fn walk_visits_all_entries_in_order() {
     let fs = sample();

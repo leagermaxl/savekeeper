@@ -28,9 +28,9 @@ use crate::{
 };
 use walk::Walker;
 
-const FILE_ATTRIBUTE_DIRECTORY: u32 = 0x10;
-const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x400;
-const FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS: u32 = 0x40_0000;
+use crate::win::{
+    FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS, FILE_ATTRIBUTE_REPARSE_POINT,
+};
 
 /// Lower-cased path components: the key of a node.
 type Key = Vec<String>;
@@ -242,14 +242,22 @@ impl MemFs {
             .collect())
     }
 
-    /// The node of a file that may be read, after the P1 checks.
+    /// The node of a file that may be read, after the checks of SPEC-03
+    /// §4.1, in the order of `RealFs`: a path with `*` or `?` names nothing,
+    /// a cloud-only entry is `CloudOnly`, a folder and a reparse point other
+    /// than a cloud placeholder are not read, a locked file is a sharing
+    /// violation.
     fn readable(&self, path: &Path) -> Result<&MemNode, FsError> {
-        let node = self.node(&path_key(path)).ok_or(FsError::NotFound)?;
-        if node.is_dir() {
-            return Err(io_error(io::ErrorKind::IsADirectory, "is a folder"));
+        let key = path_key(path);
+        if key.iter().any(|c| c.contains(['*', '?'])) {
+            return Err(FsError::NotFound);
         }
+        let node = self.node(&key).ok_or(FsError::NotFound)?;
         if node.cloud == CloudState::CloudOnly {
             return Err(FsError::CloudOnly);
+        }
+        if node.is_dir() {
+            return Err(io_error(io::ErrorKind::IsADirectory, "is a folder"));
         }
         if matches!(node.kind, EntryKind::Reparse(k) if k != ReparseKind::CloudPlaceholder) {
             return Err(io_error(
@@ -341,8 +349,10 @@ impl FsScanner for MemFs {
 
     fn read_small(&self, path: &Path, max: usize) -> Result<Vec<u8>, FsError> {
         let node = self.readable(path)?;
-        let len = node.content.as_ref().map_or(node.size, |c| c.len() as u64);
-        if len > max as u64 {
+        // Too large by metadata, or by what a read would return (SPEC-03 §4.1).
+        let limit = u64::try_from(max).unwrap_or(u64::MAX);
+        let read = node.content.as_ref().map_or(node.size, |c| c.len() as u64);
+        if node.size > limit || read > limit {
             return Err(FsError::TooLarge);
         }
         Ok(bytes(node, max))

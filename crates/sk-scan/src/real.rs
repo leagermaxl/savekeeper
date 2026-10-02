@@ -3,7 +3,9 @@
 //! Everything goes through `sk_core::path::to_extended` (FR-03-06) and only
 //! reads (P1). Metadata comes from directory enumeration, so walking never
 //! opens a file; reparse points other than cloud placeholder folders are
-//! reported but not entered (FR-03-02).
+//! reported but not entered (FR-03-02). Reads (`read_head`, `read_small`)
+//! check the entry itself first and never open a cloud-only file or follow a
+//! link (SPEC-03 §4.1).
 
 mod walk;
 
@@ -114,13 +116,6 @@ fn drive_letter(path: &Path) -> Option<char> {
     }
 }
 
-fn not_implemented(what: &str) -> FsError {
-    FsError::Io(io::Error::new(
-        io::ErrorKind::Unsupported,
-        format!("{what} is not implemented yet (SPEC-03 T-03-06)"),
-    ))
-}
-
 impl FsScanner for RealFs {
     fn metadata(&self, path: &Path) -> Result<EntryMeta, FsError> {
         win::find_meta(path).map(|raw| raw.entry_meta())
@@ -166,12 +161,12 @@ impl FsScanner for RealFs {
         )
     }
 
-    fn read_head(&self, _path: &Path, _max: usize) -> Result<Vec<u8>, FsError> {
-        Err(not_implemented("read_head"))
+    fn read_head(&self, path: &Path, max: usize) -> Result<Vec<u8>, FsError> {
+        win::read_file(path, max, false)
     }
 
-    fn read_small(&self, _path: &Path, _max: usize) -> Result<Vec<u8>, FsError> {
-        Err(not_implemented("read_small"))
+    fn read_small(&self, path: &Path, max: usize) -> Result<Vec<u8>, FsError> {
+        win::read_file(path, max, true)
     }
 
     fn probe_readable(&self, path: &Path) -> Readability {
@@ -182,3 +177,7 @@ impl FsScanner for RealFs {
 #[cfg(test)]
 #[path = "real_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "real_read_tests.rs"]
+mod read_tests;
