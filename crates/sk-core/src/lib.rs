@@ -6,6 +6,7 @@ pub mod env;
 pub mod error;
 pub mod events;
 pub mod fs;
+pub mod logging;
 pub mod model;
 pub mod path;
 pub mod privacy;

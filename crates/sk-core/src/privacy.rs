@@ -15,11 +15,16 @@ const TOKEN_MIN_LEN: usize = 24;
 /// Replaces emails, token-like strings and the user and machine names from
 /// `env` with [`REDACTED`], in that order.
 pub fn redact(text: &str, env: &Environment) -> String {
-    let mut out = redact_tokens(&redact_emails(text));
-    for name in [&env.user_name, &env.machine_name] {
-        out = redact_word(&out, name);
-    }
-    out
+    redact_names(
+        &redact_tokens(&redact_emails(text)),
+        &env.user_name,
+        &env.machine_name,
+    )
+}
+
+/// Only the user and machine names, as whole words (used for logs, SPEC-01 §4.8.3).
+pub(crate) fn redact_names(text: &str, user_name: &str, machine_name: &str) -> String {
+    redact_word(&redact_word(text, user_name), machine_name)
 }
 
 /// A path for logs and issues: the template from [`PathTemplate::from_path`],
