@@ -36,6 +36,11 @@ pub(crate) enum Command {
     },
     /// Print the detected environment (known folders, launchers) as JSON.
     Env,
+    /// Debugging tools.
+    Debug {
+        #[command(subcommand)]
+        command: DebugCommand,
+    },
 }
 
 #[derive(Debug, Args)]
@@ -96,6 +101,22 @@ pub(crate) enum ConfigCommand {
     Show,
     /// Print the path of the configuration file.
     Path,
+}
+
+#[derive(Debug, Subcommand)]
+pub(crate) enum DebugCommand {
+    /// Print the summary of a folder (FolderSummary) as JSON.
+    Summarize(SummarizeArgs),
+}
+
+#[derive(Debug, Args)]
+pub(crate) struct SummarizeArgs {
+    /// The folder to summarize; a relative path is resolved from the current folder.
+    #[arg(value_name = "PATH")]
+    pub(crate) path: PathBuf,
+    /// Pretty-print the JSON.
+    #[arg(long)]
+    pub(crate) pretty: bool,
 }
 
 /// Arguments of a command that is not implemented yet: accepted and ignored,
@@ -193,6 +214,37 @@ mod tests {
         ));
         assert!(matches!(parse(&["env"]).unwrap().command, Command::Env));
         assert!(parse(&["config"]).is_err());
+    }
+
+    #[test]
+    fn debug_summarize() {
+        let Command::Debug {
+            command: DebugCommand::Summarize(args),
+        } = parse(&["debug", "summarize", "some dir"]).unwrap().command
+        else {
+            panic!("not debug summarize");
+        };
+        assert_eq!(args.path, PathBuf::from("some dir"));
+        assert!(!args.pretty);
+
+        let Command::Debug {
+            command: DebugCommand::Summarize(args),
+        } = parse(&["debug", "summarize", "--pretty", r"D:\Games"])
+            .unwrap()
+            .command
+        else {
+            panic!("not debug summarize");
+        };
+        assert_eq!(args.path, PathBuf::from(r"D:\Games"));
+        assert!(args.pretty);
+    }
+
+    #[test]
+    fn debug_summarize_needs_one_path() {
+        assert!(parse(&["debug", "summarize"]).is_err());
+        assert!(parse(&["debug", "summarize", "a", "b"]).is_err());
+        assert!(parse(&["debug"]).is_err());
+        assert!(parse(&["debug", "summarize", "a", "--out", "x"]).is_err());
     }
 
     #[test]

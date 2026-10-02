@@ -7,6 +7,7 @@ mod cli;
 mod commands;
 mod progress;
 mod scan;
+mod summarize;
 
 use std::process::ExitCode;
 
@@ -14,7 +15,7 @@ use clap::error::ErrorKind;
 use clap::Parser;
 use sk_core::win::single_instance;
 
-use cli::{Cli, Command, ConfigCommand, ManifestCommand, RulesCommand};
+use cli::{Cli, Command, ConfigCommand, DebugCommand, ManifestCommand, RulesCommand};
 
 /// How a command that did not fail ended.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -69,6 +70,14 @@ fn run(cli: Cli) -> anyhow::Result<Status> {
             result
         }
         Command::Env => commands::env(),
+        Command::Debug {
+            command: DebugCommand::Summarize(args),
+        } => {
+            let runtime = tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()?;
+            runtime.block_on(summarize::run(args))
+        }
         Command::Config {
             command: ConfigCommand::Show,
         } => commands::config_show(),

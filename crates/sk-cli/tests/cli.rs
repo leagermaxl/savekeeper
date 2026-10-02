@@ -13,7 +13,7 @@ use std::sync::{Mutex, MutexGuard, PoisonError};
 use assert_cmd::Command;
 use predicates::prelude::*;
 use predicates::str::contains;
-use sk_core::model::ScanReport;
+use sk_core::model::{FolderSummary, Marker, ScanReport};
 use tempfile::TempDir;
 
 /// A copy of the CLI in its own folder.
@@ -122,6 +122,138 @@ fn env_prints_the_environment() {
     let json: serde_json::Value = serde_json::from_slice(&output.get_output().stdout).unwrap();
     assert!(json["known_folders"]["HOME"].is_string());
     assert!(json["os"]["arch"].is_string());
+}
+
+/// A folder tree for `debug summarize` in its own temporary folder:
+/// `proj` with 3 counted files (10 bytes) in 2 folders, a `.git` folder and
+/// an excluded `node_modules`.
+fn summary_tree() -> TempDir {
+    let tree = tempfile::tempdir().unwrap();
+    let proj = tree.path().join("proj");
+    for (path, content) in [
+        ("a.txt", "hello"),
+        ("sub/b.json", "{}"),
+        (".git/HEAD", "ref"),
+        ("node_modules/x.js", "module.exports = 1;"),
+    ] {
+        let path = proj.join(path);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, content).unwrap();
+    }
+    tree
+}
+
+fn parse_summary(stdout: &[u8]) -> FolderSummary {
+    serde_json::from_slice(stdout).unwrap()
+}
+
+#[test]
+fn debug_summarize_prints_the_folder_summary() {
+    let cli = Cli::new();
+    let tree = summary_tree();
+    let proj = tree.path().join("proj");
+    let output = cli
+        .cmd(&["debug", "summarize", proj.to_str().unwrap()])
+        .assert()
+        .code(0);
+    let stdout = &output.get_output().stdout;
+    // Compact: one line.
+    assert!(stdout.starts_with(b"{\"path\":"));
+    assert_eq!(stdout.iter().filter(|&&b| b == b'\n').count(), 1);
+    let summary = parse_summary(stdout);
+    assert_eq!(summary.file_count, 3);
+    assert_eq!(summary.dir_count, 2);
+    assert_eq!(summary.total_bytes, 10);
+    assert!(summary.markers.contains(&Marker::GitRepo));
+    assert!(!summary.truncated);
+    assert!(summary
+        .sample_names
+        .iter()
+        .all(|n| !n.contains("node_modules")));
+    assert!(summary
+        .top_children
+        .iter()
+        .all(|c| c.name != "node_modules"));
+
+    // The source is not changed; no log is written.
+    assert!(proj.join("node_modules").join("x.js").is_file());
+    assert!(!cli.path().join("savekeeper-data").join("logs").exists());
+}
+
+#[test]
+fn debug_summarize_pretty() {
+    let cli = Cli::new();
+    let tree = summary_tree();
+    let proj = tree.path().join("proj");
+    let output = cli
+        .cmd(&["debug", "summarize", "--pretty", proj.to_str().unwrap()])
+        .assert()
+        .code(0);
+    let stdout = &output.get_output().stdout;
+    assert!(stdout.starts_with(b"{\n  \"path\":"));
+    assert_eq!(parse_summary(stdout).file_count, 3);
+}
+
+#[test]
+fn debug_summarize_resolves_a_relative_path_from_the_current_folder() {
+    let cli = Cli::new();
+    let tree = summary_tree();
+    let mut cmd = cli.cmd(&["debug", "summarize", "proj"]);
+    let output = cmd.current_dir(tree.path()).assert().code(0);
+    let summary = parse_summary(&output.get_output().stdout);
+    assert_eq!(summary.file_count, 3);
+    assert!(summary.markers.contains(&Marker::GitRepo));
+}
+
+#[test]
+fn debug_summarize_fails_on_a_missing_path_or_a_file() {
+    let cli = Cli::new();
+    let tree = summary_tree();
+    let proj = tree.path().join("proj");
+    let missing = tree.path().join("missing");
+    cli.cmd(&["debug", "summarize", missing.to_str().unwrap()])
+        .assert()
+        .code(1)
+        .stdout("")
+        .stderr(contains("cannot summarize").and(contains("not found")));
+    let file = proj.join("a.txt");
+    cli.cmd(&["debug", "summarize", file.to_str().unwrap()])
+        .assert()
+        .code(1)
+        .stdout("")
+        .stderr(contains("cannot summarize").and(contains("is a file")));
+}
+
+#[test]
+fn debug_summarize_applies_the_user_exclude_globs() {
+    let cli = Cli::new();
+    let tree = summary_tree();
+    let proj = tree.path().join("proj");
+    let config = cli.path().join("savekeeper.config.json");
+
+    std::fs::write(
+        &config,
+        r#"{ "schema_version": 1, "scan": { "exclude_globs": ["*.json"] } }"#,
+    )
+    .unwrap();
+    let output = cli
+        .cmd(&["debug", "summarize", proj.to_str().unwrap()])
+        .assert()
+        .code(0);
+    assert_eq!(parse_summary(&output.get_output().stdout).file_count, 2);
+
+    // An invalid glob: a warning, and only the built-in exclusions.
+    std::fs::write(
+        &config,
+        r#"{ "schema_version": 1, "scan": { "exclude_globs": ["[", "*.json"] } }"#,
+    )
+    .unwrap();
+    let output = cli
+        .cmd(&["debug", "summarize", proj.to_str().unwrap()])
+        .assert()
+        .code(0)
+        .stderr(contains("invalid scan.exclude_globs"));
+    assert_eq!(parse_summary(&output.get_output().stdout).file_count, 3);
 }
 
 /// Serializes the tests that run `backup`: it takes the system-wide

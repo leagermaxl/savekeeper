@@ -77,7 +77,7 @@ fn options(args: &ScanArgs, config: &Config) -> ScanOptions {
 }
 
 /// Completes on Ctrl+C; never, if the handler cannot be installed.
-async fn ctrl_c() {
+pub(crate) async fn ctrl_c() {
     if tokio::signal::ctrl_c().await.is_err() {
         std::future::pending::<()>().await;
     }
