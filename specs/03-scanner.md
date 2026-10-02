@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-scan` |
 | Зависит от | SPEC-01, SPEC-02 |
 | Используется в | SPEC-04, SPEC-05, SPEC-07, SPEC-08, SPEC-10 |
-| Последнее изменение | 2026-10-02 (§4.1: соглашения `MemFs`, счётчики вызовов, загрузка фикстур перенесена в `sk_testkit::mem_fixture`; T-03-02; §9; T-03-04: ручная проверка Ctrl+C из SPEC-01 §8; §4.4: правило `UwpPackage`, 14 маркеров как в SPEC-02 §4.1; §4.1: `CloudState` без `Pinned`, как в определении enum; §9: OneDrive-корни заполняет `sk-core`; трейт `FsScanner` и его типы — в `sk-core::fs`; `WalkOptions.excludes` через трейт `PathFilter`) |
+| Последнее изменение | 2026-10-02 (§4.1: `PathFilter::check` → `Exclusion`, `ExcludeSet::builtin/with_user(env)`, `names_only`, поведение `walk`; §4.2: проверка условных исключений; §4.5: раскрытие шаблонов путей; §4.1: соглашения `MemFs`, счётчики вызовов, загрузка фикстур перенесена в `sk_testkit::mem_fixture`; T-03-02; §9; T-03-04: ручная проверка Ctrl+C из SPEC-01 §8; §4.4: правило `UwpPackage`, 14 маркеров как в SPEC-02 §4.1; §4.1: `CloudState` без `Pinned`, как в определении enum; §9: OneDrive-корни заполняет `sk-core`; трейт `FsScanner` и его типы — в `sk-core::fs`; `WalkOptions.excludes` через трейт `PathFilter`) |
 
 ## 1. Цель
 
@@ -133,18 +133,33 @@ pub fn summarize(fs: &dyn FsScanner, dir: &Path, env: &Environment, opts: &Summa
 pub struct MeasureOptions { pub probe_locks: bool /* по умолчанию true */, pub include_excluded: bool }
 pub struct SummaryOptions { pub max_entries: u64 /* 200_000 */, pub max_depth: u32 /* 12 */ }
 // sk-core::fs — фильтр исключений, через который WalkOptions не зависит от реализации §4.5
-pub trait PathFilter: Send + Sync {
-    fn is_excluded(&self, abs: &Path, name: &OsStr, is_dir: bool) -> bool;
+/// Решение фильтра. Условия проверяет обходчик (§4.2), фильтр сам к ФС не обращается.
+pub enum Exclusion {
+    Keep,
+    Exclude,
+    ExcludeIfSibling(&'static str), // исключить, если в том же каталоге есть запись, подходящая под глоб имени
+    ExcludeIfChild(&'static str),   // исключить каталог, если внутри есть файл с этим именем
+}
+pub trait PathFilter: Send + Sync + Debug {
+    fn check(&self, abs: &Path, name: &OsStr, is_dir: bool) -> Exclusion;
 }
 
 // sk-scan
 pub struct ExcludeSet { /* globset + быстрый HashSet имён каталогов */ }
 impl ExcludeSet {
-    pub fn builtin() -> Self;
-    pub fn with_user(globs: &[String]) -> Result<Self, globset::Error>;
+    pub fn builtin(env: &Environment) -> Self;
+    pub fn with_user(env: &Environment, globs: &[String]) -> Result<Self, globset::Error>;
+    /// Тот же набор без исключений по полным путям (для `explicit_root` в `measure`, §4.5).
+    pub fn names_only(&self) -> Self;
 }
-impl PathFilter for ExcludeSet { /* is_excluded */ }
+impl PathFilter for ExcludeSet { /* check */ }
 ```
+
+Поведение `walk` (одинаково для `RealFs` и `MemFs`):
+- корень сам в `visit` не передаётся; его дети имеют `depth = 1`;
+- `include` фильтрует только файлы, каталоги обходятся всегда;
+- исключённые записи не учитываются в `max_entries`;
+- `MemFsCalls.read_dir` считает и листинги, сделанные внутри `walk`.
 
 Соглашения `MemFs`:
 - Путь `&str` делится и по `/`, и по `\`; компоненты сравниваются без учёта регистра (как в NTFS).
@@ -157,7 +172,7 @@ impl PathFilter for ExcludeSet { /* is_excluded */ }
 1. `root = to_extended(root)`. `metadata(root)`: если Reparse → `WalkStats{entries:0}` + Info-issue на стороне вызывающего.
 2. `jwalk::WalkDirGeneric` с `parallelism = RayonNewPool(threads)`, `skip_hidden(false)`, `follow_links(false)`, `max_depth`.
 3. В `process_read_dir` (на уровне каталога, до спуска):
-   - отбрасываем исключённые (`ExcludeSet::is_excluded` по имени и полному пути);
+   - отбрасываем исключённые (`PathFilter::check` по имени и полному пути): `ExcludeIfSibling` проверяется по именам из того же листинга каталога, `ExcludeIfChild` — одним `metadata(abs.join(name))` на каталог-кандидат;
    - reparse-каталоги (`attrs & FILE_ATTRIBUTE_REPARSE_POINT`) не раскрываем (`read_children_path = None`), они передаются в `visit` как `EntryKind::Reparse`;
    - проверка `cancel` → если отменено, у всех детей обнуляется спуск.
 4. Каждая запись → `DirEntryInfo`. Метаданные на Windows берутся из `FindFirstFileExW`-данных (которые jwalk уже получил через `std::fs::DirEntry::metadata`, без дополнительного `CreateFile`). **Файл не открывается.**
@@ -228,6 +243,8 @@ Windows.old, Config.Msi, Recovery, MSOCache, PerfLogs
 {LOCALAPPDATA}\NVIDIA\DXCache, {LOCALAPPDATA}\NVIDIA\GLCache, {LOCALAPPDATA}\AMD\DxCache
 ```
 Файлы в корнях дисков: `pagefile.sys, hiberfil.sys, swapfile.sys, DumpStack.log*`.
+
+Шаблоны путей раскрываются один раз при создании `ExcludeSet` из `env.known_folders`. Шаблон, чья папка отсутствует, пропускается. Шаблоны с `*` (`{LOCALAPPDATA}\Packages\*\AC\INetCache`) становятся глобом по абсолютному пути без учёта регистра. Условные имена (`target`, `obj`/`bin`, `venv`) возвращают `ExcludeIfSibling`/`ExcludeIfChild` (§4.1).
 
 Исключения относятся к **обходу**. Коллектор может явно указать `Target` внутри исключённого пути (например, правило для `{PROGRAMDATA}\...` конкретной программы): `measure` для такого target применяет только имена-исключения, но не path-исключения (флаг `explicit_root` внутри `measure`).
 
