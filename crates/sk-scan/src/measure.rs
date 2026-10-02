@@ -89,9 +89,15 @@ impl Mode {
         if opts.include_excluded {
             return Mode::Off;
         }
+        Self::for_excludes(&opts.excludes, root)
+    }
+
+    /// `Full`, or `NamesOnly` when `excludes` covers `root` by a path
+    /// exclusion (§4.5 `explicit_root`); also used by `summarize` (§4.4).
+    pub(crate) fn for_excludes(excludes: &ExcludeSet, root: &Path) -> Self {
         let name = root.file_name().unwrap_or(root.as_os_str());
-        if opts.excludes.check(root, name, true) == Exclusion::Exclude
-            && opts.excludes.names_only().check(root, name, true) == Exclusion::Keep
+        if excludes.check(root, name, true) == Exclusion::Exclude
+            && excludes.names_only().check(root, name, true) == Exclusion::Keep
         {
             Mode::NamesOnly
         } else {
@@ -99,7 +105,7 @@ impl Mode {
         }
     }
 
-    fn filter(self, excludes: &Arc<ExcludeSet>) -> Arc<dyn PathFilter> {
+    pub(crate) fn filter(self, excludes: &Arc<ExcludeSet>) -> Arc<dyn PathFilter> {
         match self {
             Mode::Full => Arc::clone(excludes) as Arc<dyn PathFilter>,
             Mode::NamesOnly => Arc::new(excludes.names_only()),
@@ -120,14 +126,14 @@ impl PathFilter for KeepAll {
 
 /// How an entry counts (§4.3 step 3).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Counted {
+pub(crate) enum Counted {
     File,
     Dir,
     /// Symlink, junction or another reparse point.
     Not,
 }
 
-fn counted(meta: &EntryMeta) -> Counted {
+pub(crate) fn counted(meta: &EntryMeta) -> Counted {
     match meta.kind {
         EntryKind::File | EntryKind::Reparse(ReparseKind::AppExecLink) => Counted::File,
         EntryKind::Dir => Counted::Dir,
@@ -143,7 +149,7 @@ fn counted(meta: &EntryMeta) -> Counted {
 }
 
 /// Size counted for a file: an app alias counts as 0 bytes (§5).
-fn file_size(meta: &EntryMeta) -> u64 {
+pub(crate) fn file_size(meta: &EntryMeta) -> u64 {
     match meta.kind {
         EntryKind::Reparse(ReparseKind::AppExecLink) => 0,
         _ => meta.size,
