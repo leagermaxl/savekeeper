@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-scan` |
 | Зависит от | SPEC-01, SPEC-02 |
 | Используется в | SPEC-04, SPEC-05, SPEC-07, SPEC-08, SPEC-10 |
-| Последнее изменение | 2026-10-02 (§4.1, T-03-05, §6: `probe_readable` не следует по ссылкам; §4.6: семантика `scan.exclude_globs`; §4.1: `PathFilter::check` → `Exclusion`, `ExcludeSet::builtin/with_user(env)`, `names_only`, поведение `walk`; §4.2: проверка условных исключений; §4.5: раскрытие шаблонов путей; §4.1: соглашения `MemFs`, счётчики вызовов, загрузка фикстур перенесена в `sk_testkit::mem_fixture`; T-03-02; §9; T-03-04: ручная проверка Ctrl+C из SPEC-01 §8; §4.4: правило `UwpPackage`, 14 маркеров как в SPEC-02 §4.1; §4.1: `CloudState` без `Pinned`, как в определении enum; §9: OneDrive-корни заполняет `sk-core`; трейт `FsScanner` и его типы — в `sk-core::fs`; `WalkOptions.excludes` через трейт `PathFilter`) |
+| Последнее изменение | 2026-10-02 (§4.2: собственный обход на rayon вместо jwalk, метаданные из листинга, правило числа потоков; T-03-04: ручная проверка Ctrl+C перенесена в SPEC-04 T-04-07; §4.1, T-03-05, §6: `probe_readable` не следует по ссылкам; §4.6: семантика `scan.exclude_globs`; §4.1: `PathFilter::check` → `Exclusion`, `ExcludeSet::builtin/with_user(env)`, `names_only`, поведение `walk`; §4.2: проверка условных исключений; §4.5: раскрытие шаблонов путей; §4.1: соглашения `MemFs`, счётчики вызовов, загрузка фикстур перенесена в `sk_testkit::mem_fixture`; T-03-02; §9; T-03-04: ручная проверка Ctrl+C из SPEC-01 §8; §4.4: правило `UwpPackage`, 14 маркеров как в SPEC-02 §4.1; §4.1: `CloudState` без `Pinned`, как в определении enum; §9: OneDrive-корни заполняет `sk-core`; трейт `FsScanner` и его типы — в `sk-core::fs`; `WalkOptions.excludes` через трейт `PathFilter`) |
 
 ## 1. Цель
 
@@ -20,7 +20,7 @@
 ## 2. Область
 
 ### 2.1 Входит
-- Трейт `FsScanner` + реальная реализация `RealFs` (jwalk/rayon) и фейковая `MemFs` для тестов.
+- Трейт `FsScanner` + реальная реализация `RealFs` (rayon) и фейковая `MemFs` для тестов.
 - `measure()`: `TargetStats` для `Target::FileSet` / `Target::File`.
 - `summarize()`: `FolderSummary` + вычисление всех `Marker` из SPEC-02 §4.1.
 - Глобальные исключения (встроенные + `config.scan.exclude_globs`).
@@ -172,17 +172,19 @@ impl PathFilter for ExcludeSet { /* check */ }
 
 ### 4.2 Реализация `RealFs::walk`
 1. `root = to_extended(root)`. `metadata(root)`: если Reparse → `WalkStats{entries:0}` + Info-issue на стороне вызывающего.
-2. `jwalk::WalkDirGeneric` с `parallelism = RayonNewPool(threads)`, `skip_hidden(false)`, `follow_links(false)`, `max_depth`.
-3. В `process_read_dir` (на уровне каталога, до спуска):
+2. Собственный параллельный обход: пул `rayon` из `threads` потоков (правило ниже), одна задача на листинг каталога (`std::fs::read_dir`), дочерние каталоги ставятся в пул; записи передаются в `visit` на вызывающем потоке через канал. Скрытые файлы не пропускаются, по ссылкам не идём, глубина ограничена `max_depth`. `jwalk` не используется: он отбрасывает `std::fs::DirEntry` и даёт метаданные только через `symlink_metadata` (`CreateFileW` на запись), к тому же не поддерживается автором.
+3. При обработке листинга каталога (до спуска):
    - отбрасываем исключённые (`PathFilter::check` по имени и полному пути): `ExcludeIfSibling` проверяется по именам из того же листинга каталога, `ExcludeIfChild` — одним `metadata(abs.join(name))` на каталог-кандидат;
-   - reparse-каталоги (`attrs & FILE_ATTRIBUTE_REPARSE_POINT`) не раскрываем (`read_children_path = None`), они передаются в `visit` как `EntryKind::Reparse`;
+   - reparse-каталоги (`attrs & FILE_ATTRIBUTE_REPARSE_POINT`) не раскрываем, они передаются в `visit` как `EntryKind::Reparse`;
    - проверка `cancel` → если отменено, у всех детей обнуляется спуск.
-4. Каждая запись → `DirEntryInfo`. Метаданные на Windows берутся из `FindFirstFileExW`-данных (которые jwalk уже получил через `std::fs::DirEntry::metadata`, без дополнительного `CreateFile`). **Файл не открывается.**
+4. Каждая запись → `DirEntryInfo`. Метаданные — `std::fs::DirEntry::metadata()` (на Windows из `WIN32_FIND_DATAW` листинга, без системных вызовов), `attrs` — `MetadataExt::file_attributes()`; tag только для записей с `FILE_ATTRIBUTE_REPARSE_POINT` — `sk-scan::win::reparse_tag` (`FindFirstFileExW`). **Файл не открывается.**
 5. `visit` возвращает `SkipDir`/`Stop`. `Stop` выставляет внутренний флаг, обход сворачивается.
 6. Счётчик `entries ≥ max_entries` → `truncated = true`, Stop.
 
+Число потоков (NFR-03-03) = min(`opts.threads`, лимит диска корня). Лимит = 2 для `DriveKind::Network` или `DriveMedia::Hdd`, иначе min(num_cpus, 8). При `opts.threads == 0` используется лимит диска. Диск не найден в `env.drives` → как SSD.
+
 Определение `CloudState::CloudOnly`: `attrs & (0x400000 | 0x40000 | 0x1000) != 0`.
-Определение `ReparseKind`: по `dwReserved0` из `WIN32_FIND_DATAW` (tag): `IO_REPARSE_TAG_SYMLINK` → Symlink, `IO_REPARSE_TAG_MOUNT_POINT` → Junction, `IO_REPARSE_TAG_CLOUD*` (маска `0x9000001A`) → CloudPlaceholder (как файл, не каталог-ссылка), `IO_REPARSE_TAG_APPEXECLINK` → AppExecLink. Если jwalk не даёт tag, то `unsafe` FFI в `sk-scan::win::reparse_tag` с `FindFirstFileExW` (FindExInfoBasic).
+Определение `ReparseKind`: по `dwReserved0` из `WIN32_FIND_DATAW` (tag): `IO_REPARSE_TAG_SYMLINK` → Symlink, `IO_REPARSE_TAG_MOUNT_POINT` → Junction, `IO_REPARSE_TAG_CLOUD*` (маска `0x9000001A`) → CloudPlaceholder (как файл, не каталог-ссылка), `IO_REPARSE_TAG_APPEXECLINK` → AppExecLink. `std::fs::DirEntry` tag не отдаёт, поэтому он берётся через `unsafe` FFI в `sk-scan::win::reparse_tag` с `FindFirstFileExW` (FindExInfoBasic).
 
 > Каталоги с тегом CloudPlaceholder (OneDrive-папки) **обходятся** как обычные каталоги: сама папка не является ссылкой, её перечисление не гидрирует файлы. Не раскрываются только Symlink/Junction/Other.
 
@@ -300,7 +302,7 @@ Windows.old, Config.Msi, Recovery, MSOCache, PerfLogs
 - [x] **T-03-01** — Типы API §4.1 в `sk-core::fs` (`FsScanner`, `PathFilter`, `EntryMeta`, `DirEntryInfo`, `WalkOptions`, `FsError` ...) + реэкспорт из `sk-scan`. *Зависит:* T-02-01. Нужна в P0: от неё зависит SPEC-01 T-01-03. *Готово, когда:* крейты компилируются, документация `///`.
 - [x] **T-03-02** — `MemFs` (+ счётчики вызовов) в `sk-scan`; `mem_fixture` и ключи `fixtures/fs` (SPEC-12 §4.3) в `sk-testkit`; фикстура `fixtures/fs/electron-app.yaml`. *Зависит:* T-03-01. *Готово, когда:* интеграционный тест в `crates/sk-scan/tests/` (`sk-testkit` как dev-dependency) загружает `electron-app.yaml`, и `walk` по ней проходит.
 - [x] **T-03-03** — `ExcludeSet` (встроенный список §4.5 + пользовательские глобы, условные исключения `target`/`obj`/`venv`). *Зависит:* T-03-01. *Готово, когда:* unit-тесты на каждый пункт списка.
-- [ ] **T-03-04** — `RealFs::walk` на jwalk: reparse, cloud-атрибуты, исключения, отмена, лимиты, выбор потоков по типу диска. *Зависит:* T-03-03, T-02-02. *Готово, когда:* Windows-тесты junction/long path; ручная проверка критерия SPEC-01 §8: Ctrl+C во время `savekeeper-cli scan` по реальному профилю завершает процесс за ≤ 1 с с кодом 2.
+- [ ] **T-03-04** — `RealFs::walk` на rayon: reparse, cloud-атрибуты, исключения, отмена, лимиты, выбор потоков по типу диска. *Зависит:* T-03-03, T-02-02. *Готово, когда:* Windows-тесты junction/long path.
 - [x] **T-03-05** — `sk-scan::win`: `reparse_tag`, `probe_readable` через `CreateFileW` (`GENERIC_READ`, share RW|D, `OPEN_EXISTING`, `FILE_FLAG_OPEN_NO_RECALL | FILE_FLAG_OPEN_REPARSE_POINT`, `FILE_FLAG_BACKUP_SEMANTICS` для каталогов); при CloudOnly-атрибутах самой записи — `Readability::CloudOnly` без открытия. *Зависит:* T-03-01. *Готово, когда:* тест Locked + OFFLINE.
 - [ ] **T-03-06** — `read_head`/`read_small` с защитой от cloud-only и лимитом. *Зависит:* T-03-05.
 - [ ] **T-03-07** — `measure` + `DirStatsCache` + `measure_all` с прогрессом. *Зависит:* T-03-04. *Готово, когда:* тест «вложенные корни — один обход».
