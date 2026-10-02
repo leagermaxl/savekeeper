@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-llm` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-07 |
 | Используется в | SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-01 (`LlmConfig` — в `sk-core::config`; `MockClassifier` в `sk-llm` под feature `mock`) |
+| Последнее изменение | 2026-10-02 (промпт: `sample_names` — пути файлов и папок, SPEC-03 §4.4; 2026-10-01: `LlmConfig` — в `sk-core::config`; `MockClassifier` в `sk-llm` под feature `mock`) |
 
 ## 1. Цель
 
@@ -204,7 +204,7 @@ You receive a JSON array of folder summaries. Each item has an "id" and a "summa
 - total_bytes, file_count, dir_count, max_depth
 - newest_mtime / oldest_mtime (RFC 3339)
 - ext_histogram: most common extensions with counts and bytes
-- sample_names: up to 20 relative file paths (some parts may be "<redacted>")
+- sample_names: up to 20 relative paths of files and folders (some parts may be "<redacted>")
 - top_children: largest subfolders
 - markers: precomputed hints (HasExecutables, CacheLike, ConfigLike, SqliteFiles, ElectronApp, UnityGame, ...)
 - optional "peek": the first bytes of a few small text config files (secrets removed)

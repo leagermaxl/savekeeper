@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-scan` |
 | Зависит от | SPEC-01, SPEC-02 |
 | Используется в | SPEC-04, SPEC-05, SPEC-07, SPEC-08, SPEC-10 |
-| Последнее изменение | 2026-10-02 (§4.3: reparse-корень для `File`, повторяющийся ключ кэша; §4.1: `MeasureOptions` с исключениями и лимитами, API `DirStatsCache`, `measure` → `Option<TargetStats>`; §4.3: правила подсчёта, кэша и issues `measure_all`; §4.5: определение `explicit_root`; §4.1, T-03-06: как `read_head`/`read_small` открывают файл, по ссылкам не читаем; §5: LastAccessTime при чтении; §4.2: облачные заглушки — `Reparse(CloudPlaceholder)` для файлов и каталогов, различение по `FILE_ATTRIBUTE_DIRECTORY`; §4.2: собственный обход на rayon вместо jwalk, метаданные из листинга, правило числа потоков; T-03-04: ручная проверка Ctrl+C перенесена в SPEC-04 T-04-07; §4.1, T-03-05, §6: `probe_readable` не следует по ссылкам; §4.6: семантика `scan.exclude_globs`; §4.1: `PathFilter::check` → `Exclusion`, `ExcludeSet::builtin/with_user(env)`, `names_only`, поведение `walk`; §4.2: проверка условных исключений; §4.5: раскрытие шаблонов путей; §4.1: соглашения `MemFs`, счётчики вызовов, загрузка фикстур перенесена в `sk_testkit::mem_fixture`; T-03-02; §9; T-03-04: ручная проверка Ctrl+C из SPEC-01 §8; §4.4: правило `UwpPackage`, 14 маркеров как в SPEC-02 §4.1; §4.1: `CloudState` без `Pinned`, как в определении enum; §9: OneDrive-корни заполняет `sk-core`; трейт `FsScanner` и его типы — в `sk-core::fs`; `WalkOptions.excludes` через трейт `PathFilter`) |
+| Последнее изменение | 2026-10-02 (§4.1: `SummaryOptions.excludes`; §4.4: корень, подсчёт, глубина, детерминированная аккумуляция, общие правила маркеров (нулевой знаменатель), уточнения `HasExecutables`/`UnityGame`/`UnrealSaveGames`/`SqliteFiles`/`CacheLike`/`ProjectLike`/`CloudSynced`, `top_children.name` обезличивается; §4.3: reparse-корень для `File`, повторяющийся ключ кэша; §4.1: `MeasureOptions` с исключениями и лимитами, API `DirStatsCache`, `measure` → `Option<TargetStats>`; §4.3: правила подсчёта, кэша и issues `measure_all`; §4.5: определение `explicit_root`; §4.1, T-03-06: как `read_head`/`read_small` открывают файл, по ссылкам не читаем; §5: LastAccessTime при чтении; §4.2: облачные заглушки — `Reparse(CloudPlaceholder)` для файлов и каталогов, различение по `FILE_ATTRIBUTE_DIRECTORY`; §4.2: собственный обход на rayon вместо jwalk, метаданные из листинга, правило числа потоков; T-03-04: ручная проверка Ctrl+C перенесена в SPEC-04 T-04-07; §4.1, T-03-05, §6: `probe_readable` не следует по ссылкам; §4.6: семантика `scan.exclude_globs`; §4.1: `PathFilter::check` → `Exclusion`, `ExcludeSet::builtin/with_user(env)`, `names_only`, поведение `walk`; §4.2: проверка условных исключений; §4.5: раскрытие шаблонов путей; §4.1: соглашения `MemFs`, счётчики вызовов, загрузка фикстур перенесена в `sk_testkit::mem_fixture`; T-03-02; §9; T-03-04: ручная проверка Ctrl+C из SPEC-01 §8; §4.4: правило `UwpPackage`, 14 маркеров как в SPEC-02 §4.1; §4.1: `CloudState` без `Pinned`, как в определении enum; §9: OneDrive-корни заполняет `sk-core`; трейт `FsScanner` и его типы — в `sk-core::fs`; `WalkOptions.excludes` через трейт `PathFilter`) |
 
 ## 1. Цель
 
@@ -152,7 +152,8 @@ impl MeasureOptions { pub fn new(excludes: Arc<ExcludeSet>, max_depth: u32) -> S
 /// Кэш агрегатов по каталогам. Send + Sync, один на скан; measure_all создаёт свой.
 pub struct DirStatsCache { /* … */ }
 impl DirStatsCache { pub fn new() -> Self; } // + Default
-pub struct SummaryOptions { pub max_entries: u64 /* 200_000 */, pub max_depth: u32 /* 12 */ }
+pub struct SummaryOptions { pub max_entries: u64 /* 200_000 */, pub max_depth: u32 /* 12 */, pub excludes: Arc<ExcludeSet> }
+impl SummaryOptions { pub fn new(excludes: Arc<ExcludeSet>) -> Self; } // max_entries, max_depth — по умолчанию
 // sk-core::fs — фильтр исключений, через который WalkOptions не зависит от реализации §4.5
 /// Решение фильтра. Условия проверяет обходчик (§4.2), фильтр сам к ФС не обращается.
 pub enum Exclusion {
@@ -231,31 +232,49 @@ impl PathFilter for ExcludeSet { /* check */ }
 - Прогресс через `ThrottledSink` после каждой fs-находки: `Event::Progress{phase: Measure, done: i, total: Some(число FileSet/File-находок), current: Some(шаблон root/path)}`; в конце `flush()`.
 
 ### 4.4 `summarize` и маркеры
-Обход `dir` с `SummaryOptions` → аккумулируем:
-- `ext_histogram`: HashMap ext → (count, bytes), затем top-15 по count;
-- `sample_names`: 5 top-level имён (сортировка по имени), затем 10 самых свежих файлов (min-heap по mtime), затем добор до 20 файлами с ещё не представленными расширениями;
-- `top_children`: bytes/files по каждому прямому ребёнку, top-10 по bytes;
-- `max_depth`, `newest/oldest_mtime`;
-- флаги-кандидаты для маркеров (наличие конкретных имён).
-После обхода: `path = PathTemplate::from_path(dir, env)`, `sample_names` → `privacy::redact`.
+Обход `dir` с `SummaryOptions`: фильтр исключений по §4.5, как в `measure` (`explicit_root` → `names_only`); `threads = 0`, include/exclude нет; исключённые записи нигде не учитываются.
 
-Точные правила маркеров (все сравнения имён регистронезависимы):
+Корень: `dir` нет → `NotFound`; `dir` — файл → `FsError::Io`; reparse point, кроме каталога-`CloudPlaceholder` → сводка с нулевыми счётчиками, из маркеров только путевые (`CloudSynced`, `UwpPackage`); отмена → `Cancelled`.
+
+Подсчёт — по правилам §4.3 шаг 3: файлы — `File`, файл-`CloudPlaceholder`, `AppExecLink` (размер 0); каталоги — `Dir`, каталог-`CloudPlaceholder`; Symlink/Junction/Other игнорируются везде. `max_depth` = наибольший `DirEntryInfo.depth` среди учтённых записей (0, если пусто). `truncated = walk.truncated || walk.errors > 0`; срез по `max_depth` `truncated` не выставляет.
+
+Глубина: `DirEntryInfo.depth` записи (прямой ребёнок `dir` = 1). «Папка глубины k» в таблице — папка на k уровней ниже `dir` (сам `dir` = 0, у папки `depth = k`), её прямые дети имеют `depth = k + 1`.
+
+Аккумуляция (все порядки детерминированы: `walk` не задаёт порядок между папками, а SPEC-08 строит ключ кэша по содержимому сводки):
+- `ext_histogram`: ext = `Path::extension` в нижнем регистре (`.gitignore` → `""`, `a.tar.gz` → `gz`) → (count, bytes); сортировка count ↓, bytes ↓, ext ↑; top-15.
+- `sample_names` — относительные пути с разделителем `\`, lossy UTF-8:
+  1. записи верхнего уровня (файлы и папки, `depth = 1`) по имени в нижнем регистре, затем по ordinal, первые 5;
+  2. затем 10 самых свежих ещё не выбранных файлов любой глубины: mtime ↓, затем путь ↑; файлы без mtime пропускаются;
+  3. затем добор до 20: расширения ≠ `""`, которых ещё нет среди выбранных файлов, в порядке полной гистограммы; для каждого — файл с наименьшим путём в нижнем регистре.
+  В конце каждый путь → `privacy::redact`.
+- `top_children`: только прямые дочерние папки (`Dir` и каталог-`CloudPlaceholder`); bytes/files — по всему поддереву; сортировка bytes ↓, files ↓, имя в нижнем регистре ↑; top-10; `name` → `privacy::redact`.
+- `newest/oldest_mtime` — только по файлам.
+- флаги-кандидаты для маркеров (наличие конкретных имён).
+После обхода: `path = PathTemplate::from_path(dir, env)`.
+
+Общие правила маркеров:
+- все сравнения имён регистронезависимы; маркер по имени срабатывает на любой учтённый тип записи, если в таблице не сказано «папка» или «файл»;
+- условие на долю ложно, если знаменатель равен 0 (`total_bytes` для долей байт, `file_count` для долей файлов); сравнение в целых: «> N%» — `part*100 > total*N`, «≥ N%» — `part*100 >= total*N`;
+- 50 МБ = 50 MiB = 52 428 800 байт;
+- `markers` — в порядке `Marker::ALL`, без повторов.
+
+Точные правила маркеров:
 
 | Marker | Условие |
 |---|---|
-| `HasExecutables` | байты `exe+dll+sys+msi+ocx` > 30% от `total_bytes` **или** ≥ 3 `.exe` на глубине ≤ 1 |
+| `HasExecutables` | байты `exe+dll+sys+msi+ocx` > 30% от `total_bytes` **или** ≥ 3 `.exe`-файлов в `dir` или его прямых подпапках (`depth ≤ 2`) |
 | `GitRepo` | прямой ребёнок `.git` (каталог или файл-gitdir) |
-| `UnityGame` | путь внутри `{LOCALLOW}` на глубине 2 (`Company\Product`) **и** (`Player.log`/`Player-prev.log`/`output_log.txt` или `Unity\` подпапка), либо любой уровень содержит `*_Data\` рядом с `UnityPlayer.dll` |
-| `UnrealSaveGames` | существует подпуть `Saved\SaveGames` (глубина ≤ 3) или ≥ 1 файл `.sav` рядом с `Saved\Config\Windows*` |
+| `UnityGame` | `dir` относительно `{LOCALLOW}` — ровно 2 компонента (`Company\Product`, `starts_with_ci`) **и** прямо в `dir` файл `Player.log`/`Player-prev.log`/`output_log.txt` или папка `Unity`; **либо** какая-то папка (включая `dir`) прямо содержит папку `*_Data` и файл `UnityPlayer.dll` |
+| `UnrealSaveGames` | папка `SaveGames` глубины ≤ 3, родитель которой — папка `Saved`; **или** папка `Saved` глубины ≤ 3 содержит папку `Config\Windows*`, и под этой `Saved` (на любой глубине) есть ≥ 1 файл `.sav` |
 | `ElectronApp` | ≥ 3 из прямых детей: `Local Storage`, `IndexedDB`, `Cache`, `GPUCache`, `Code Cache`, `Session Storage`, `blob_storage`, `Service Worker` |
 | `ChromiumProfile` | (`Local State` в корне **и** `Default\Preferences`) или (`Preferences` + `Bookmarks`/`History` в корне) |
-| `SqliteFiles` | ≥ 1 файл с ext `sqlite, sqlite3, db, db3` и первые 16 байт == `"SQLite format 3\0"` (проверяем `read_head` не больше чем у 5 файлов) |
-| `CacheLike` | имя `dir` или ≥ 50% байт в детях с именами по regex `(?i)^(cache|caches|.*cache|temp|tmp|logs?|crash(es|dumps|pad)?|shadercache|dxcache|gpucache)$`, **или** `tmp+log+dmp+etl` > 60% файлов |
+| `SqliteFiles` | ≥ 1 файл с ext `sqlite, sqlite3, db, db3` и первые 16 байт == `"SQLite format 3\0"` (проверяем `read_head` не больше чем у 5 файлов: кандидаты — локальные, не CloudOnly, файлы с этими ext и размером ≥ 16; берутся 5 с наименьшими (depth, путь в нижнем регистре); `read_head(path, 16)` после обхода; ошибка чтения считается попыткой, без issue) |
+| `CacheLike` | имя `dir` (`file_name`) подходит под regex, или ≥ 50% байт приходится на прямых детей с подходящими именами (файл — свой размер, папка — байты поддерева); regex `(?i)^(cache|caches|.*cache|temp|tmp|logs?|crash(es|dumps|pad)?|shadercache|dxcache|gpucache)$`, **или** `tmp+log+dmp+etl` > 60% файлов |
 | `ConfigLike` | `json, ini, xml, cfg, conf, toml, yaml, yml, reg, config, prefs, plist` ≥ 60% файлов **и** `total_bytes` ≤ 50 МБ |
 | `MediaHeavy` | изображения (`jpg, jpeg, png, gif, webp, heic, raw, cr2, nef, arw, dng, psd, tif, tiff, bmp`) + видео (`mp4, mkv, mov, avi, webm, m4v`) + аудио (`mp3, flac, wav, ogg, m4a, aac, opus`) > 70% байт |
 | `DocumentHeavy` | `doc, docx, xls, xlsx, ppt, pptx, odt, ods, odp, pdf, txt, md, rtf, epub, djvu` > 50% файлов |
-| `ProjectLike` | в любой папке глубины ≤ 2: `package.json, Cargo.toml, go.mod, pyproject.toml, requirements.txt, pom.xml, build.gradle*, CMakeLists.txt, Makefile, *.sln, *.csproj, *.vcxproj, *.uproject, *.unity (ProjectSettings\), *.blend, *.aep, *.prproj, *.als, *.flp, *.rpp, *.kra, *.xcf` |
-| `CloudSynced` | `dir` внутри `{ONEDRIVE}` или пути из `HKCU\Software\Dropbox`/`%LOCALAPPDATA%\Dropbox\info.json`, `Google Drive` (`DriveFS`), `Yandex.Disk` (см. Открытые вопросы — где хранить корни) |
+| `ProjectLike` | в любой папке глубины ≤ 2 (файлы с `depth ≤ 3`) — файл, подходящий под глоб имени: `package.json, Cargo.toml, go.mod, pyproject.toml, requirements.txt, pom.xml, build.gradle*, CMakeLists.txt, Makefile, *.sln, *.csproj, *.vcxproj, *.uproject, *.blend, *.aep, *.prproj, *.als, *.flp, *.rpp, *.kra, *.xcf`; **или** Unity-проект: папка `ProjectSettings` рядом с папкой `Assets` (одиночный `*.unity` не считается) |
+| `CloudSynced` | `dir` внутри `{ONEDRIVE}` или пути из `HKCU\Software\Dropbox`/`%LOCALAPPDATA%\Dropbox\info.json`, `Google Drive` (`DriveFS`), `Yandex.Disk`; проверка — `starts_with_ci(dir, root.path)` для любого корня из `env.cloud_roots` (равенство тоже) |
 | `UwpPackage` | `dir` — сам каталог пакета `{LOCALAPPDATA}\Packages\<name>_<publisherId>` (publisherId — 13 символов `[a-z0-9]`), то есть `PathTemplate::from_path(dir)` = `{PACKAGE:name}` без хвоста |
 
 Маркеры не взаимоисключающие. `summarize` не присваивает категорию: это задача SPEC-07.
