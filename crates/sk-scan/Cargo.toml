@@ -13,8 +13,12 @@ globset.workspace = true
 sk-core.workspace = true
 time.workspace = true
 
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true, features = ["Win32_Foundation", "Win32_Storage_FileSystem"] }
+
 [dev-dependencies]
 sk-testkit.workspace = true
+tempfile.workspace = true
 
 [lints]
 workspace = true

@@ -7,6 +7,7 @@
 
 mod exclude;
 mod mem;
+mod win;
 
 pub use exclude::ExcludeSet;
 pub use mem::{MemFs, MemFsCalls};

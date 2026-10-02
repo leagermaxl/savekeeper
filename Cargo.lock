@@ -1894,7 +1894,9 @@ dependencies = [
  "globset",
  "sk-core",
  "sk-testkit",
+ "tempfile",
  "time",
+ "windows",
 ]
 
 [[package]]
