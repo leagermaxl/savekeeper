@@ -8,7 +8,7 @@
 | Крейт(ы) | все, в первую очередь `sk-core`, `sk-engine`, `sk-cli` |
 | Зависит от | SPEC-00, SPEC-02 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-10-02 (§4.2: `xtask` может подключать `sk-testkit` как обычную зависимость; статус done; §8: Ctrl+C принят по тесту, ручная проверка перенесена в SPEC-03 T-03-04; §4.10: API `sk-core::win::single_instance` и кто берёт блокировку; §4.4: внедрение зависимостей `ScanPipeline`, поведение `run` по фазам, сохранение отчётов, заглушка сканера; §4.7: варианты `EngineError`; §4.8.3: API `sk-core::logging`, обезличивание в писателе, имя файла лога; §4.8.2: API `Config`/`LoadedConfig`/`ConfigWarning`/`DataDir`, правила загрузки, типы значений; §4.5: `ScanPhase`, `LogLevel`, API и правила `ThrottledSink`; T-01-03: `PathSet` вынесен в T-02-02; MSRV 1.93; YAML: `serde-saphyr`; `FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; уточнение T-01-01) |
+| Последнее изменение | 2026-10-02 (§4.2: `windows` в зависимостях `sk-scan`; §4.2: `xtask` может подключать `sk-testkit` как обычную зависимость; статус done; §8: Ctrl+C принят по тесту, ручная проверка перенесена в SPEC-03 T-03-04; §4.10: API `sk-core::win::single_instance` и кто берёт блокировку; §4.4: внедрение зависимостей `ScanPipeline`, поведение `run` по фазам, сохранение отчётов, заглушка сканера; §4.7: варианты `EngineError`; §4.8.3: API `sk-core::logging`, обезличивание в писателе, имя файла лога; §4.8.2: API `Config`/`LoadedConfig`/`ConfigWarning`/`DataDir`, правила загрузки, типы значений; §4.5: `ScanPhase`, `LogLevel`, API и правила `ThrottledSink`; T-01-03: `PathSet` вынесен в T-02-02; MSRV 1.93; YAML: `serde-saphyr`; `FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; уточнение T-01-01) |
 
 ## 1. Цель
 
@@ -114,7 +114,7 @@ graph BT
 | Крейт | Ответственность | Ключевые внешние зависимости |
 |---|---|---|
 | `sk-core` | Типы SPEC-02, `PathTemplate`, `KnownFolders`, `Config` со всеми секциями, `Event`, `CancellationToken` (реэкспорт `tokio_util::sync`), трейт `FsScanner` и его типы (SPEC-03 §4.1), общие ошибки | `serde`, `thiserror`, `windows`, `uuid`, `time`, `blake3`, `globset` |
-| `sk-scan` | Параллельный обход, `measure()`, `summarize()`, глобальные исключения | `jwalk`, `globset`, `rayon` |
+| `sk-scan` | Параллельный обход, `measure()`, `summarize()`, глобальные исключения | `jwalk`, `globset`, `rayon`, `windows` (FFI в `sk-scan::win`) |
 | `sk-rules` | Загрузка, валидация и матчинг YAML-правил | `serde-saphyr`, `globset`, `include_dir` |
 | `sk-games` | Парсинг манифеста Ludusavi, детект лаунчеров, резолв путей игр | `serde-saphyr` (большой манифест: feature `huge_documents` или увеличенный бюджет парсера), `reqwest` (blocking=false), `keyvalues-parser` (VDF) |
 | `sk-system` | Обнаружение и выполнение системных экспортов | `winreg`, `std::process` |

@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-scan` |
 | Зависит от | SPEC-01, SPEC-02 |
 | Используется в | SPEC-04, SPEC-05, SPEC-07, SPEC-08, SPEC-10 |
-| Последнее изменение | 2026-10-02 (§4.6: семантика `scan.exclude_globs`; §4.1: `PathFilter::check` → `Exclusion`, `ExcludeSet::builtin/with_user(env)`, `names_only`, поведение `walk`; §4.2: проверка условных исключений; §4.5: раскрытие шаблонов путей; §4.1: соглашения `MemFs`, счётчики вызовов, загрузка фикстур перенесена в `sk_testkit::mem_fixture`; T-03-02; §9; T-03-04: ручная проверка Ctrl+C из SPEC-01 §8; §4.4: правило `UwpPackage`, 14 маркеров как в SPEC-02 §4.1; §4.1: `CloudState` без `Pinned`, как в определении enum; §9: OneDrive-корни заполняет `sk-core`; трейт `FsScanner` и его типы — в `sk-core::fs`; `WalkOptions.excludes` через трейт `PathFilter`) |
+| Последнее изменение | 2026-10-02 (§4.1, T-03-05, §6: `probe_readable` не следует по ссылкам; §4.6: семантика `scan.exclude_globs`; §4.1: `PathFilter::check` → `Exclusion`, `ExcludeSet::builtin/with_user(env)`, `names_only`, поведение `walk`; §4.2: проверка условных исключений; §4.5: раскрытие шаблонов путей; §4.1: соглашения `MemFs`, счётчики вызовов, загрузка фикстур перенесена в `sk_testkit::mem_fixture`; T-03-02; §9; T-03-04: ручная проверка Ctrl+C из SPEC-01 §8; §4.4: правило `UwpPackage`, 14 маркеров как в SPEC-02 §4.1; §4.1: `CloudState` без `Pinned`, как в определении enum; §9: OneDrive-корни заполняет `sk-core`; трейт `FsScanner` и его типы — в `sk-core::fs`; `WalkOptions.excludes` через трейт `PathFilter`) |
 
 ## 1. Цель
 
@@ -73,6 +73,8 @@ pub trait FsScanner: Send + Sync {
     /// Файл целиком, если ≤ max байт, иначе FsError::TooLarge.
     fn read_small(&self, path: &Path, max: usize) -> Result<Vec<u8>, FsError>;
     /// Пробное открытие на чтение с FILE_SHARE_READ|WRITE|DELETE → Locked при sharing violation.
+    /// Не следует по ссылкам (FR-03-02): атрибуты берутся у самой записи; CloudOnly → без открытия;
+    /// для reparse point открывается сама ссылка (FILE_FLAG_OPEN_REPARSE_POINT), цель не проверяется.
     fn probe_readable(&self, path: &Path) -> Readability;
 }
 
@@ -289,7 +291,8 @@ Windows.old, Config.Msi, Recovery, MSOCache, PerfLogs
   - создание junction (`mklink /J` через `std::os::windows::fs::symlink_dir` или `junction` crate) → не обходится;
   - файл, открытый другим хэндлом с `share_mode(0)` → `Readability::Locked`;
   - путь длиной 400 символов → успешный `measure`;
-  - файл с атрибутом OFFLINE (`SetFileAttributesW`) → не открывается (проверка через счётчик `read_head`-вызовов в обёртке).
+  - файл с атрибутом OFFLINE (`SetFileAttributesW`) → не открывается (проверка через счётчик `read_head`-вызовов в обёртке);
+  - junction на удалённый каталог → `probe_readable` = Ok (проверяется сама ссылка, не цель).
 - **Бенчмарк (`criterion`, ручной запуск):** генератор 1 млн файлов в tempdir → `walk` ≥ NFR-03-01.
 
 ## 7. Задачи
@@ -298,7 +301,7 @@ Windows.old, Config.Msi, Recovery, MSOCache, PerfLogs
 - [x] **T-03-02** — `MemFs` (+ счётчики вызовов) в `sk-scan`; `mem_fixture` и ключи `fixtures/fs` (SPEC-12 §4.3) в `sk-testkit`; фикстура `fixtures/fs/electron-app.yaml`. *Зависит:* T-03-01. *Готово, когда:* интеграционный тест в `crates/sk-scan/tests/` (`sk-testkit` как dev-dependency) загружает `electron-app.yaml`, и `walk` по ней проходит.
 - [x] **T-03-03** — `ExcludeSet` (встроенный список §4.5 + пользовательские глобы, условные исключения `target`/`obj`/`venv`). *Зависит:* T-03-01. *Готово, когда:* unit-тесты на каждый пункт списка.
 - [ ] **T-03-04** — `RealFs::walk` на jwalk: reparse, cloud-атрибуты, исключения, отмена, лимиты, выбор потоков по типу диска. *Зависит:* T-03-03, T-02-02. *Готово, когда:* Windows-тесты junction/long path; ручная проверка критерия SPEC-01 §8: Ctrl+C во время `savekeeper-cli scan` по реальному профилю завершает процесс за ≤ 1 с с кодом 2.
-- [ ] **T-03-05** — `sk-scan::win`: `reparse_tag`, `probe_readable` через `CreateFileW` (`GENERIC_READ`, share RW|D, `FILE_FLAG_BACKUP_SEMANTICS` для каталогов, `FILE_FLAG_OPEN_NO_RECALL`). *Зависит:* T-03-01. *Готово, когда:* тест Locked + OFFLINE.
+- [ ] **T-03-05** — `sk-scan::win`: `reparse_tag`, `probe_readable` через `CreateFileW` (`GENERIC_READ`, share RW|D, `OPEN_EXISTING`, `FILE_FLAG_OPEN_NO_RECALL | FILE_FLAG_OPEN_REPARSE_POINT`, `FILE_FLAG_BACKUP_SEMANTICS` для каталогов); при CloudOnly-атрибутах самой записи — `Readability::CloudOnly` без открытия. *Зависит:* T-03-01. *Готово, когда:* тест Locked + OFFLINE.
 - [ ] **T-03-06** — `read_head`/`read_small` с защитой от cloud-only и лимитом. *Зависит:* T-03-05.
 - [ ] **T-03-07** — `measure` + `DirStatsCache` + `measure_all` с прогрессом. *Зависит:* T-03-04. *Готово, когда:* тест «вложенные корни — один обход».
 - [ ] **T-03-08** — `summarize` + все маркеры по таблице §4.4. *Зависит:* T-03-06, T-02-07, T-02-04. *Готово, когда:* тесты порогов для всех 14 маркеров.
