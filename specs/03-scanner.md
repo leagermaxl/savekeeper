@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-scan` |
 | Зависит от | SPEC-01, SPEC-02 |
 | Используется в | SPEC-04, SPEC-05, SPEC-07, SPEC-08, SPEC-10 |
-| Последнее изменение | 2026-10-02 (§4.1, T-03-06: как `read_head`/`read_small` открывают файл, по ссылкам не читаем; §5: LastAccessTime при чтении; §4.2: облачные заглушки — `Reparse(CloudPlaceholder)` для файлов и каталогов, различение по `FILE_ATTRIBUTE_DIRECTORY`; §4.2: собственный обход на rayon вместо jwalk, метаданные из листинга, правило числа потоков; T-03-04: ручная проверка Ctrl+C перенесена в SPEC-04 T-04-07; §4.1, T-03-05, §6: `probe_readable` не следует по ссылкам; §4.6: семантика `scan.exclude_globs`; §4.1: `PathFilter::check` → `Exclusion`, `ExcludeSet::builtin/with_user(env)`, `names_only`, поведение `walk`; §4.2: проверка условных исключений; §4.5: раскрытие шаблонов путей; §4.1: соглашения `MemFs`, счётчики вызовов, загрузка фикстур перенесена в `sk_testkit::mem_fixture`; T-03-02; §9; T-03-04: ручная проверка Ctrl+C из SPEC-01 §8; §4.4: правило `UwpPackage`, 14 маркеров как в SPEC-02 §4.1; §4.1: `CloudState` без `Pinned`, как в определении enum; §9: OneDrive-корни заполняет `sk-core`; трейт `FsScanner` и его типы — в `sk-core::fs`; `WalkOptions.excludes` через трейт `PathFilter`) |
+| Последнее изменение | 2026-10-02 (§4.1: `MeasureOptions` с исключениями и лимитами, API `DirStatsCache`, `measure` → `Option<TargetStats>`; §4.3: правила подсчёта, кэша и issues `measure_all`; §4.5: определение `explicit_root`; §4.1, T-03-06: как `read_head`/`read_small` открывают файл, по ссылкам не читаем; §5: LastAccessTime при чтении; §4.2: облачные заглушки — `Reparse(CloudPlaceholder)` для файлов и каталогов, различение по `FILE_ATTRIBUTE_DIRECTORY`; §4.2: собственный обход на rayon вместо jwalk, метаданные из листинга, правило числа потоков; T-03-04: ручная проверка Ctrl+C перенесена в SPEC-04 T-04-07; §4.1, T-03-05, §6: `probe_readable` не следует по ссылкам; §4.6: семантика `scan.exclude_globs`; §4.1: `PathFilter::check` → `Exclusion`, `ExcludeSet::builtin/with_user(env)`, `names_only`, поведение `walk`; §4.2: проверка условных исключений; §4.5: раскрытие шаблонов путей; §4.1: соглашения `MemFs`, счётчики вызовов, загрузка фикстур перенесена в `sk_testkit::mem_fixture`; T-03-02; §9; T-03-04: ручная проверка Ctrl+C из SPEC-01 §8; §4.4: правило `UwpPackage`, 14 маркеров как в SPEC-02 §4.1; §4.1: `CloudState` без `Pinned`, как в определении enum; §9: OneDrive-корни заполняет `sk-core`; трейт `FsScanner` и его типы — в `sk-core::fs`; `WalkOptions.excludes` через трейт `PathFilter`) |
 
 ## 1. Цель
 
@@ -134,13 +134,24 @@ pub struct MemFsCalls { pub read_dir: u64, pub exists: u64, pub read_head: u64 }
 
 // Высокоуровневые функции
 pub fn measure(fs: &dyn FsScanner, target: &Target, cache: &DirStatsCache, opts: &MeasureOptions,
-               cancel: &CancellationToken) -> Result<TargetStats, FsError>;
+               cancel: &CancellationToken) -> Result<Option<TargetStats>, FsError>; // Ok(None) — Registry/SystemExport
 pub fn measure_all(fs: &dyn FsScanner, findings: &mut [Finding], opts: &MeasureOptions,
                    events: &EventSink, cancel: &CancellationToken) -> Vec<ScanIssue>;
 pub fn summarize(fs: &dyn FsScanner, dir: &Path, env: &Environment, opts: &SummaryOptions,
                  cancel: &CancellationToken) -> Result<FolderSummary, FsError>;
 
-pub struct MeasureOptions { pub probe_locks: bool /* по умолчанию true */, pub include_excluded: bool }
+pub struct MeasureOptions {
+    pub probe_locks: bool,             // по умолчанию true
+    pub include_excluded: bool,        // по умолчанию false; true → глобальные исключения выключены (отладка в CLI)
+    pub excludes: Arc<ExcludeSet>,     // ExcludeSet::with_user(env, &config.scan.exclude_globs)
+    pub max_depth: u32,                // config.scan.max_depth
+    pub max_entries: u64,              // 2_000_000
+    pub threads: usize,                // 0 = лимит диска (§4.2)
+}
+impl MeasureOptions { pub fn new(excludes: Arc<ExcludeSet>, max_depth: u32) -> Self; } // остальные поля — по умолчанию
+/// Кэш агрегатов по каталогам. Send + Sync, один на скан; measure_all создаёт свой.
+pub struct DirStatsCache { /* … */ }
+impl DirStatsCache { pub fn new() -> Self; } // + Default
 pub struct SummaryOptions { pub max_entries: u64 /* 200_000 */, pub max_depth: u32 /* 12 */ }
 // sk-core::fs — фильтр исключений, через который WalkOptions не зависит от реализации §4.5
 /// Решение фильтра. Условия проверяет обходчик (§4.2), фильтр сам к ФС не обращается.
@@ -197,16 +208,27 @@ impl PathFilter for ExcludeSet { /* check */ }
 > `IO_REPARSE_TAG_CLOUD*` (маска `0x9000001A`) → `EntryKind::Reparse(CloudPlaceholder)` и для файлов, и для каталогов. Это не ссылка: файл-заглушка учитывается как файл (размер из метаданных, содержимое не читается), каталог-заглушка (OneDrive-папка) **обходится** как обычный каталог — его перечисление не гидрирует файлы. Файл и каталог различаются по `attrs & FILE_ATTRIBUTE_DIRECTORY` (`MemFs` выставляет этот атрибут так же). Потребители (`measure`, `summarize`) считают `Reparse(CloudPlaceholder)` без `FILE_ATTRIBUTE_DIRECTORY` файлом, с ним — каталогом. Не раскрываются Symlink, Junction, AppExecLink, Other.
 
 ### 4.3 `measure`
-Для `Target::File`: `metadata` → stats с `file_count=1`. Если `probe_locks`, то `probe_readable`.
+Для `Target::File`: `metadata` → stats с `file_count=1` по тем же правилам подсчёта, что в шаге 3; если путь — каталог, `FsError::Io`. Если `probe_locks`, то `probe_readable`.
 Для `Target::FileSet`:
-1. `cache.get(resolved, include, exclude)`, если уже есть.
-2. `walk` с `include`/`exclude` из target (глобы относительно root, `globset` с `case_insensitive(true)`, `literal_separator(true)`).
-3. Аккумуляция: `total_bytes += size` (для CloudOnly тоже, но в `cloud_only_bytes`, см. Открытые вопросы), `file_count`, `dir_count`, `newest/oldest_mtime`.
+1. `cache.get(resolved, include, exclude, режим)`, если уже есть.
+2. `walk` с `include`/`exclude` из target (глобы относительно root, `globset` с `case_insensitive(true)`, `literal_separator(true)`), фильтр исключений по §4.5 (`explicit_root`, `include_excluded`), `max_depth`/`max_entries`/`threads` из `MeasureOptions`.
+3. Аккумуляция:
+   - файлы: `File` и `Reparse(CloudPlaceholder)` без `FILE_ATTRIBUTE_DIRECTORY`; каталоги (`dir_count`): `Dir` и `CloudPlaceholder` с этим атрибутом; `AppExecLink` — файл размера 0; Symlink/Junction/Other не учитываются;
+   - `total_bytes += size`; CloudOnly-файл добавляет ещё в `cloud_only_bytes` и `cloud_only_files` и никогда не пробуется;
+   - `newest/oldest_mtime` — только по файлам; `largest_file_bytes` — наибольший файл, `None`, если файлов нет.
 4. Probe блокировок: только для файлов с расширениями из «часто блокируемых» (`db, sqlite, ldb, log, dat, lock, pst, ost, vhdx`) и не больше 500 проб на корень (probe дорог). Результат `Locked` → `locked_files += 1`.
 5. `truncated = walk.truncated || errors > 0`.
-6. `Target::Registry` / `Target::SystemExport` → `measure` возвращает `None`-stats (размер оценивает SPEC-06 `plan()`).
+6. `Target::Registry` / `Target::SystemExport` → `Ok(None)` (размер оценивает SPEC-06 `plan()`).
 
-`measure_all`: сортирует findings по глубине пути; для вложенных корней (A ⊂ B) результат A вычисляется в том же обходе B, если у A и B пустые include/exclude (оптимизация через `DirStatsCache`, агрегирующий stats по каждому каталогу до глубины 3 от корня). Прогресс: `Event::Progress{phase: Measure, done: i, total: n, current: template}`.
+`DirStatsCache`:
+- Ключ = (resolved без `\\?\` в нижнем регистре; `include` и `exclude` как заданы; режим исключений: полный / `names_only` / без исключений).
+- После полного обхода `measure` сохраняет stats корня. Если `include` и `exclude` пусты, сохраняются ещё агрегированные stats каждой обойдённой подпапки глубины ≤ 3 под ключом (подпапка, [], [], тот же режим) — только если обход не обрезан (`truncated`), `errors == 0` и ни одна папка не осталась необойдённой из-за `max_depth`.
+- Каталог, исключённый из обхода (по пути, имени или условию), записи не получает и меряется своим обходом. При `Cancelled` или `Err` ничего не сохраняется.
+
+`measure_all` (issues с `source = "measure"`):
+- Порядок `findings` сохраняется (сортируется индекс, а не срез). FileSet, чей корень лежит на 1–3 уровня ниже корня другого FileSet (оба с пустыми include/exclude и одним режимом), меряется после него — попаданием в кэш. Остальные корни меряются параллельно (rayon).
+- `Ok` → `stats = Some`. `NotFound` → `stats = None`, без issue. Корень — reparse point (по `fs.metadata`, кроме каталога-`CloudPlaceholder`) → нулевые stats, тег `reparse_root`, Info `issue.scan.reparse_root`. `walk.errors > 0` → один Warning `issue.scan.dirs_unreadable` {count} на находку, `path` = шаблон корня. Прочая ошибка → `stats = None`, Warning `issue.scan.measure_failed` {error}. `Cancelled` → остановка, у оставшихся `stats = None`, без issues.
+- Прогресс через `ThrottledSink` после каждой fs-находки: `Event::Progress{phase: Measure, done: i, total: Some(число FileSet/File-находок), current: Some(шаблон root/path)}`; в конце `flush()`.
 
 ### 4.4 `summarize` и маркеры
 Обход `dir` с `SummaryOptions` → аккумулируем:
@@ -258,7 +280,7 @@ Windows.old, Config.Msi, Recovery, MSOCache, PerfLogs
 
 Шаблоны путей раскрываются один раз при создании `ExcludeSet` из `env.known_folders`. Шаблон, чья папка отсутствует, пропускается. Шаблоны с `*` (`{LOCALAPPDATA}\Packages\*\AC\INetCache`) становятся глобом по абсолютному пути без учёта регистра. Условные имена (`target`, `obj`/`bin`, `venv`) возвращают `ExcludeIfSibling`/`ExcludeIfChild` (§4.1).
 
-Исключения относятся к **обходу**. Коллектор может явно указать `Target` внутри исключённого пути (например, правило для `{PROGRAMDATA}\...` конкретной программы): `measure` для такого target применяет только имена-исключения, но не path-исключения (флаг `explicit_root` внутри `measure`).
+Исключения относятся к **обходу**. Коллектор может явно указать `Target` внутри исключённого пути (например, правило для `{PROGRAMDATA}\...` конкретной программы): `measure` для такого target применяет только имена-исключения, но не path-исключения (флаг `explicit_root` внутри `measure`). `explicit_root` ⇔ `opts.excludes.check(root, name(root), true)` = `Exclude`, а `opts.excludes.names_only().check(...)` = `Keep` (корень покрыт исключением по пути); тогда обход идёт с `excludes.names_only()`. `include_excluded` → фильтр, который всегда возвращает `Keep`.
 
 ### 4.6 Конфигурация
 - `scan.exclude_globs` добавляются в `ExcludeSet::with_user`:
