@@ -11,10 +11,9 @@ pub mod model;
 pub mod path;
 pub mod privacy;
 pub mod template;
+pub mod win;
 
 mod serde_util;
-#[cfg(windows)]
-mod win;
 
 /// Cancellation of long operations (SPEC-01 §4.6).
 pub use tokio_util::sync::CancellationToken;

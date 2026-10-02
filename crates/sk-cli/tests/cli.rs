@@ -8,6 +8,7 @@
 #![allow(clippy::unwrap_used)]
 
 use std::path::{Path, PathBuf};
+use std::sync::{Mutex, MutexGuard, PoisonError};
 
 use assert_cmd::Command;
 use predicates::prelude::*;
@@ -123,8 +124,17 @@ fn env_prints_the_environment() {
     assert!(json["os"]["arch"].is_string());
 }
 
+/// Serializes the tests that run `backup`: it takes the system-wide
+/// single-instance lock, which one of them holds on purpose.
+static BACKUP_LOCK: Mutex<()> = Mutex::new(());
+
+fn backup_lock() -> MutexGuard<'static, ()> {
+    BACKUP_LOCK.lock().unwrap_or_else(PoisonError::into_inner)
+}
+
 #[test]
 fn unimplemented_commands_fail_with_a_message() {
+    let _backup = backup_lock();
     let cli = Cli::new();
     for (args, name) in [
         (
@@ -139,6 +149,25 @@ fn unimplemented_commands_fail_with_a_message() {
             .code(1)
             .stderr(contains(name).and(contains("not implemented yet")));
     }
+}
+
+/// SPEC-01 §5, T-01-08: a second instance running `backup` exits with 1.
+#[cfg(windows)]
+#[test]
+fn backup_fails_while_another_instance_runs() {
+    let _backup = backup_lock();
+    let cli = Cli::new();
+    let first = sk_core::win::single_instance::acquire().unwrap();
+    cli.cmd(&["backup", "--report", "r.json", "--to", "b"])
+        .assert()
+        .code(1)
+        .stderr(contains("another SaveKeeper instance is running"));
+    drop(first);
+    // Without the other instance it gets past the lock.
+    cli.cmd(&["backup", "--report", "r.json", "--to", "b"])
+        .assert()
+        .code(1)
+        .stderr(contains("not implemented yet"));
 }
 
 #[test]

@@ -12,6 +12,7 @@ use std::process::ExitCode;
 
 use clap::error::ErrorKind;
 use clap::Parser;
+use sk_core::win::single_instance;
 
 use cli::{Cli, Command, ConfigCommand, ManifestCommand, RulesCommand};
 
@@ -74,7 +75,11 @@ fn run(cli: Cli) -> anyhow::Result<Status> {
         Command::Config {
             command: ConfigCommand::Path,
         } => commands::config_path(),
-        Command::Backup(_) => commands::not_implemented("backup", "SPEC-10, T-10-14"),
+        Command::Backup(_) => {
+            // Only one backup at a time (SPEC-01 §5): held until the command ends.
+            let _instance = single_instance::acquire()?;
+            commands::not_implemented("backup", "SPEC-10, T-10-14")
+        }
         Command::Rules {
             command: RulesCommand::Validate(_),
         } => commands::not_implemented("rules validate", "SPEC-04, T-04-10"),
