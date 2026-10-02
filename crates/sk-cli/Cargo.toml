@@ -14,3 +14,19 @@ workspace = true
 [[bin]]
 name = "savekeeper-cli"
 path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+indicatif.workspace = true
+serde_json.workspace = true
+sk-core.workspace = true
+sk-engine.workspace = true
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal", "sync"] }
+
+[dev-dependencies]
+assert_cmd.workspace = true
+async-trait.workspace = true
+predicates.workspace = true
+tempfile.workspace = true
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal", "sync", "time"] }
