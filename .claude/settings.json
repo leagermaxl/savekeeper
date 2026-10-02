@@ -1,0 +1,36 @@
+{
+  "model": "claude-opus-5-5",
+  "permissions": {
+    "allow": [
+      "Edit",
+      "Write",
+      "Bash(cargo *)",
+      "Bash(rustup show *)",
+      "Bash(rustc --version)",
+      "Bash(pnpm *)",
+      "Bash(node --version)",
+      "Bash(npx tsc *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git rev-parse *)",
+      "Bash(git ls-files *)",
+      "Bash(git stash list *)"
+    ],
+    "deny": [
+      "Bash(git push *)",
+      "Bash(git reset --hard *)",
+      "Bash(git clean *)",
+      "Bash(git checkout -- *)",
+      "Bash(cargo publish *)",
+      "Bash(cargo install *)",
+      "Bash(rustup install *)",
+      "Bash(rustup toolchain install *)",
+      "Read(./.env)",
+      "Read(./.env.*)"
+    ]
+  }
+}
