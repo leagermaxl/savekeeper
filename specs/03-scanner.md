@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-scan` |
 | Зависит от | SPEC-01, SPEC-02 |
 | Используется в | SPEC-04, SPEC-05, SPEC-07, SPEC-08, SPEC-10 |
-| Последнее изменение | 2026-10-02 (§4.1: `CloudState` без `Pinned`, как в определении enum; §9: OneDrive-корни заполняет `sk-core`; трейт `FsScanner` и его типы — в `sk-core::fs`; `WalkOptions.excludes` через трейт `PathFilter`) |
+| Последнее изменение | 2026-10-02 (§4.4: правило `UwpPackage`, 14 маркеров как в SPEC-02 §4.1; §4.1: `CloudState` без `Pinned`, как в определении enum; §9: OneDrive-корни заполняет `sk-core`; трейт `FsScanner` и его типы — в `sk-core::fs`; `WalkOptions.excludes` через трейт `PathFilter`) |
 
 ## 1. Цель
 
@@ -198,6 +198,7 @@ impl PathFilter for ExcludeSet { /* is_excluded */ }
 | `DocumentHeavy` | `doc, docx, xls, xlsx, ppt, pptx, odt, ods, odp, pdf, txt, md, rtf, epub, djvu` > 50% файлов |
 | `ProjectLike` | в любой папке глубины ≤ 2: `package.json, Cargo.toml, go.mod, pyproject.toml, requirements.txt, pom.xml, build.gradle*, CMakeLists.txt, Makefile, *.sln, *.csproj, *.vcxproj, *.uproject, *.unity (ProjectSettings\), *.blend, *.aep, *.prproj, *.als, *.flp, *.rpp, *.kra, *.xcf` |
 | `CloudSynced` | `dir` внутри `{ONEDRIVE}` или пути из `HKCU\Software\Dropbox`/`%LOCALAPPDATA%\Dropbox\info.json`, `Google Drive` (`DriveFS`), `Yandex.Disk` (см. Открытые вопросы — где хранить корни) |
+| `UwpPackage` | `dir` — сам каталог пакета `{LOCALAPPDATA}\Packages\<name>_<publisherId>` (publisherId — 13 символов `[a-z0-9]`), то есть `PathTemplate::from_path(dir)` = `{PACKAGE:name}` без хвоста |
 
 Маркеры не взаимоисключающие. `summarize` не присваивает категорию: это задача SPEC-07.
 
@@ -267,7 +268,7 @@ Windows.old, Config.Msi, Recovery, MSOCache, PerfLogs
 - [ ] **T-03-05** — `sk-scan::win`: `reparse_tag`, `probe_readable` через `CreateFileW` (`GENERIC_READ`, share RW|D, `FILE_FLAG_BACKUP_SEMANTICS` для каталогов, `FILE_FLAG_OPEN_NO_RECALL`). *Зависит:* T-03-01. *Готово, когда:* тест Locked + OFFLINE.
 - [ ] **T-03-06** — `read_head`/`read_small` с защитой от cloud-only и лимитом. *Зависит:* T-03-05.
 - [ ] **T-03-07** — `measure` + `DirStatsCache` + `measure_all` с прогрессом. *Зависит:* T-03-04. *Готово, когда:* тест «вложенные корни — один обход».
-- [ ] **T-03-08** — `summarize` + все маркеры по таблице §4.4. *Зависит:* T-03-06, T-02-07, T-02-04. *Готово, когда:* тесты порогов для всех 13 маркеров.
+- [ ] **T-03-08** — `summarize` + все маркеры по таблице §4.4. *Зависит:* T-03-06, T-02-07, T-02-04. *Готово, когда:* тесты порогов для всех 14 маркеров.
 - [ ] **T-03-09** — Бенчмарк `criterion` и генератор дерева. *Зависит:* T-03-04. *Готово, когда:* результат ≥ NFR-03-01 на машине разработчика, число записано в спеку.
 - [ ] **T-03-10** — Команда CLI `savekeeper-cli debug summarize <path>` (вывод FolderSummary JSON). *Зависит:* T-03-08, T-01-07.
 
@@ -276,7 +277,7 @@ Windows.old, Config.Msi, Recovery, MSOCache, PerfLogs
 - [ ] Ни один тест и ни один ручной прогон не гидрирует OneDrive-файлы (проверка: папка «только онлайн» остаётся с облачным значком после скана).
 - [ ] Скан профиля с junction'ами профиля (`Application Data` и т.д.) не даёт двойного счёта размеров.
 - [ ] NFR-03-01 подтверждён бенчмарком.
-- [ ] Все 13 маркеров покрыты тестами порогов.
+- [ ] Все 14 маркеров покрыты тестами порогов.
 
 ## 9. Открытые вопросы
 
