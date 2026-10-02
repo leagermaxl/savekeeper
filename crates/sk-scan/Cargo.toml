@@ -10,6 +10,7 @@ publish.workspace = true
 
 [dependencies]
 globset.workspace = true
+rayon.workspace = true
 sk-core.workspace = true
 time.workspace = true
 

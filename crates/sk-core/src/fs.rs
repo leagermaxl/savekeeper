@@ -30,7 +30,8 @@ pub trait FsScanner: Send + Sync {
     fn read_dir(&self, path: &Path) -> Result<Vec<DirEntryInfo>, FsError>;
 
     /// Parallel recursive traversal; calls `visit` for every entry that is not
-    /// excluded. Reparse points are reported but not entered.
+    /// excluded. Reparse points are reported but not entered, except cloud
+    /// placeholder folders (SPEC-03 §4.2).
     fn walk(
         &self,
         root: &Path,
@@ -70,11 +71,14 @@ pub struct EntryMeta {
 /// Kind of an entry.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EntryKind {
-    /// A regular file (also cloud placeholders of files).
+    /// A regular file.
     File,
     /// A directory.
     Dir,
-    /// A reparse point that is not entered.
+    /// A reparse point; of these, `walk` enters only cloud placeholder folders
+    /// (SPEC-03 §4.2). Cloud placeholders, files and folders alike, are
+    /// `Reparse(CloudPlaceholder)`; a folder has `FILE_ATTRIBUTE_DIRECTORY`
+    /// in [`EntryMeta::attrs`], a file does not.
     Reparse(ReparseKind),
 }
 

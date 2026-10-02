@@ -2,7 +2,6 @@
 
 mod pipeline;
 mod reports;
-mod unavailable_fs;
 
 pub use pipeline::{ScanOptions, ScanPipeline};
 pub use sk_core::error::EngineError;

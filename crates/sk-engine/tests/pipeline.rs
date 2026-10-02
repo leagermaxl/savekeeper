@@ -337,3 +337,43 @@ async fn reports_are_saved_and_pruned() {
     let report = sk_core::model::ScanReport::from_json(&saved).unwrap();
     assert_eq!(report.scan_id, ids[11]);
 }
+
+/// Lists `dir` through the context's scanner and records what it saw.
+struct ListDir {
+    dir: PathBuf,
+    seen: std::sync::Mutex<Option<Vec<PathBuf>>>,
+}
+
+#[async_trait]
+impl Collector for ListDir {
+    fn id(&self) -> &'static str {
+        "list-dir"
+    }
+    fn display_key(&self) -> &'static str {
+        "collector.list_dir"
+    }
+    async fn collect(&self, ctx: &CollectContext) -> Result<CollectOutput, CollectorError> {
+        let entries = ctx.scanner.read_dir(&self.dir).unwrap();
+        *self.seen.lock().unwrap() = Some(entries.into_iter().map(|e| e.rel).collect());
+        Ok(CollectOutput::default())
+    }
+}
+
+/// Without `with_scanner` the pipeline scans the real file system (SPEC-01 §4.4).
+#[tokio::test]
+async fn default_scanner_reads_the_real_file_system() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(dir.path().join("save.dat"), b"x").unwrap();
+    let collector = Arc::new(ListDir {
+        dir: dir.path().to_path_buf(),
+        seen: std::sync::Mutex::new(None),
+    });
+    let (tx, _rx) = unbounded_channel();
+    pipeline()
+        .with_collector(collector.clone())
+        .run(ScanOptions::default(), tx, CancellationToken::new())
+        .await
+        .unwrap();
+    let seen = collector.seen.lock().unwrap().clone();
+    assert_eq!(seen, Some(vec![PathBuf::from("save.dat")]));
+}

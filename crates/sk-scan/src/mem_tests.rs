@@ -421,3 +421,32 @@ fn a_junction_is_always_a_folder() {
     let link = fs.metadata(Path::new("/r/link.txt")).unwrap();
     assert_eq!(link.attrs & FILE_ATTRIBUTE_DIRECTORY, 0);
 }
+
+/// Cloud placeholders are `Reparse(CloudPlaceholder)` for files and folders;
+/// only folders have `FILE_ATTRIBUTE_DIRECTORY` and are walked (SPEC-03 §4.2).
+#[test]
+fn cloud_placeholders_are_told_apart_by_the_directory_attribute() {
+    let mut fs = MemFs::new();
+    fs.add_file("/r/od/doc.txt", 7, "", None)
+        .add_reparse("/r/od", ReparseKind::CloudPlaceholder)
+        .add_reparse("/r/od/doc.txt", ReparseKind::CloudPlaceholder)
+        .set_cloud_only("/r/od/doc.txt")
+        .add_reparse("/r/new.txt", ReparseKind::CloudPlaceholder);
+    let kind = EntryKind::Reparse(ReparseKind::CloudPlaceholder);
+
+    let folder = fs.metadata(Path::new("/r/od")).unwrap();
+    assert_eq!(folder.kind, kind);
+    assert_ne!(folder.attrs & FILE_ATTRIBUTE_DIRECTORY, 0);
+    assert_ne!(folder.attrs & FILE_ATTRIBUTE_REPARSE_POINT, 0);
+    for file in ["/r/od/doc.txt", "/r/new.txt"] {
+        let meta = fs.metadata(Path::new(file)).unwrap();
+        assert_eq!(meta.kind, kind, "{file}");
+        assert_eq!(meta.attrs & FILE_ATTRIBUTE_DIRECTORY, 0, "{file}");
+        assert_ne!(meta.attrs & FILE_ATTRIBUTE_REPARSE_POINT, 0, "{file}");
+    }
+    let doc = fs.metadata(Path::new("/r/od/doc.txt")).unwrap();
+    assert_eq!((doc.size, doc.cloud), (7, CloudState::CloudOnly));
+
+    let (seen, _) = walk_with(&fs, &opts(), |_| WalkControl::Continue);
+    assert_eq!(seen, ["new.txt", "od", "od/doc.txt"]);
+}

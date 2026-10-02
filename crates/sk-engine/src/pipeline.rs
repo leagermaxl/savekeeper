@@ -19,12 +19,12 @@ use sk_core::model::{
 use sk_core::path::PathSet;
 use sk_core::template::PathTemplate;
 use sk_core::CancellationToken;
+use sk_scan::RealFs;
 use time::OffsetDateTime;
 use tokio::task::{JoinError, JoinSet};
 use uuid::Uuid;
 
 use crate::reports;
-use crate::unavailable_fs::UnavailableFs;
 
 /// What to scan.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -44,7 +44,8 @@ pub struct ScanPipeline {
     config: Arc<Config>,
     collectors: Vec<Arc<dyn Collector>>,
     post_collectors: Vec<Arc<dyn PostCollector>>,
-    scanner: Arc<dyn FsScanner>,
+    /// `None`: `RealFs` for the environment of each run.
+    scanner: Option<Arc<dyn FsScanner>>,
     environment: Option<Environment>,
     scans_dir: Option<PathBuf>,
     app_version: String,
@@ -57,7 +58,7 @@ impl ScanPipeline {
             config,
             collectors: Vec::new(),
             post_collectors: Vec::new(),
-            scanner: Arc::new(UnavailableFs),
+            scanner: None,
             environment: None,
             scans_dir: None,
             app_version: env!("CARGO_PKG_VERSION").to_owned(),
@@ -78,7 +79,7 @@ impl ScanPipeline {
 
     /// Replaces the file system scanner.
     pub fn with_scanner(mut self, scanner: Arc<dyn FsScanner>) -> Self {
-        self.scanner = scanner;
+        self.scanner = Some(scanner);
         self
     }
 
@@ -121,10 +122,14 @@ impl ScanPipeline {
                 }
             })
             .await??;
+        let scanner = match &self.scanner {
+            Some(scanner) => Arc::clone(scanner),
+            None => Arc::new(RealFs::new(&env)),
+        };
         let ctx = CollectContext {
             env: Arc::new(env),
             config: Arc::clone(&self.config),
-            scanner: Arc::clone(&self.scanner),
+            scanner,
             events: events.clone(),
             cancel: cancel.child_token(),
         };
