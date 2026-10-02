@@ -3,14 +3,17 @@
 //! The `FsScanner` trait and its types are defined in `sk-core::fs` and
 //! re-exported here, next to their implementations: [`RealFs`] for the real
 //! file system, [`MemFs`] for tests and [`ExcludeSet`] for global exclusions;
-//! measurement and summaries follow in later tasks of SPEC-03.
+//! [`measure`] and [`measure_all`] fill `TargetStats` of findings; summaries
+//! follow in a later task of SPEC-03.
 
 mod exclude;
+mod measure;
 mod mem;
 mod real;
 mod win;
 
 pub use exclude::ExcludeSet;
+pub use measure::{measure, measure_all, DirStatsCache, MeasureOptions};
 pub use mem::{MemFs, MemFsCalls};
 pub use real::RealFs;
 pub use sk_core::fs::{

@@ -19,7 +19,7 @@ use sk_core::model::{
 use sk_core::path::PathSet;
 use sk_core::template::PathTemplate;
 use sk_core::CancellationToken;
-use sk_scan::RealFs;
+use sk_scan::{measure_all, ExcludeSet, MeasureOptions, RealFs};
 use time::OffsetDateTime;
 use tokio::task::{JoinError, JoinSet};
 use uuid::Uuid;
@@ -147,13 +147,21 @@ impl ScanPipeline {
             .await?;
         acc.extend(post, &run);
 
-        // Filled by SPEC-03 (T-03-07), SPEC-08 and SPEC-09.
-        for phase in [ScanPhase::Measure, ScanPhase::Classify, ScanPhase::Score] {
+        // The depth of this scan, also recorded in the report (SPEC-01 §4.4).
+        let max_depth = opts.max_depth.unwrap_or(self.config.scan.max_depth);
+        run.phase(
+            ScanPhase::Measure,
+            self.measure(&ctx, max_depth, &mut acc, &run),
+        )
+        .await?;
+
+        // Filled by SPEC-08 and SPEC-09.
+        for phase in [ScanPhase::Classify, ScanPhase::Score] {
             run.phase(phase, async {}).await?;
         }
 
         run.phase(ScanPhase::Done, async {
-            self.finish(&ctx.env, opts, acc, started_at, &run)
+            self.finish(&ctx.env, opts, max_depth, acc, started_at, &run)
         })
         .await?
     }
@@ -224,10 +232,58 @@ impl ScanPipeline {
         outcomes
     }
 
+    /// Sizes of the findings (SPEC-01 §4.4 `Measure`, SPEC-03 §4.3): `measure_all`
+    /// on a blocking thread; its issues go to the report and to the events.
+    async fn measure(
+        &self,
+        ctx: &CollectContext,
+        max_depth: u32,
+        acc: &mut Accumulated,
+        run: &Run<'_>,
+    ) {
+        let excludes = match ExcludeSet::with_user(&ctx.env, &self.config.scan.exclude_globs) {
+            Ok(set) => set,
+            Err(error) => {
+                let mut issue = issue("engine", "issue.scan.bad_exclude_globs", &error.to_string());
+                issue.severity = IssueSeverity::Warning;
+                acc.push_issue(issue, run);
+                ExcludeSet::builtin(&ctx.env)
+            }
+        };
+        let opts = MeasureOptions::new(Arc::new(excludes), max_depth);
+        let mut findings = std::mem::take(&mut acc.findings);
+        // Kept to restore the findings if the blocking task panics.
+        let backup = findings.clone();
+        let scanner = Arc::clone(&ctx.scanner);
+        let events = ctx.events.clone();
+        let cancel = ctx.cancel.clone();
+        let task = tokio::task::spawn_blocking(move || {
+            let issues = measure_all(&*scanner, &mut findings, &opts, &events, &cancel);
+            (findings, issues)
+        });
+        match task.await {
+            Ok((findings, issues)) => {
+                acc.findings = findings;
+                for issue in issues {
+                    acc.push_issue(issue, run);
+                }
+            }
+            Err(error) => {
+                // The findings stay without stats.
+                acc.findings = backup
+                    .into_iter()
+                    .map(|f| Finding { stats: None, ..f })
+                    .collect();
+                acc.push_issue(issue("engine", "measure.panicked", &error.to_string()), run);
+            }
+        }
+    }
+
     fn finish(
         &self,
         env: &Environment,
         opts: ScanOptions,
+        max_depth: u32,
         acc: Accumulated,
         started_at: OffsetDateTime,
         run: &Run<'_>,
@@ -259,7 +315,7 @@ impl ScanPipeline {
                     .collect(),
                 collectors: opts.collectors,
                 llm: opts.llm,
-                max_depth: opts.max_depth,
+                max_depth: Some(max_depth),
             },
             findings,
             unknown_summaries: Vec::new(),
@@ -330,6 +386,13 @@ struct Accumulated {
 }
 
 impl Accumulated {
+    fn push_issue(&mut self, issue: ScanIssue, run: &Run<'_>) {
+        run.send(Event::Issue {
+            issue: issue.clone(),
+        });
+        self.issues.push(issue);
+    }
+
     fn extend(&mut self, outcomes: Vec<Outcome>, run: &Run<'_>) {
         for outcome in outcomes {
             let (findings, claimed, issues) = match outcome {

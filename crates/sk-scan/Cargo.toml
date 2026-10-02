@@ -20,6 +20,7 @@ windows = { workspace = true, features = ["Win32_Foundation", "Win32_Storage_Fil
 [dev-dependencies]
 sk-testkit.workspace = true
 tempfile.workspace = true
+tokio = { workspace = true, features = ["sync"] }
 
 [lints]
 workspace = true
