@@ -13,6 +13,7 @@ workspace = true
 
 [dependencies]
 sk-core.workspace = true
+sk-scan.workspace = true
 blake3.workspace = true
 gix = { workspace = true, features = ["sha1", "index"] }
 serde.workspace = true

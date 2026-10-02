@@ -14,6 +14,7 @@ use time::OffsetDateTime;
 
 use crate::cache;
 use crate::fixture::{write_content, Attr, Content, Item, ProfileSpec};
+use crate::fixture_fs::Format;
 use crate::git;
 
 /// Steam id64 of the account with id3 `0`.
@@ -50,7 +51,7 @@ pub(crate) fn materialize(
     cache_name: Option<&str>,
 ) -> Result<Environment, String> {
     let spec = ProfileSpec::parse(src)?;
-    let items = spec.items(OffsetDateTime::now_utc())?;
+    let items = spec.items(OffsetDateTime::now_utc(), Format::Profile)?;
     let samples = fixtures_dir().join("samples");
     let cached = match cache_name {
         Some(name) => {
@@ -79,7 +80,7 @@ pub(crate) fn fixtures_dir() -> PathBuf {
 }
 
 /// `Environment::fake(root)` with the known folder overrides and launchers of `spec`.
-fn environment(spec: &ProfileSpec, root: &Path) -> Result<Environment, String> {
+pub(crate) fn environment(spec: &ProfileSpec, root: &Path) -> Result<Environment, String> {
     let mut env = Environment::fake(root);
     for (token, relative) in &spec.known_folders {
         let folder = KnownFolder::from_token(token)
@@ -147,6 +148,11 @@ fn generate(env: &Environment, root: &Path, items: &[Item], samples: &Path) -> R
                 write_file(&path, &file.path, &file.content, &file.attrs, samples)
                     .map_err(|e| format!("cannot write {}: {e}", path.display()))?;
             }
+            Item::Dir(dir) => {
+                let path = resolve(env, root, &dir.path)?;
+                fs::create_dir_all(&path)
+                    .map_err(|e| format!("cannot create {}: {e}", path.display()))?;
+            }
             Item::Repo(repo) => git::create(&resolve(env, root, &repo.path)?, &repo.git)?,
         }
     }
@@ -173,6 +179,7 @@ fn write_file(
             })?;
             io::copy(&mut src, &mut out)?;
         }
+        Content::Text(text) => out.write_all(text.as_bytes())?,
     }
     out.flush()
 }

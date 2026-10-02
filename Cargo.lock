@@ -1891,7 +1891,10 @@ version = "0.1.0"
 name = "sk-scan"
 version = "0.1.0"
 dependencies = [
+ "globset",
  "sk-core",
+ "sk-testkit",
+ "time",
 ]
 
 [[package]]
@@ -1911,6 +1914,7 @@ dependencies = [
  "serde",
  "serde-saphyr",
  "sk-core",
+ "sk-scan",
  "tempfile",
  "time",
  "tokio",

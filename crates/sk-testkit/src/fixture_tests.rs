@@ -74,7 +74,7 @@ fn summary(items: &[Item]) -> Vec<(&str, &Content, Option<OffsetDateTime>)> {
         .iter()
         .map(|item| match item {
             Item::File(f) => (f.path.as_str(), &f.content, f.mtime),
-            Item::Repo(_) => panic!("unexpected repo {item:?}"),
+            Item::Repo(_) | Item::Dir(_) => panic!("unexpected {item:?}"),
         })
         .collect()
 }
@@ -104,7 +104,7 @@ tree:
         ["steam/libraryfolders.vdf"]
     );
     let now = datetime!(2026-10-02 12:00 UTC);
-    let items = spec.items(now).unwrap();
+    let items = spec.items(now, Format::Profile).unwrap();
     let sample = Content::Sample("steam/libraryfolders.vdf".to_owned());
     assert_eq!(
         summary(&items),
@@ -142,7 +142,9 @@ tree:
     assert_eq!(steam.root.as_deref(), Some("Program Files (x86)/Steam"));
     assert_eq!(steam.users, ["12345678"]);
 
-    let items = spec.items(OffsetDateTime::UNIX_EPOCH).unwrap();
+    let items = spec
+        .items(OffsetDateTime::UNIX_EPOCH, Format::Profile)
+        .unwrap();
     assert_eq!(
         items[0],
         Item::Repo(RepoSpec {
@@ -184,7 +186,8 @@ fn invalid_entries_are_rejected() {
         "tree:\n  - path: \"{HOME}/r/.git\"\n    git: { commits: 1, branch: dev }\n",
         "launchers:\n  steam: { root: x, games: [] }\n",
     ] {
-        let result = ProfileSpec::parse(src).and_then(|s| s.items(OffsetDateTime::UNIX_EPOCH));
+        let result = ProfileSpec::parse(src)
+            .and_then(|s| s.items(OffsetDateTime::UNIX_EPOCH, Format::Profile));
         assert!(result.is_err(), "{src}");
     }
 }

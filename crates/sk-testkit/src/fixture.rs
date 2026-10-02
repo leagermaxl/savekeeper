@@ -1,9 +1,12 @@
-//! Profile description format of `fixtures/profiles/*.yaml` (SPEC-12 §4.3).
+//! Description format of `fixtures/profiles/*.yaml` and `fixtures/fs/*.yaml`
+//! (SPEC-12 §4.3).
 //!
 //! This module parses a description and expands it into a flat list of items
 //! to create. Keys: `known_folders`, `launchers` and `tree` entries with
-//! `path` plus either content (`size` or `sample`, with `mtime`, `repeat`,
-//! `attrs`) or a git repository (`git`). Unknown keys are rejected.
+//! `path` plus either content (`size`, `sample` or `content`, with `mtime`,
+//! `repeat`, `attrs`), an empty folder (`dir: true`) or a git repository
+//! (`git`). `fixtures/fs` descriptions forbid `git` and `sample` and add
+//! `reparse`, `locked` and `cloud_only`. Unknown keys are rejected.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::Write;
@@ -11,6 +14,8 @@ use std::io::Write;
 use serde::Deserialize;
 use time::format_description::well_known::Rfc3339;
 use time::{Duration, OffsetDateTime};
+
+use crate::fixture_fs::{fs_flags, Format, FsFlags, ReparseSpec};
 
 /// A parsed profile description.
 #[derive(Debug, Deserialize)]
@@ -63,6 +68,21 @@ pub(crate) struct TreeEntry {
     /// A git repository; `path` is its `.git` folder.
     #[serde(default)]
     pub git: Option<GitSpec>,
+    /// UTF-8 text content; the size is its length in bytes.
+    #[serde(default)]
+    pub content: Option<String>,
+    /// An empty folder.
+    #[serde(default)]
+    pub dir: bool,
+    /// A reparse point (`fixtures/fs` only).
+    #[serde(default)]
+    pub reparse: Option<ReparseSpec>,
+    /// Opened by another process without sharing (`fixtures/fs` only).
+    #[serde(default)]
+    pub locked: bool,
+    /// Content only in the cloud (`fixtures/fs` only).
+    #[serde(default)]
+    pub cloud_only: bool,
 }
 
 /// A size: a number of bytes or a string such as `12 KiB`.
@@ -113,6 +133,8 @@ pub(crate) enum Content {
     Random(u64),
     /// A copy of `fixtures/samples/<name>`.
     Sample(String),
+    /// This UTF-8 text.
+    Text(String),
 }
 
 /// A file to create, after `repeat` expansion.
@@ -126,6 +148,17 @@ pub(crate) struct FileSpec {
     pub mtime: Option<OffsetDateTime>,
     /// Attributes, sorted and without duplicates.
     pub attrs: Vec<Attr>,
+    /// `fixtures/fs` flags.
+    pub fs: FsFlags,
+}
+
+/// An empty folder to create, after `repeat` expansion.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct DirSpec {
+    /// Path template of this folder.
+    pub path: String,
+    /// `fixtures/fs` flags.
+    pub fs: FsFlags,
 }
 
 /// A git repository to create.
@@ -142,6 +175,8 @@ pub(crate) struct RepoSpec {
 pub(crate) enum Item {
     /// A file.
     File(FileSpec),
+    /// An empty folder.
+    Dir(DirSpec),
     /// A git repository.
     Repo(RepoSpec),
 }
@@ -160,29 +195,43 @@ impl ProfileSpec {
             .collect()
     }
 
-    /// Expands `tree` into items; relative `mtime` values count from `now`.
-    pub fn items(&self, now: OffsetDateTime) -> Result<Vec<Item>, String> {
+    /// Expands `tree` into items of `format`; relative `mtime` values count from `now`.
+    pub fn items(&self, now: OffsetDateTime, format: Format) -> Result<Vec<Item>, String> {
         let mut items = Vec::new();
         for entry in &self.tree {
-            match &entry.git {
-                Some(git) => items.push(Item::Repo(repo_item(entry, git)?)),
-                None => items.extend(file_items(entry, now)?.into_iter().map(Item::File)),
+            let fs = fs_flags(entry, format)?;
+            if let Some(git) = &entry.git {
+                items.push(Item::Repo(repo_item(entry, git, format)?));
+            } else if entry.dir {
+                items.extend(dir_items(entry, fs)?.into_iter().map(Item::Dir));
+            } else {
+                items.extend(
+                    file_items(entry, now, format, fs)?
+                        .into_iter()
+                        .map(Item::File),
+                );
             }
         }
         Ok(items)
     }
 }
 
-fn repo_item(entry: &TreeEntry, git: &GitSpec) -> Result<RepoSpec, String> {
+fn repo_item(entry: &TreeEntry, git: &GitSpec, format: Format) -> Result<RepoSpec, String> {
     let path = &entry.path;
+    if format == Format::Fs {
+        return Err(format!("{path:?}: `git` is not allowed in fixtures/fs"));
+    }
     let has_other_keys = entry.size.is_some()
         || entry.sample.is_some()
+        || entry.content.is_some()
+        || entry.dir
         || entry.mtime.is_some()
         || entry.repeat.is_some()
         || !entry.attrs.is_empty();
     if has_other_keys {
         return Err(format!(
-            "{path:?}: `git` cannot be combined with `size`, `sample`, `mtime`, `repeat` or `attrs`"
+            "{path:?}: `git` cannot be combined with `size`, `sample`, `content`, `dir`, \
+             `mtime`, `repeat` or `attrs`"
         ));
     }
     let name = path.rsplit(['/', '\\']).next().unwrap_or_default();
@@ -201,18 +250,49 @@ fn repo_item(entry: &TreeEntry, git: &GitSpec) -> Result<RepoSpec, String> {
     })
 }
 
-fn file_items(entry: &TreeEntry, now: OffsetDateTime) -> Result<Vec<FileSpec>, String> {
-    let content = match (&entry.size, &entry.sample) {
-        (Some(_), Some(_)) => {
+/// `dir: true`: an empty folder; no content keys, no `mtime` and no `attrs`.
+fn dir_items(entry: &TreeEntry, fs: FsFlags) -> Result<Vec<DirSpec>, String> {
+    let has_other_keys = entry.size.is_some()
+        || entry.sample.is_some()
+        || entry.content.is_some()
+        || entry.mtime.is_some()
+        || !entry.attrs.is_empty();
+    if has_other_keys {
+        return Err(format!(
+            "{:?}: `dir` cannot be combined with `size`, `sample`, `content`, `mtime` or `attrs`",
+            entry.path
+        ));
+    }
+    Ok(paths(entry)?
+        .into_iter()
+        .map(|path| DirSpec { path, fs })
+        .collect())
+}
+
+fn file_items(
+    entry: &TreeEntry,
+    now: OffsetDateTime,
+    format: Format,
+    fs: FsFlags,
+) -> Result<Vec<FileSpec>, String> {
+    if format == Format::Fs && entry.sample.is_some() {
+        return Err(format!(
+            "{:?}: `sample` is not allowed in fixtures/fs",
+            entry.path
+        ));
+    }
+    let content = match (&entry.size, &entry.sample, &entry.content) {
+        (None, None, None) => Content::Random(0),
+        (Some(Size::Bytes(n)), None, None) => Content::Random(*n),
+        (Some(Size::Text(s)), None, None) => Content::Random(parse_size(s)?),
+        (None, Some(sample), None) => Content::Sample(sample_name(sample)?),
+        (None, None, Some(text)) => Content::Text(text.clone()),
+        _ => {
             return Err(format!(
-                "{:?}: `size` and `sample` are mutually exclusive",
+                "{:?}: `size`, `sample` and `content` are mutually exclusive",
                 entry.path
             ))
         }
-        (None, None) => Content::Random(0),
-        (Some(Size::Bytes(n)), None) => Content::Random(*n),
-        (Some(Size::Text(s)), None) => Content::Random(parse_size(s)?),
-        (None, Some(sample)) => Content::Sample(sample_name(sample)?),
     };
     let mtime = entry
         .mtime
@@ -222,19 +302,24 @@ fn file_items(entry: &TreeEntry, now: OffsetDateTime) -> Result<Vec<FileSpec>, S
     let mut attrs = entry.attrs.clone();
     attrs.sort();
     attrs.dedup();
-    let paths = match entry.repeat {
-        None => vec![entry.path.clone()],
-        Some(n) => expand_repeat(&entry.path, n)?,
-    };
-    Ok(paths
+    Ok(paths(entry)?
         .into_iter()
         .map(|path| FileSpec {
             path,
             content: content.clone(),
             mtime,
             attrs: attrs.clone(),
+            fs,
         })
         .collect())
+}
+
+/// The entry's path, expanded by `repeat`.
+fn paths(entry: &TreeEntry) -> Result<Vec<String>, String> {
+    match entry.repeat {
+        None => Ok(vec![entry.path.clone()]),
+        Some(n) => expand_repeat(&entry.path, n),
+    }
 }
 
 /// A sample name: a relative `/`-separated path inside `fixtures/samples`.

@@ -1,0 +1,51 @@
+# Electron app (SPEC-03 §4.4 marker ElectronApp, SPEC-12 §4.3 «Фикстуры fixtures/fs»):
+# the Obsidian user data folder in Roaming AppData with the typical Chromium
+# subfolders (Local Storage, IndexedDB, Session Storage, Cache, Code Cache,
+# GPUCache, blob_storage, Service Worker), a small JSON config and a locked
+# LevelDB lock file. Loaded into MemFs by sk_testkit::mem_fixture.
+tree:
+  # --- settings ---
+  - path: "{APPDATA}/Obsidian/obsidian.json"
+    content: "{\"vaults\":{\"8f2c1a\":{\"path\":\"C:\\\\Users\\\\user\\\\Documents\\\\Notes\",\"ts\":1727800000000,\"open\":true}}}"
+    mtime: "-1d"
+  - path: "{APPDATA}/Obsidian/Preferences"
+    content: "{\"spellcheck\":{\"dictionaries\":[\"en-US\"]}}"
+    mtime: "-3d"
+  - path: "{APPDATA}/Obsidian/Local State"
+    size: 2 KiB
+    mtime: "-1d"
+  # --- storage ---
+  - path: "{APPDATA}/Obsidian/Local Storage/leveldb/000003.log"
+    size: 4 KiB
+    mtime: "-1d"
+  - path: "{APPDATA}/Obsidian/Local Storage/leveldb/CURRENT"
+    content: "MANIFEST-000001\n"
+    mtime: "-30d"
+  - path: "{APPDATA}/Obsidian/Local Storage/leveldb/LOCK"
+    size: 0
+    locked: true
+  - path: "{APPDATA}/Obsidian/IndexedDB/app_obsidian.md_0.indexeddb.leveldb/000005.ldb"
+    size: 64 KiB
+    mtime: "-2d"
+  - path: "{APPDATA}/Obsidian/Session Storage/000003.log"
+    size: 1 KiB
+    mtime: "-1d"
+  - path: "{APPDATA}/Obsidian/Service Worker/Database/000003.log"
+    size: 2 KiB
+    mtime: "-7d"
+  - path: "{APPDATA}/Obsidian/blob_storage"
+    dir: true
+  # --- caches ---
+  - path: "{APPDATA}/Obsidian/Cache/Cache_Data/f_000001"
+    size: 16 KiB
+    repeat: 20
+    mtime: "-1d"
+  - path: "{APPDATA}/Obsidian/Cache/Cache_Data/index"
+    size: 256 KiB
+    mtime: "-1d"
+  - path: "{APPDATA}/Obsidian/Code Cache/js/index"
+    size: 24
+    mtime: "-5d"
+  - path: "{APPDATA}/Obsidian/GPUCache/data_0"
+    size: 8 KiB
+    mtime: "-5d"

@@ -10,6 +10,11 @@ publish.workspace = true
 
 [dependencies]
 sk-core.workspace = true
+time.workspace = true
+
+[dev-dependencies]
+globset.workspace = true
+sk-testkit.workspace = true
 
 [lints]
 workspace = true
