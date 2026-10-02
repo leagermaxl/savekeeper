@@ -12,3 +12,20 @@ pub enum CollectorError {
     #[error("{0}")]
     Other(String),
 }
+
+/// The scan pipeline failed as a whole (SPEC-01 §4.7).
+#[derive(Debug, thiserror::Error)]
+pub enum EngineError {
+    /// The scan was cancelled; no report is saved.
+    #[error("cancelled")]
+    Cancelled,
+    /// A collector could not work at all.
+    #[error(transparent)]
+    Collector(#[from] CollectorError),
+    /// The environment could not be read.
+    #[error(transparent)]
+    Environment(#[from] crate::env::EnvError),
+    /// The report could not be built.
+    #[error("report: {0}")]
+    Report(String),
+}
