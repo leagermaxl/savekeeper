@@ -10,3 +10,19 @@ publish.workspace = true
 
 [lints]
 workspace = true
+
+[dependencies]
+sk-core.workspace = true
+blake3.workspace = true
+serde.workspace = true
+serde-saphyr.workspace = true
+tempfile.workspace = true
+time.workspace = true
+tokio = { workspace = true, features = ["sync"] }
+
+[target.'cfg(windows)'.dependencies]
+uuid = { workspace = true, features = ["v4"] }
+winreg.workspace = true
+
+[dev-dependencies]
+time = { workspace = true, features = ["macros"] }
