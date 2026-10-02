@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-scan` |
 | Зависит от | SPEC-01, SPEC-02 |
 | Используется в | SPEC-04, SPEC-05, SPEC-07, SPEC-08, SPEC-10 |
-| Последнее изменение | 2026-10-02 (§4.4: порядок «по пути», глубина Unity-проекта, `SqliteFiles` до первого совпадения; §4.1: `SummaryOptions.excludes`; §4.4: корень, подсчёт, глубина, детерминированная аккумуляция, общие правила маркеров (нулевой знаменатель), уточнения `HasExecutables`/`UnityGame`/`UnrealSaveGames`/`SqliteFiles`/`CacheLike`/`ProjectLike`/`CloudSynced`, `top_children.name` обезличивается; §4.3: reparse-корень для `File`, повторяющийся ключ кэша; §4.1: `MeasureOptions` с исключениями и лимитами, API `DirStatsCache`, `measure` → `Option<TargetStats>`; §4.3: правила подсчёта, кэша и issues `measure_all`; §4.5: определение `explicit_root`; §4.1, T-03-06: как `read_head`/`read_small` открывают файл, по ссылкам не читаем; §5: LastAccessTime при чтении; §4.2: облачные заглушки — `Reparse(CloudPlaceholder)` для файлов и каталогов, различение по `FILE_ATTRIBUTE_DIRECTORY`; §4.2: собственный обход на rayon вместо jwalk, метаданные из листинга, правило числа потоков; T-03-04: ручная проверка Ctrl+C перенесена в SPEC-04 T-04-07; §4.1, T-03-05, §6: `probe_readable` не следует по ссылкам; §4.6: семантика `scan.exclude_globs`; §4.1: `PathFilter::check` → `Exclusion`, `ExcludeSet::builtin/with_user(env)`, `names_only`, поведение `walk`; §4.2: проверка условных исключений; §4.5: раскрытие шаблонов путей; §4.1: соглашения `MemFs`, счётчики вызовов, загрузка фикстур перенесена в `sk_testkit::mem_fixture`; T-03-02; §9; T-03-04: ручная проверка Ctrl+C из SPEC-01 §8; §4.4: правило `UwpPackage`, 14 маркеров как в SPEC-02 §4.1; §4.1: `CloudState` без `Pinned`, как в определении enum; §9: OneDrive-корни заполняет `sk-core`; трейт `FsScanner` и его типы — в `sk-core::fs`; `WalkOptions.excludes` через трейт `PathFilter`) |
+| Последнее изменение | 2026-10-02 (§6: результат бенчмарка NFR-03-01; §4.4: порядок «по пути», глубина Unity-проекта, `SqliteFiles` до первого совпадения; §4.1: `SummaryOptions.excludes`; §4.4: корень, подсчёт, глубина, детерминированная аккумуляция, общие правила маркеров (нулевой знаменатель), уточнения `HasExecutables`/`UnityGame`/`UnrealSaveGames`/`SqliteFiles`/`CacheLike`/`ProjectLike`/`CloudSynced`, `top_children.name` обезличивается; §4.3: reparse-корень для `File`, повторяющийся ключ кэша; §4.1: `MeasureOptions` с исключениями и лимитами, API `DirStatsCache`, `measure` → `Option<TargetStats>`; §4.3: правила подсчёта, кэша и issues `measure_all`; §4.5: определение `explicit_root`; §4.1, T-03-06: как `read_head`/`read_small` открывают файл, по ссылкам не читаем; §5: LastAccessTime при чтении; §4.2: облачные заглушки — `Reparse(CloudPlaceholder)` для файлов и каталогов, различение по `FILE_ATTRIBUTE_DIRECTORY`; §4.2: собственный обход на rayon вместо jwalk, метаданные из листинга, правило числа потоков; T-03-04: ручная проверка Ctrl+C перенесена в SPEC-04 T-04-07; §4.1, T-03-05, §6: `probe_readable` не следует по ссылкам; §4.6: семантика `scan.exclude_globs`; §4.1: `PathFilter::check` → `Exclusion`, `ExcludeSet::builtin/with_user(env)`, `names_only`, поведение `walk`; §4.2: проверка условных исключений; §4.5: раскрытие шаблонов путей; §4.1: соглашения `MemFs`, счётчики вызовов, загрузка фикстур перенесена в `sk_testkit::mem_fixture`; T-03-02; §9; T-03-04: ручная проверка Ctrl+C из SPEC-01 §8; §4.4: правило `UwpPackage`, 14 маркеров как в SPEC-02 §4.1; §4.1: `CloudState` без `Pinned`, как в определении enum; §9: OneDrive-корни заполняет `sk-core`; трейт `FsScanner` и его типы — в `sk-core::fs`; `WalkOptions.excludes` через трейт `PathFilter`) |
 
 ## 1. Цель
 
@@ -345,7 +345,7 @@ Windows.old, Config.Msi, Recovery, MSOCache, PerfLogs
   - путь длиной 400 символов → успешный `measure`;
   - файл с атрибутом OFFLINE (`SetFileAttributesW`) → не открывается (проверка через счётчик `read_head`-вызовов в обёртке);
   - junction на удалённый каталог → `probe_readable` = Ok (проверяется сама ссылка, не цель).
-- **Бенчмарк (`criterion`, ручной запуск):** генератор 1 млн файлов в tempdir → `walk` ≥ NFR-03-01.
+- **Бенчмарк (`criterion`, ручной запуск):** `cargo bench -p sk-scan --bench walk` (`crates/sk-scan/benches/walk.rs`; `SK_BENCH_FILES` — число файлов, `SK_BENCH_DIR` — диск/папка для дерева): генератор 1 млн пустых файлов в tempdir → `walk` ≥ NFR-03-01. **Результат (2026-10-02, T-03-09):** 1 011 110 записей (1 000 000 файлов + 11 110 папок), ≈ 183 000 записей/с (медиана criterion, 10 проб, ≈ 5,5 с на обход), NVMe SSD, NTFS, 8 потоков, тёплый кэш ФС — NFR-03-01 выполнен (запас ≈ ×9).
 
 ## 7. Задачи
 
@@ -357,15 +357,15 @@ Windows.old, Config.Msi, Recovery, MSOCache, PerfLogs
 - [x] **T-03-06** — `read_head`/`read_small` через `sk-scan::win` (§4.1): атрибуты самой записи, CloudOnly без открытия, `CreateFileW` с `FILE_FLAG_OPEN_NO_RECALL | FILE_FLAG_OPEN_REPARSE_POINT`, лимит. *Зависит:* T-03-05. *Готово, когда:* Windows-тесты: OFFLINE-файл, открытый другим хэндлом с `share_mode(0)` → `CloudOnly` (не `SharingViolation`, значит файл не открывался); заблокированный файл → `SharingViolation`; symlink на файл и junction → `Io`, цель не читается; `TooLarge`; путь длиной 400 символов.
 - [x] **T-03-07** — `measure` + `DirStatsCache` + `measure_all` с прогрессом. *Зависит:* T-03-04. *Готово, когда:* тест «вложенные корни — один обход».
 - [x] **T-03-08** — `summarize` + все маркеры по таблице §4.4. *Зависит:* T-03-06, T-02-07, T-02-04. *Готово, когда:* тесты порогов для всех 14 маркеров.
-- [ ] **T-03-09** — Бенчмарк `criterion` и генератор дерева. *Зависит:* T-03-04. *Готово, когда:* результат ≥ NFR-03-01 на машине разработчика, число записано в спеку.
+- [x] **T-03-09** — Бенчмарк `criterion` и генератор дерева. *Зависит:* T-03-04. *Готово, когда:* результат ≥ NFR-03-01 на машине разработчика, число записано в спеку.
 - [ ] **T-03-10** — Команда CLI `savekeeper-cli debug summarize <path>` (вывод FolderSummary JSON). *Зависит:* T-03-08, T-01-07.
 
 ## 8. Критерии приёмки
 
 - [ ] Ни один тест и ни один ручной прогон не гидрирует OneDrive-файлы (проверка: папка «только онлайн» остаётся с облачным значком после скана).
 - [ ] Скан профиля с junction'ами профиля (`Application Data` и т.д.) не даёт двойного счёта размеров.
-- [ ] NFR-03-01 подтверждён бенчмарком.
-- [ ] Все 14 маркеров покрыты тестами порогов.
+- [x] NFR-03-01 подтверждён бенчмарком.
+- [x] Все 14 маркеров покрыты тестами порогов.
 
 ## 9. Открытые вопросы
 

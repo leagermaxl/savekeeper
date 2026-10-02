@@ -18,9 +18,15 @@ time.workspace = true
 windows = { workspace = true, features = ["Win32_Foundation", "Win32_Storage_FileSystem"] }
 
 [dev-dependencies]
+criterion.workspace = true
 sk-testkit.workspace = true
 tempfile.workspace = true
 tokio = { workspace = true, features = ["sync"] }
+
+# Manual benchmark (SPEC-03 §6, NFR-03-01): `cargo bench -p sk-scan --bench walk`.
+[[bench]]
+name = "walk"
+harness = false
 
 [lints]
 workspace = true

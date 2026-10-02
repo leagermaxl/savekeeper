@@ -55,6 +55,8 @@ winreg = "0.56"
 
 # Test-only
 assert_cmd = "2"
+# Manual benchmarks only (`cargo bench`, SPEC-12 §2.2); no plots, no rayon of its own.
+criterion = { version = "0.7", default-features = false, features = ["cargo_bench_support"] }
 insta = { version = "1", features = ["json"] }
 predicates = "3"
 tempfile = "3"
