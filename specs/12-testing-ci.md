@@ -8,7 +8,7 @@
 | Крейт(ы) | все, `fixtures/`, `xtask/`, `.github/workflows/` |
 | Зависит от | SPEC-00, SPEC-01, SPEC-02 |
 | Используется в | все спеки (§6 «Тестирование» каждой спеки опирается на эту) |
-| Последнее изменение | 2026-10-02 (§4.2: `materialize_profile`; §4.3: ключи `git.unpushed`, `attrs: system`, правила `size`/`sample`/`launchers`, повторяемый `--profile`, ключ кэша, `samples/dev/node.gitignore`; §4.6: исключение `xtask` для `sk-testkit`; §4.2: `UnboundedReceiver` в `collect_ctx`/`drain_events`, API `RegTestKey` и `REG_TEST_PARENT`; §7: граница T-12-05/T-12-06 по ключам формата фикстур и кэшу; 2026-10-01: §4.4: снапшот TS-деклараций вместо JSON Schema для SPEC-02; §4.8: Node 24 LTS; §4.2: состав `sk-testkit`, `collect_ctx` со сканером, правило unit-тестов; §4.5: `MockClassifier` в `sk-llm`; §4.6: транзитивные рёбра, `xtask`; зависимости T-12-02/04/05/06; §4.8: MSRV 1.93) |
+| Последнее изменение | 2026-10-02 (§4.2: `mem_fixture`; §4.3: фикстуры `fixtures/fs/` для `MemFs` и их ключи; §4.2: `materialize_profile`; §4.3: ключи `git.unpushed`, `attrs: system`, правила `size`/`sample`/`launchers`, повторяемый `--profile`, ключ кэша, `samples/dev/node.gitignore`; §4.6: исключение `xtask` для `sk-testkit`; §4.2: `UnboundedReceiver` в `collect_ctx`/`drain_events`, API `RegTestKey` и `REG_TEST_PARENT`; §7: граница T-12-05/T-12-06 по ключам формата фикстур и кэшу; 2026-10-01: §4.4: снапшот TS-деклараций вместо JSON Schema для SPEC-02; §4.8: Node 24 LTS; §4.2: состав `sk-testkit`, `collect_ctx` со сканером, правило unit-тестов; §4.5: `MockClassifier` в `sk-llm`; §4.6: транзитивные рёбра, `xtask`; зависимости T-12-02/04/05/06; §4.8: MSRV 1.93) |
 
 ## 1. Цель
 
@@ -96,6 +96,11 @@ pub const REG_TEST_PARENT: &str = r"Software\SaveKeeperTest"; // #[cfg(windows)]
 /// Общий материализатор §4.3: пишет профиль fixtures/profiles/<name>.yaml в пустой dest через кэш target/fixtures-cache.
 /// Используется FakeProfile::load и `cargo xtask fixtures`. Ошибка — текст (dev-only крейт).
 pub fn materialize_profile(name: &str, dest: &Path) -> Result<Environment, String>;
+
+/// Загружает fixtures/fs/<name>.yaml в память, без записи на диск (§4.3 «Фикстуры fixtures/fs»).
+/// Шаблоны разрешаются через Environment::fake(root) + known_folders/launchers, как в materialize_profile.
+/// Паникует с текстом ошибки, как FakeProfile::load.
+pub fn mem_fixture(name: &str, root: &Path) -> (MemFs, Environment);
 ```
 
 ### 4.3 Фикстуры ФС
@@ -109,6 +114,7 @@ fixtures/
 │   ├── office.yaml           # документы вне Documents, OneDrive-перенаправление, Outlook .pst
 │   ├── messy.yaml            # 200 неизвестных AppData-папок, кэши, длинные пути, кириллица, пробелы, non-UTF8 (только Linux)
 │   └── huge.yaml             # генеративный: 1 млн файлов (для ручных бенчей, #[ignore])
+├── fs/                       # деревья для MemFs (SPEC-03 §4.1), без диска: electron-app.yaml, unity-locallow.yaml, …; подпапки по спекам (heuristics/)
 ├── samples/                  # маленькие реальные образцы форматов
 │   ├── steam/libraryfolders.vdf, loginusers.vdf, appmanifest_1245620.acf
 │   ├── ludusavi/manifest-mini.yaml   # 20 игр из реального манифеста
@@ -143,6 +149,11 @@ tree:
 - `launchers.<id>: { root?: путь от root, users: [...] }`; для `steam` `users` — id3, `alt_id` (id64) вычисляется.
 - `cargo xtask fixtures [--profile gamer]... [--out target/fixtures]` материализует профили; `--profile` можно повторять, без него — все профили. `FakeProfile::load` делает то же в `TempDir` через `materialize_profile` (с кэшем в `target/fixtures-cache`, копированием). Ключ кэша — хэш версии генератора, YAML профиля и использованных `samples`.
 - На Windows генератор выставляет атрибуты, если они указаны в YAML (`attrs: [hidden, readonly, system]`).
+
+**Фикстуры `fixtures/fs/*.yaml`.** Формат тот же, что у профилей (`known_folders`, `launchers`, `tree` с `path`/`size`/`mtime`/`repeat`/`attrs`, те же правила). Загружаются в `MemFs` функцией `mem_fixture` (§4.2), без записи на диск.
+- Запрещены (ошибка): `git`, `sample`.
+- Разрешены только здесь: `content: "<utf-8 текст>"` (исключает `size`; размер — длина в байтах), `dir: true` (пустая папка, без других ключей содержимого), `reparse: symlink|junction|cloud_placeholder|app_exec_link|<u32 tag>`, `locked: true`, `cloud_only: true`. Материализатор профилей может принимать `content` и `dir`; `reparse`/`locked`/`cloud_only` в профилях — ошибка.
+- Файл, заданный только `size`, читается как нули. Без `mtime` время — момент загрузки (в снапшотах `mtime` редактируется, §4.4).
 - `expected/*.findings.yaml` — «золотые» ожидания для pipeline-тестов: тест проверяет, что каждая ожидаемая находка присутствует (recall), и выводит список лишних (без падения, как warning в отчёте теста).
 
 ### 4.4 Snapshot-тесты

@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-scan` |
 | Зависит от | SPEC-01, SPEC-02 |
 | Используется в | SPEC-04, SPEC-05, SPEC-07, SPEC-08, SPEC-10 |
-| Последнее изменение | 2026-10-02 (T-03-04: ручная проверка Ctrl+C из SPEC-01 §8; §4.4: правило `UwpPackage`, 14 маркеров как в SPEC-02 §4.1; §4.1: `CloudState` без `Pinned`, как в определении enum; §9: OneDrive-корни заполняет `sk-core`; трейт `FsScanner` и его типы — в `sk-core::fs`; `WalkOptions.excludes` через трейт `PathFilter`) |
+| Последнее изменение | 2026-10-02 (§4.1: соглашения `MemFs`, счётчики вызовов, загрузка фикстур перенесена в `sk_testkit::mem_fixture`; T-03-02; §9; T-03-04: ручная проверка Ctrl+C из SPEC-01 §8; §4.4: правило `UwpPackage`, 14 маркеров как в SPEC-02 §4.1; §4.1: `CloudState` без `Pinned`, как в определении enum; §9: OneDrive-корни заполняет `sk-core`; трейт `FsScanner` и его типы — в `sk-core::fs`; `WalkOptions.excludes` через трейт `PathFilter`) |
 
 ## 1. Цель
 
@@ -117,8 +117,10 @@ impl MemFs {
     pub fn add_reparse(&mut self, path: &str, kind: ReparseKind) -> &mut Self;
     pub fn set_locked(&mut self, path: &str) -> &mut Self;
     pub fn set_cloud_only(&mut self, path: &str) -> &mut Self;
-    pub fn from_yaml_fixture(yaml: &str) -> Result<Self, FixtureError>; // SPEC-12 формат фикстур
+    pub fn calls(&self) -> MemFsCalls;   // счётчики вызовов с момента создания
 }
+pub struct MemFsCalls { pub read_dir: u64, pub exists: u64, pub read_head: u64 }
+// Загрузка YAML-фикстур в MemFs — sk_testkit::mem_fixture (SPEC-12 §4.2, §4.3 «Фикстуры fixtures/fs»).
 
 // Высокоуровневые функции
 pub fn measure(fs: &dyn FsScanner, target: &Target, cache: &DirStatsCache, opts: &MeasureOptions,
@@ -143,6 +145,13 @@ impl ExcludeSet {
 }
 impl PathFilter for ExcludeSet { /* is_excluded */ }
 ```
+
+Соглашения `MemFs`:
+- Путь `&str` делится и по `/`, и по `\`; компоненты сравниваются без учёта регистра (как в NTFS).
+- `mtime` — синтаксис фикстур SPEC-12 §4.3 (`-1d` или RFC 3339); если не разбирается — `EntryMeta.mtime = None`.
+- Родительские папки создаются неявно.
+- Файл без `content` читается (`read_head`/`read_small`) как нули длиной `size`.
+- `calls()` считает вызовы `read_dir`, `exists`, `read_head` (нужно тестам §6 и SPEC-05 §6).
 
 ### 4.2 Реализация `RealFs::walk`
 1. `root = to_extended(root)`. `metadata(root)`: если Reparse → `WalkStats{entries:0}` + Info-issue на стороне вызывающего.
@@ -262,7 +271,7 @@ Windows.old, Config.Msi, Recovery, MSOCache, PerfLogs
 ## 7. Задачи
 
 - [x] **T-03-01** — Типы API §4.1 в `sk-core::fs` (`FsScanner`, `PathFilter`, `EntryMeta`, `DirEntryInfo`, `WalkOptions`, `FsError` ...) + реэкспорт из `sk-scan`. *Зависит:* T-02-01. Нужна в P0: от неё зависит SPEC-01 T-01-03. *Готово, когда:* крейты компилируются, документация `///`.
-- [ ] **T-03-02** — `MemFs` + загрузка YAML-фикстур (формат согласовать с SPEC-12). *Зависит:* T-03-01. *Готово, когда:* фикстура `electron-app.yaml` загружается, `walk` по ней проходит тест.
+- [ ] **T-03-02** — `MemFs` (+ счётчики вызовов) в `sk-scan`; `mem_fixture` и ключи `fixtures/fs` (SPEC-12 §4.3) в `sk-testkit`; фикстура `fixtures/fs/electron-app.yaml`. *Зависит:* T-03-01. *Готово, когда:* интеграционный тест в `crates/sk-scan/tests/` (`sk-testkit` как dev-dependency) загружает `electron-app.yaml`, и `walk` по ней проходит.
 - [ ] **T-03-03** — `ExcludeSet` (встроенный список §4.5 + пользовательские глобы, условные исключения `target`/`obj`/`venv`). *Зависит:* T-03-01. *Готово, когда:* unit-тесты на каждый пункт списка.
 - [ ] **T-03-04** — `RealFs::walk` на jwalk: reparse, cloud-атрибуты, исключения, отмена, лимиты, выбор потоков по типу диска. *Зависит:* T-03-03, T-02-02. *Готово, когда:* Windows-тесты junction/long path; ручная проверка критерия SPEC-01 §8: Ctrl+C во время `savekeeper-cli scan` по реальному профилю завершает процесс за ≤ 1 с с кодом 2.
 - [ ] **T-03-05** — `sk-scan::win`: `reparse_tag`, `probe_readable` через `CreateFileW` (`GENERIC_READ`, share RW|D, `FILE_FLAG_BACKUP_SEMANTICS` для каталогов, `FILE_FLAG_OPEN_NO_RECALL`). *Зависит:* T-03-01. *Готово, когда:* тест Locked + OFFLINE.
@@ -284,5 +293,5 @@ Windows.old, Config.Msi, Recovery, MSOCache, PerfLogs
 - **Предложение к SPEC-02 §2.6:** добавить в `TargetStats` поле `cloud_only_bytes: u64` и `cloud_only_files: u64`. Нужно для UI («2,3 ГБ, из них 1,1 ГБ только в облаке») и для SPEC-10 (не пытаться копировать).
 - ~~**Предложение к SPEC-02 §3.3:** добавить в `Environment` поле `cloud_roots`~~ **Принято** (SPEC-02 §3.3). OneDrive-корни заполняет `Environment::detect()` в `sk-core` (нужны для `{ONEDRIVE}`), `sk-scan::cloud::detect_roots(env)` добавляет Dropbox, Google Drive и Yandex.Disk в фазе Environment.
 - **Предложение к SPEC-02 §3.3:** в `DriveInfo` явно поле `media: Ssd | Hdd | Unknown` (через `IOCTL_STORAGE_QUERY_PROPERTY` / `StorageDeviceSeekPenaltyProperty`) для NFR-03-03.
-- Формат YAML-фикстур `MemFs` определяется в SPEC-12. Здесь фиксируется только API `from_yaml_fixture`.
+- ~~Формат YAML-фикстур `MemFs`~~ **Решено:** SPEC-12 §4.3 «Фикстуры `fixtures/fs`», загрузка — `sk_testkit::mem_fixture`.
 - Нужен ли hard-link дедуп (одинаковый FileId) при подсчёте размеров? Пока нет (редко в пользовательских данных).
