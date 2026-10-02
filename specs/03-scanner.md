@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-scan` |
 | Зависит от | SPEC-01, SPEC-02 |
 | Используется в | SPEC-04, SPEC-05, SPEC-07, SPEC-08, SPEC-10 |
-| Последнее изменение | 2026-10-02 (§4.2: облачные заглушки — `Reparse(CloudPlaceholder)` для файлов и каталогов, различение по `FILE_ATTRIBUTE_DIRECTORY`; §4.2: собственный обход на rayon вместо jwalk, метаданные из листинга, правило числа потоков; T-03-04: ручная проверка Ctrl+C перенесена в SPEC-04 T-04-07; §4.1, T-03-05, §6: `probe_readable` не следует по ссылкам; §4.6: семантика `scan.exclude_globs`; §4.1: `PathFilter::check` → `Exclusion`, `ExcludeSet::builtin/with_user(env)`, `names_only`, поведение `walk`; §4.2: проверка условных исключений; §4.5: раскрытие шаблонов путей; §4.1: соглашения `MemFs`, счётчики вызовов, загрузка фикстур перенесена в `sk_testkit::mem_fixture`; T-03-02; §9; T-03-04: ручная проверка Ctrl+C из SPEC-01 §8; §4.4: правило `UwpPackage`, 14 маркеров как в SPEC-02 §4.1; §4.1: `CloudState` без `Pinned`, как в определении enum; §9: OneDrive-корни заполняет `sk-core`; трейт `FsScanner` и его типы — в `sk-core::fs`; `WalkOptions.excludes` через трейт `PathFilter`) |
+| Последнее изменение | 2026-10-02 (§4.1, T-03-06: как `read_head`/`read_small` открывают файл, по ссылкам не читаем; §5: LastAccessTime при чтении; §4.2: облачные заглушки — `Reparse(CloudPlaceholder)` для файлов и каталогов, различение по `FILE_ATTRIBUTE_DIRECTORY`; §4.2: собственный обход на rayon вместо jwalk, метаданные из листинга, правило числа потоков; T-03-04: ручная проверка Ctrl+C перенесена в SPEC-04 T-04-07; §4.1, T-03-05, §6: `probe_readable` не следует по ссылкам; §4.6: семантика `scan.exclude_globs`; §4.1: `PathFilter::check` → `Exclusion`, `ExcludeSet::builtin/with_user(env)`, `names_only`, поведение `walk`; §4.2: проверка условных исключений; §4.5: раскрытие шаблонов путей; §4.1: соглашения `MemFs`, счётчики вызовов, загрузка фикстур перенесена в `sk_testkit::mem_fixture`; T-03-02; §9; T-03-04: ручная проверка Ctrl+C из SPEC-01 §8; §4.4: правило `UwpPackage`, 14 маркеров как в SPEC-02 §4.1; §4.1: `CloudState` без `Pinned`, как в определении enum; §9: OneDrive-корни заполняет `sk-core`; трейт `FsScanner` и его типы — в `sk-core::fs`; `WalkOptions.excludes` через трейт `PathFilter`) |
 
 ## 1. Цель
 
@@ -72,6 +72,14 @@ pub trait FsScanner: Send + Sync {
     fn read_head(&self, path: &Path, max: usize) -> Result<Vec<u8>, FsError>;
     /// Файл целиком, если ≤ max байт, иначе FsError::TooLarge.
     fn read_small(&self, path: &Path, max: usize) -> Result<Vec<u8>, FsError>;
+    // read_head/read_small: атрибуты берутся у самой записи без открытия (FindFirstFileExW, как metadata);
+    // CloudOnly → FsError::CloudOnly без открытия (FR-03-03); каталог → FsError::Io;
+    // reparse point, кроме CloudPlaceholder, не читается, по ссылке не следуем → FsError::Io
+    // (ссылки в промежуточных компонентах пути разрешает ОС); путь с `*`/`?` → NotFound (как metadata).
+    // Открытие: CreateFileW (GENERIC_READ, share RW|D, OPEN_EXISTING,
+    // FILE_FLAG_OPEN_NO_RECALL | FILE_FLAG_OPEN_REPARSE_POINT); sharing/lock violation → SharingViolation,
+    // нет доступа → AccessDenied. read_small: TooLarge, если размер из метаданных > max или при чтении
+    // получено > max байт (читается не больше max+1 байт).
     /// Пробное открытие на чтение с FILE_SHARE_READ|WRITE|DELETE → Locked при sharing violation.
     /// Не следует по ссылкам (FR-03-02): атрибуты берутся у самой записи; CloudOnly → без открытия;
     /// для reparse point открывается сама ссылка (FILE_FLAG_OPEN_REPARSE_POINT), цель не проверяется.
@@ -275,6 +283,7 @@ Windows.old, Config.Msi, Recovery, MSOCache, PerfLogs
 | OneDrive Files On-Demand, файл только в облаке | Не открываем. Размер учитывается, `probe_readable` = CloudOnly, в stats отдельным счётчиком (Открытые вопросы). |
 | Каталог без прав на листинг (`AccessDenied`) | `errors += 1`, спуск пропущен, агрегированный `ScanIssue::Warning` «n папок недоступны». |
 | Файл заблокирован (`SharingViolation`) | `locked_files += 1`. SPEC-10 решает, что делать при копировании. |
+| Обновление LastAccessTime при чтении | Чтение (`read_head`/`read_small`, копирование в SPEC-10) может обновить LastAccessTime, если он включён в NTFS. Это не считается изменением источника (P1): содержимое и прочие атрибуты не меняются. |
 | Путь > 32 767 символов | Практически невозможно. `FsError::Io` → пропуск записи. |
 | Имя файла не в UTF-8 (неспаренные суррогаты) | Работаем через `OsString`. В `sample_names` lossy + тег `non_utf8_path` на находке. |
 | Огромная папка (> `max_entries`) | `truncated = true`. Stats — нижняя граница, в UI «≥ N ГБ». |
@@ -304,7 +313,7 @@ Windows.old, Config.Msi, Recovery, MSOCache, PerfLogs
 - [x] **T-03-03** — `ExcludeSet` (встроенный список §4.5 + пользовательские глобы, условные исключения `target`/`obj`/`venv`). *Зависит:* T-03-01. *Готово, когда:* unit-тесты на каждый пункт списка.
 - [x] **T-03-04** — `RealFs::walk` на rayon: reparse, cloud-атрибуты, исключения, отмена, лимиты, выбор потоков по типу диска. *Зависит:* T-03-03, T-02-02. *Готово, когда:* Windows-тесты junction/long path.
 - [x] **T-03-05** — `sk-scan::win`: `reparse_tag`, `probe_readable` через `CreateFileW` (`GENERIC_READ`, share RW|D, `OPEN_EXISTING`, `FILE_FLAG_OPEN_NO_RECALL | FILE_FLAG_OPEN_REPARSE_POINT`, `FILE_FLAG_BACKUP_SEMANTICS` для каталогов); при CloudOnly-атрибутах самой записи — `Readability::CloudOnly` без открытия. *Зависит:* T-03-01. *Готово, когда:* тест Locked + OFFLINE.
-- [ ] **T-03-06** — `read_head`/`read_small` с защитой от cloud-only и лимитом. *Зависит:* T-03-05.
+- [ ] **T-03-06** — `read_head`/`read_small` через `sk-scan::win` (§4.1): атрибуты самой записи, CloudOnly без открытия, `CreateFileW` с `FILE_FLAG_OPEN_NO_RECALL | FILE_FLAG_OPEN_REPARSE_POINT`, лимит. *Зависит:* T-03-05. *Готово, когда:* Windows-тесты: OFFLINE-файл, открытый другим хэндлом с `share_mode(0)` → `CloudOnly` (не `SharingViolation`, значит файл не открывался); заблокированный файл → `SharingViolation`; symlink на файл и junction → `Io`, цель не читается; `TooLarge`; путь длиной 400 символов.
 - [ ] **T-03-07** — `measure` + `DirStatsCache` + `measure_all` с прогрессом. *Зависит:* T-03-04. *Готово, когда:* тест «вложенные корни — один обход».
 - [ ] **T-03-08** — `summarize` + все маркеры по таблице §4.4. *Зависит:* T-03-06, T-02-07, T-02-04. *Готово, когда:* тесты порогов для всех 14 маркеров.
 - [ ] **T-03-09** — Бенчмарк `criterion` и генератор дерева. *Зависит:* T-03-04. *Готово, когда:* результат ≥ NFR-03-01 на машине разработчика, число записано в спеку.
