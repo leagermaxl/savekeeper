@@ -7,15 +7,16 @@ use std::sync::Arc;
 
 use sk_core::env::KnownFolder;
 use sk_scan::{
-    CancellationToken, EntryKind, FsScanner, PathFilter, Readability, WalkControl, WalkOptions,
+    CancellationToken, EntryKind, Exclusion, FsScanner, PathFilter, Readability, WalkControl,
+    WalkOptions,
 };
 
 #[derive(Debug)]
 struct NoExcludes;
 
 impl PathFilter for NoExcludes {
-    fn is_excluded(&self, _: &Path, _: &OsStr, _: bool) -> bool {
-        false
+    fn check(&self, _: &Path, _: &OsStr, _: bool) -> Exclusion {
+        Exclusion::Keep
     }
 }
 

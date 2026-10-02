@@ -1,14 +1,17 @@
 //! File system traversal, measurement, folder summaries and exclusions (SPEC-03).
 //!
 //! The `FsScanner` trait and its types are defined in `sk-core::fs` and
-//! re-exported here, next to their implementations: [`MemFs`] for tests;
-//! `RealFs`, measurement and summaries follow in later tasks of SPEC-03.
+//! re-exported here, next to their implementations: [`MemFs`] for tests and
+//! [`ExcludeSet`] for global exclusions; `RealFs`, measurement and summaries
+//! follow in later tasks of SPEC-03.
 
+mod exclude;
 mod mem;
 
+pub use exclude::ExcludeSet;
 pub use mem::{MemFs, MemFsCalls};
 pub use sk_core::fs::{
-    CloudState, DirEntryInfo, EntryKind, EntryMeta, FsError, FsScanner, PathFilter, Readability,
-    ReparseKind, WalkControl, WalkOptions, WalkStats,
+    CloudState, DirEntryInfo, EntryKind, EntryMeta, Exclusion, FsError, FsScanner, PathFilter,
+    Readability, ReparseKind, WalkControl, WalkOptions, WalkStats,
 };
 pub use sk_core::CancellationToken;

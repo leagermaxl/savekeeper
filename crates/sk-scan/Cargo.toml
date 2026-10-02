@@ -9,11 +9,11 @@ authors.workspace = true
 publish.workspace = true
 
 [dependencies]
+globset.workspace = true
 sk-core.workspace = true
 time.workspace = true
 
 [dev-dependencies]
-globset.workspace = true
 sk-testkit.workspace = true
 
 [lints]

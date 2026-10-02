@@ -141,10 +141,28 @@ pub enum Readability {
     Missing,
 }
 
+/// Decision of a [`PathFilter`] about one entry.
+///
+/// The conditions are checked by the walker (SPEC-03 §4.2); the filter itself
+/// never touches the file system.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Exclusion {
+    /// The entry is walked.
+    Keep,
+    /// The entry is skipped.
+    Exclude,
+    /// Skip the entry if another entry of the same folder has a name matching
+    /// this glob (`*` and `?`, case-insensitive), e.g. `target` next to `Cargo.toml`.
+    ExcludeIfSibling(&'static str),
+    /// Skip the folder if it directly contains a file with this name,
+    /// e.g. `venv` with `pyvenv.cfg`.
+    ExcludeIfChild(&'static str),
+}
+
 /// Decides which entries a walk skips; implemented by `sk_scan::ExcludeSet` (SPEC-03 §4.5).
 pub trait PathFilter: Send + Sync + Debug {
-    /// Whether the entry at `abs` named `name` is excluded.
-    fn is_excluded(&self, abs: &Path, name: &OsStr, is_dir: bool) -> bool;
+    /// Decision for the entry at the absolute path `abs` named `name`.
+    fn check(&self, abs: &Path, name: &OsStr, is_dir: bool) -> Exclusion;
 }
 
 /// Parameters of [`FsScanner::walk`].
@@ -255,8 +273,8 @@ mod tests {
     struct NoExcludes;
 
     impl PathFilter for NoExcludes {
-        fn is_excluded(&self, _: &Path, _: &OsStr, _: bool) -> bool {
-            false
+        fn check(&self, _: &Path, _: &OsStr, _: bool) -> Exclusion {
+            Exclusion::Keep
         }
     }
 
@@ -273,9 +291,10 @@ mod tests {
             exclude: None,
             threads: 1,
         };
-        assert!(!opts
-            .excludes
-            .is_excluded(Path::new("a"), OsStr::new("a"), false));
+        assert_eq!(
+            opts.excludes.check(Path::new("a"), OsStr::new("a"), false),
+            Exclusion::Keep
+        );
         assert!(format!("{opts:?}").contains("NoExcludes"));
     }
 }

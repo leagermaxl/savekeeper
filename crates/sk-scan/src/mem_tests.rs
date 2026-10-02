@@ -1,19 +1,24 @@
+use std::ffi::OsStr;
 use std::path::PathBuf;
 use std::sync::Arc;
 
 use globset::{GlobBuilder, GlobSet, GlobSetBuilder};
 
 use super::*;
-use crate::PathFilter;
+use crate::{Exclusion, PathFilter};
 
 /// Excludes entries by name, ignoring case.
 #[derive(Debug, Default)]
 struct NameFilter(Vec<&'static str>);
 
 impl PathFilter for NameFilter {
-    fn is_excluded(&self, _: &Path, name: &OsStr, _: bool) -> bool {
+    fn check(&self, _: &Path, name: &OsStr, _: bool) -> Exclusion {
         let name = name.to_string_lossy();
-        self.0.iter().any(|n| n.eq_ignore_ascii_case(&name))
+        if self.0.iter().any(|n| n.eq_ignore_ascii_case(&name)) {
+            Exclusion::Exclude
+        } else {
+            Exclusion::Keep
+        }
     }
 }
 
@@ -22,8 +27,12 @@ impl PathFilter for NameFilter {
 struct PathExclude(PathBuf);
 
 impl PathFilter for PathExclude {
-    fn is_excluded(&self, abs: &Path, _: &OsStr, _: bool) -> bool {
-        abs == self.0
+    fn check(&self, abs: &Path, _: &OsStr, _: bool) -> Exclusion {
+        if abs == self.0 {
+            Exclusion::Exclude
+        } else {
+            Exclusion::Keep
+        }
     }
 }
 
@@ -395,4 +404,20 @@ fn walk_root_errors() {
         fs.walk(Path::new("/r/top.sav"), &opts(), &mut visit, &cancel),
         Err(FsError::Io(_))
     ));
+}
+
+#[test]
+fn a_junction_is_always_a_folder() {
+    let mut fs = sample();
+    fs.add_reparse("/r/top.sav", ReparseKind::Junction)
+        .add_reparse("/r/new", ReparseKind::Junction)
+        .add_reparse("/r/link.txt", ReparseKind::Symlink);
+    for p in ["/r/top.sav", "/r/new"] {
+        let meta = fs.metadata(Path::new(p)).unwrap();
+        assert_eq!(meta.kind, EntryKind::Reparse(ReparseKind::Junction), "{p}");
+        assert_ne!(meta.attrs & FILE_ATTRIBUTE_DIRECTORY, 0, "{p}");
+        assert_ne!(meta.attrs & FILE_ATTRIBUTE_REPARSE_POINT, 0, "{p}");
+    }
+    let link = fs.metadata(Path::new("/r/link.txt")).unwrap();
+    assert_eq!(link.attrs & FILE_ATTRIBUTE_DIRECTORY, 0);
 }

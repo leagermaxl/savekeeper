@@ -11,8 +11,9 @@
 //!
 //! YAML fixtures are loaded by `sk_testkit::mem_fixture` (SPEC-12 §4.2).
 
+mod walk;
+
 use std::collections::BTreeMap;
-use std::ffi::OsStr;
 use std::io;
 use std::ops::Bound;
 use std::path::Path;
@@ -25,6 +26,7 @@ use crate::{
     CancellationToken, CloudState, DirEntryInfo, EntryKind, EntryMeta, FsError, FsScanner,
     Readability, ReparseKind, WalkControl, WalkOptions, WalkStats,
 };
+use walk::Walker;
 
 const FILE_ATTRIBUTE_DIRECTORY: u32 = 0x10;
 const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x400;
@@ -158,19 +160,15 @@ impl MemFs {
     }
 
     /// Makes an entry a reparse point of `kind`, keeping its size and time;
-    /// a new entry has size 0 and is a folder only for a junction.
+    /// a new entry has size 0. A junction is always a folder, as on NTFS.
     pub fn add_reparse(&mut self, path: &str, kind: ReparseKind) -> &mut Self {
-        let new = |name: &str| {
-            let dir = if kind == ReparseKind::Junction {
-                FILE_ATTRIBUTE_DIRECTORY
-            } else {
-                0
-            };
-            MemNode::new(name, EntryKind::Reparse(kind), dir)
-        };
+        let new = |name: &str| MemNode::new(name, EntryKind::Reparse(kind), 0);
         if let Some(node) = self.upsert(path, new) {
             node.kind = EntryKind::Reparse(kind);
             node.attrs |= FILE_ATTRIBUTE_REPARSE_POINT;
+            if kind == ReparseKind::Junction {
+                node.attrs |= FILE_ATTRIBUTE_DIRECTORY;
+            }
         }
         self
     }
@@ -357,91 +355,6 @@ impl FsScanner for MemFs {
             Some(node) if node.locked => Readability::Locked,
             Some(_) => Readability::Ok,
         }
-    }
-}
-
-/// Depth-first, sorted traversal state of [`MemFs::walk`].
-struct Walker<'a, 'v> {
-    fs: &'a MemFs,
-    opts: &'a WalkOptions,
-    visit: &'v mut dyn FnMut(&DirEntryInfo) -> WalkControl,
-    cancel: &'a CancellationToken,
-    stats: WalkStats,
-    stopped: bool,
-}
-
-impl Walker<'_, '_> {
-    /// Visits the children of the folder `key` at `abs`; `rel` and `rel_glob`
-    /// (`/`-separated, for glob matching) are relative to the walk root.
-    fn dir(
-        &mut self,
-        abs: &Path,
-        key: &[String],
-        rel: &Path,
-        rel_glob: &str,
-        depth: u32,
-    ) -> Result<(), FsError> {
-        for (child_key, node) in self.fs.list(key)? {
-            if self.cancel.is_cancelled() {
-                return Err(FsError::Cancelled);
-            }
-            let path = abs.join(&node.name);
-            let child_glob = if rel_glob.is_empty() {
-                node.name.clone()
-            } else {
-                format!("{rel_glob}/{}", node.name)
-            };
-            let excluded =
-                self.opts
-                    .excludes
-                    .is_excluded(&path, OsStr::new(&node.name), node.is_dir())
-                    || self
-                        .opts
-                        .exclude
-                        .as_ref()
-                        .is_some_and(|g| g.is_match(&child_glob));
-            if excluded {
-                self.stats.skipped_excluded += 1;
-                continue;
-            }
-            // `include` selects files; folders are always entered.
-            let included = node.is_dir()
-                || self
-                    .opts
-                    .include
-                    .as_ref()
-                    .is_none_or(|g| g.is_match(&child_glob));
-            if !included {
-                continue;
-            }
-            if self.stats.entries >= self.opts.max_entries {
-                self.stats.truncated = true;
-                self.stopped = true;
-                return Ok(());
-            }
-            self.stats.entries += 1;
-            let info = DirEntryInfo {
-                path,
-                rel: rel.join(&node.name),
-                depth,
-                meta: node.meta(),
-            };
-            match (self.visit)(&info) {
-                WalkControl::Stop => {
-                    self.stopped = true;
-                    return Ok(());
-                }
-                WalkControl::SkipDir => continue,
-                WalkControl::Continue => {}
-            }
-            if node.is_walked() && depth < self.opts.max_depth {
-                self.dir(&info.path, child_key, &info.rel, &child_glob, depth + 1)?;
-                if self.stopped {
-                    return Ok(());
-                }
-            }
-        }
-        Ok(())
     }
 }
 
