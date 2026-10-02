@@ -8,7 +8,7 @@
 | Крейт(ы) | все, в первую очередь `sk-core`, `sk-engine`, `sk-cli` |
 | Зависит от | SPEC-00, SPEC-02 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-10-02 (§4.8.2: API `Config`/`LoadedConfig`/`ConfigWarning`/`DataDir`, правила загрузки, типы значений; §4.5: `ScanPhase`, `LogLevel`, API и правила `ThrottledSink`; T-01-03: `PathSet` вынесен в T-02-02; MSRV 1.93; YAML: `serde-saphyr`; `FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; уточнение T-01-01) |
+| Последнее изменение | 2026-10-02 (§4.8.3: API `sk-core::logging`, обезличивание в писателе, имя файла лога; §4.8.2: API `Config`/`LoadedConfig`/`ConfigWarning`/`DataDir`, правила загрузки, типы значений; §4.5: `ScanPhase`, `LogLevel`, API и правила `ThrottledSink`; T-01-03: `PathSet` вынесен в T-02-02; MSRV 1.93; YAML: `serde-saphyr`; `FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; уточнение T-01-01) |
 
 ## 1. Цель
 
@@ -296,7 +296,7 @@ pub enum EngineError { #[error("cancelled")] Cancelled, #[error(transparent)] Co
 ├── savekeeper.exe
 ├── savekeeper.config.json       # создаётся при первом запуске с дефолтами
 └── savekeeper-data/
-    ├── logs/savekeeper-YYYY-MM-DD.log   # ротация, хранить 7 файлов
+    ├── logs/savekeeper.YYYY-MM-DD.log   # ротация раз в сутки, хранить 7 файлов
     ├── cache/
     │   ├── ludusavi-manifest.yaml       # SPEC-05
     │   ├── ludusavi-manifest.etag
@@ -395,6 +395,18 @@ impl DataDir {
 #### 4.8.3 Логирование
 - `tracing` с уровнем из `SK_LOG` (по умолчанию `info`), в файл и в `Event::Log` (только `warn+`).
 - В логах пути пользователя заменяются на шаблоны (`{HOME}\...`), чтобы логи можно было отправлять в баг-репорты.
+
+```rust
+// sk-core::logging
+pub struct LogGuard { /* сбрасывает буфер файла при drop */ }
+#[derive(thiserror::Error, Debug)]
+pub enum LogError { Io(std::io::Error), Filter(String), AlreadyInitialized }
+/// Глобальный subscriber: файл <logs_dir>/savekeeper.YYYY-MM-DD.log (7 файлов) + Event::Log (warn+) в events.
+pub fn init(logs_dir: &Path, env: &Environment, events: Option<EventSink>) -> Result<LogGuard, LogError>;
+```
+- Уровень — `SK_LOG` в синтаксисе `EnvFilter` (`info`, `sk_scan=debug`), по умолчанию `info`. Неверное значение → `LogError::Filter`.
+- Обезличивание делает писатель, а не вызывающий код: в каждой строке пути `known_folders` (и с префиксом `\\?\`) заменяются на токен (`{APPDATA}`, самый длинный путь первым, без учёта регистра), затем `user_name` и `machine_name` — на `<redacted>` по правилам SPEC-02 §4.2. Полный `redact` не применяется: он удалил бы UUID и хэши, нужные для диагностики.
+- `Event::Log.message` проходит то же обезличивание.
 
 ### 4.9 CLI (`sk-cli`)
 
