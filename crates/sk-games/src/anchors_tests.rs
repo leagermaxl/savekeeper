@@ -447,3 +447,44 @@ fn real_manifest_index() {
     println!("largest anchor: {:?}", largest.map(|(k, v)| (k, v.len())));
     assert!(index.bases.len() < 40);
 }
+
+/// A drive root with fewer than two static segments is wide, not an anchor:
+/// `C:\Users` always exists, and a bracketed user name is a glob class
+/// (T-05-14).
+#[test]
+fn drive_roots_with_one_static_segment_are_wide() {
+    let yaml = r"
+Bracket User:
+  files:
+    C:/Users/[User]/AppData/Roaming/Nitroplus: {}
+Drive Glob:
+  files:
+    D:/OldGame/*.sav: {}
+Old Game:
+  files:
+    D:/Games/OldGame/save: {}
+Token Game:
+  files:
+    <winAppData>/TokenGame: {}
+";
+    let index = AnchorIndex::new(&manifest(yaml));
+    assert_eq!(
+        sorted_anchors(&index),
+        [r"d:\games\oldgame", r"{appdata}\tokengame"]
+    );
+    let wide: Vec<&str> = index.wide().map(|r| r.key.as_str()).collect();
+    assert_eq!(wide, ["Bracket User", "Drive Glob"]);
+    let bases: Vec<&str> = index.bases.keys().map(String::as_str).collect();
+    assert_eq!(bases, ["d:", "{appdata}"]);
+
+    let mut fs = MemFs::new();
+    fs.add_file(
+        r"C:\Users\U\AppData\Roaming\Nitroplus\save.dat",
+        1,
+        "-1d",
+        None,
+    );
+    fs.add_file(r"D:\OldGame\1.sav", 1, "-1d", None);
+    let hits = find(&index, &fs, &env(), &[]);
+    assert!(hits.is_empty());
+}

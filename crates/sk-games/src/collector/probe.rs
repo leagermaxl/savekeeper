@@ -6,7 +6,7 @@ use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use globset::{GlobBuilder, GlobSet, GlobSetBuilder};
+use globset::{GlobBuilder, GlobMatcher, GlobSet, GlobSetBuilder};
 use sk_core::fs::{
     EntryKind, EntryMeta, Exclusion, FsScanner, PathFilter, WalkControl, WalkOptions,
 };
@@ -69,10 +69,12 @@ pub(super) fn folder_like(meta: &EntryMeta) -> bool {
 }
 
 /// Whether a file under `root` matches `include`; stops at the first one.
+/// Folders that cannot lead to a match ([`Prefixes`]) are not entered.
 fn include_matches(scan: &Scan<'_>, root: &Path, include: &[String]) -> bool {
     let Some(globs) = glob_set(include) else {
         return false;
     };
+    let prefixes = Prefixes::new(include);
     let opts = WalkOptions {
         max_depth: scan.max_depth,
         max_entries: MAX_PROBE_ENTRIES,
@@ -86,7 +88,11 @@ fn include_matches(scan: &Scan<'_>, root: &Path, include: &[String]) -> bool {
     let mut visit = |entry: &sk_core::fs::DirEntryInfo| {
         // `include` selects files; folders are always reported.
         if folder_like(&entry.meta) {
-            WalkControl::Continue
+            if prefixes.may_contain(&entry.rel) {
+                WalkControl::Continue
+            } else {
+                WalkControl::SkipDir
+            }
         } else {
             found = true;
             WalkControl::Stop
@@ -120,6 +126,73 @@ fn glob_set(include: &[String]) -> Option<GlobSet> {
     builder.build().ok()
 }
 
+/// One `/`-separated segment of an include glob.
+#[derive(Debug)]
+enum Segment {
+    /// Matches one path component (case-insensitive, as [`glob_set`]).
+    One(GlobMatcher),
+    /// `**`, or a segment that cannot be judged alone: anything below can
+    /// match, so no folder is pruned from here on.
+    Rest,
+}
+
+/// Segment-prefix pruning of the include probe (T-05-14): a folder is
+/// entered only if its path relative to the probe root matches the leading
+/// segments of some include glob and is shorter than that glob, so a file
+/// below it can still match. E.g. with `[User]/AppData/Roaming/Nitroplus`
+/// under `C:\Users`, no user folder is entered (`[User]` is one character).
+#[derive(Debug)]
+struct Prefixes(Vec<Vec<Segment>>);
+
+impl Prefixes {
+    /// Splits each glob of `include` into segments; a segment that does not
+    /// compile on its own (e.g. a part of `[/]`) or contains `**` together
+    /// with other text disables pruning below it.
+    fn new(include: &[String]) -> Self {
+        let globs = include
+            .iter()
+            .map(|pattern| {
+                let mut segments = Vec::new();
+                for text in pattern.split('/') {
+                    let segment = if text.contains("**") {
+                        Segment::Rest
+                    } else {
+                        GlobBuilder::new(text)
+                            .case_insensitive(true)
+                            .literal_separator(true)
+                            .build()
+                            .map_or(Segment::Rest, |glob| Segment::One(glob.compile_matcher()))
+                    };
+                    let rest = matches!(segment, Segment::Rest);
+                    segments.push(segment);
+                    if rest {
+                        break;
+                    }
+                }
+                segments
+            })
+            .collect();
+        Self(globs)
+    }
+
+    /// Whether a file below the folder at `rel` (relative to the probe root,
+    /// not empty) can match one of the globs.
+    fn may_contain(&self, rel: &Path) -> bool {
+        let components: Vec<&OsStr> = rel.iter().collect();
+        self.0.iter().any(|segments| {
+            for (i, name) in components.iter().enumerate() {
+                match segments.get(i) {
+                    None => return false,
+                    Some(Segment::Rest) => return true,
+                    Some(Segment::One(glob)) if glob.is_match(Path::new(name)) => {}
+                    Some(Segment::One(_)) => return false,
+                }
+            }
+            components.len() < segments.len()
+        })
+    }
+}
+
 /// The probe looks at every entry: it only asks whether a file exists.
 #[derive(Debug)]
 struct KeepAll;
@@ -129,3 +202,7 @@ impl PathFilter for KeepAll {
         Exclusion::Keep
     }
 }
+
+#[cfg(test)]
+#[path = "probe_tests.rs"]
+mod tests;

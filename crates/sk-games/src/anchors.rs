@@ -72,7 +72,8 @@ pub(crate) struct AnchorIndex {
     rules: Vec<AnchoredRule>,
     /// Lowercase anchor → entries of [`rules`](Self::rules), in order.
     anchors: HashMap<String, Vec<usize>>,
-    /// Entries without a static segment after the root (`<winAppData>/*/Saves`).
+    /// Entries without a static segment after the root (`<winAppData>/*/Saves`),
+    /// or with fewer than two after a drive (`C:/Users/*/Game`).
     wide: Vec<usize>,
     /// Lowercase root → what to list there.
     bases: BTreeMap<String, Base>,
@@ -91,7 +92,8 @@ impl AnchorIndex {
     ///
     /// The anchor of an entry is its root and the first two static segments
     /// of its template, or the only one; an entry without static segments
-    /// after the root is "wide" ([`wide`](Self::wide)).
+    /// after the root, or with fewer than two after a drive root, is "wide"
+    /// ([`wide`](Self::wide)).
     pub(crate) fn new(manifest: &Manifest) -> Self {
         let ctx = GameCtx::default();
         let mut keys: Vec<&String> = manifest
@@ -184,7 +186,8 @@ impl AnchorIndex {
     }
 
     /// "Wide" entries: the first segment after the root is a glob
-    /// (`<winAppData>/*/Saves`), so they have no anchor. They are checked only
+    /// (`<winAppData>/*/Saves`), or the second one after a drive
+    /// (`C:/Users/[User]/…`), so they have no anchor. They are checked only
     /// for installed games, like every entry of an installed game (§4.7 step 2).
     #[cfg_attr(not(test), allow(dead_code))] // GamesCollector checks every entry of an installed game
     pub(crate) fn wide(&self) -> impl Iterator<Item = &AnchoredRule> {
@@ -239,7 +242,10 @@ impl AnchorIndex {
             return false;
         };
         let rest: Vec<String> = segments.take(ANCHOR_DEPTH).map(str::to_lowercase).collect();
-        if rest.is_empty() {
+        // A drive root needs two static segments: `C:\Users` always exists,
+        // and `C:/Users/[User]/…` (a bracketed user name reads as a glob
+        // class) would make every scan walk all user profiles (T-05-14).
+        if rest.is_empty() || (is_drive(root) && rest.len() < ANCHOR_DEPTH) {
             return false;
         }
         let root_key = root.to_lowercase();
@@ -278,6 +284,11 @@ fn may_apply_on_windows(when: &[When]) -> bool {
                     .as_ref()
                     .is_none_or(|store| store_launcher(store).is_some())
         })
+}
+
+/// Whether the first segment of a template is a drive (`D:`), not a token.
+fn is_drive(root: &str) -> bool {
+    matches!(root.as_bytes(), [letter, b':'] if letter.is_ascii_alphabetic())
 }
 
 /// Entries of one folder; nothing when it is missing or cannot be listed.
