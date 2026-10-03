@@ -113,6 +113,9 @@ pub mod expand {
     pub struct TargetExpander<'a>;
     impl TargetExpander<'_> {
         pub fn new(env: &Environment, fs: &dyn FsScanner, registry: &dyn RegistryProbe, resolve: &ResolveContext) -> Self;
+        /// Те же входы, что у evaluator'а, и общий набор «registry_access_denied уже сообщён» (§5). Коллектор использует этот конструктор.
+        pub fn from_evaluator(evaluator: &ConditionEvaluator) -> Self;
+        /// Optional-targets опрашиваются только после срабатывания правила.
         pub fn expand(&self, rule: &CompiledRule, outcome: ConditionOutcome) -> RuleOutput;
     }
 }
