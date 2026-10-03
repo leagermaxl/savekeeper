@@ -315,6 +315,17 @@ fn glob_root_depth_is_limited() {
 }
 
 #[test]
+fn claims_allow_two_wildcard_segments() {
+    let claims = |c: &str| valid_rule(&format!("    claims: [ \"{c}\" ]\n"));
+    compile_ok(&claims("{APPDATA}\\\\Chrome\\\\*\\\\Cache"));
+    compile_ok(&claims("{DRIVE:*}\\\\*\\\\x*\\\\Cache"));
+    assert_error(
+        &claims("{APPDATA}\\\\*\\\\*\\\\*"),
+        "claims[0]: 3 `*` segments",
+    );
+}
+
+#[test]
 fn all_drives_token_is_not_a_wildcard() {
     compile_ok(&valid_rule(
         "    targets: [ { path: \"{DRIVE:*}\\\\RetroArch\" } ]\n",

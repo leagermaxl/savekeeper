@@ -21,7 +21,10 @@ thiserror.workspace = true
 winreg.workspace = true
 
 [dev-dependencies]
+insta.workspace = true
+serde_json.workspace = true
 sk-scan.workspace = true
+sk-testkit.workspace = true
 tempfile.workspace = true
 
 [lints]

@@ -237,6 +237,7 @@ fn compile_rule(mut rule: Rule, ctx: &mut RuleCtx) -> Option<CompiledRule> {
         rule.sensitivity = Sensitivity::High;
     }
     cond_checks::check_conditions(&rule.conditions, "conditions", ctx);
+    check_claims(&rule.claims, ctx);
 
     let targets: Vec<CompiledTarget> = rule
         .targets
@@ -336,11 +337,7 @@ fn compile_target(
 
 /// `*` only with `glob_root`, in at most [`MAX_GLOB_ROOT_SEGMENTS`] segments.
 fn check_path(template: &PathTemplate, glob_root: bool, at: &str, ctx: &mut RuleCtx) {
-    let wildcards = template
-        .as_str()
-        .split('\\')
-        .filter(|segment| *segment != "{DRIVE:*}" && segment.contains('*'))
-        .count();
+    let wildcards = wildcard_segments(template);
     if wildcards == 0 {
         return;
     }
@@ -351,6 +348,28 @@ fn check_path(template: &PathTemplate, glob_root: bool, at: &str, ctx: &mut Rule
             "{at}: `path` has {wildcards} `*` segments, at most {MAX_GLOB_ROOT_SEGMENTS} allowed"
         ));
     }
+}
+
+/// `*` in a claim needs no `glob_root`, but is limited to
+/// [`MAX_GLOB_ROOT_SEGMENTS`] segments like a `glob_root` path (SPEC-04 §4.4).
+fn check_claims(claims: &[PathTemplate], ctx: &mut RuleCtx) {
+    for (index, claim) in claims.iter().enumerate() {
+        let wildcards = wildcard_segments(claim);
+        if wildcards > MAX_GLOB_ROOT_SEGMENTS {
+            ctx.error(format!(
+                "claims[{index}]: {wildcards} `*` segments, at most {MAX_GLOB_ROOT_SEGMENTS} allowed"
+            ));
+        }
+    }
+}
+
+/// Number of segments of `template` with `*`, `{DRIVE:*}` not counted.
+pub(crate) fn wildcard_segments(template: &PathTemplate) -> usize {
+    template
+        .as_str()
+        .split('\\')
+        .filter(|segment| *segment != "{DRIVE:*}" && segment.contains('*'))
+        .count()
 }
 
 /// A JSON Pointer (empty or starting with `/`) with at most

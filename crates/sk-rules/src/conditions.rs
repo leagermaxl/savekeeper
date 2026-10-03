@@ -10,7 +10,7 @@
 
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
-use std::sync::{Mutex, MutexGuard, PoisonError};
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
 use regex::bytes::Regex as BytesRegex;
 use regex::Regex;
@@ -49,12 +49,40 @@ pub struct ConditionOutcome {
 
 /// Evaluates rule conditions for one scan, with a cache of results.
 pub struct ConditionEvaluator<'a> {
-    env: &'a Environment,
-    fs: &'a dyn FsScanner,
-    registry: &'a dyn RegistryProbe,
-    resolve: &'a ResolveContext,
+    pub(crate) env: &'a Environment,
+    pub(crate) fs: &'a dyn FsScanner,
+    pub(crate) registry: &'a dyn RegistryProbe,
+    pub(crate) resolve: &'a ResolveContext,
+    /// Shared with the target expanders made from this evaluator
+    /// (`TargetExpander::from_evaluator`).
+    pub(crate) denied_keys: DeniedKeys,
     cache: Mutex<Cache>,
     issues: Mutex<Vec<ScanIssue>>,
+}
+
+/// Registry keys whose `issue.rules.registry_access_denied` was already
+/// raised in this scan. One set serves conditions and targets, so a key is
+/// reported once per scan whichever met it first (SPEC-04 §5).
+#[derive(Debug, Clone, Default)]
+pub(crate) struct DeniedKeys(Arc<Mutex<HashSet<(RegHive, String)>>>);
+
+impl DeniedKeys {
+    /// The Info issue for an unreadable key (normalized), or `None` when the
+    /// key was already reported.
+    pub(crate) fn report(&self, rule_id: &str, hive: RegHive, key: &str) -> Option<ScanIssue> {
+        let first = lock(&self.0).insert((hive, key.to_lowercase()));
+        first.then(|| {
+            issue(
+                IssueSeverity::Info,
+                ISSUE_REGISTRY_ACCESS_DENIED,
+                [
+                    ("rule_id", rule_id.to_owned()),
+                    ("hive", hive_name(hive).to_owned()),
+                    ("key", key.to_owned()),
+                ],
+            )
+        })
+    }
 }
 
 /// Results computed so far in this scan.
@@ -88,6 +116,7 @@ impl<'a> ConditionEvaluator<'a> {
             fs,
             registry,
             resolve,
+            denied_keys: DeniedKeys::default(),
             cache: Mutex::new(Cache::default()),
             issues: Mutex::new(Vec::new()),
         }
@@ -227,18 +256,11 @@ impl<'a> ConditionEvaluator<'a> {
         }
         let state = self.registry.key_state(key.hive, &normalized);
         let found = state == KeyState::Present;
-        let mut cache = lock(&self.cache);
-        // Report only once even if two threads probed the same key.
-        if cache.registry.insert(cache_key, found).is_none() && state == KeyState::AccessDenied {
-            self.push_issue(issue(
-                IssueSeverity::Info,
-                ISSUE_REGISTRY_ACCESS_DENIED,
-                [
-                    ("rule_id", rule_id.to_owned()),
-                    ("hive", hive_name(key.hive).to_owned()),
-                    ("key", normalized),
-                ],
-            ));
+        lock(&self.cache).registry.insert(cache_key, found);
+        if state == KeyState::AccessDenied {
+            if let Some(issue) = self.denied_keys.report(rule_id, key.hive, &normalized) {
+                self.push_issue(issue);
+            }
         }
         found
     }
@@ -326,7 +348,7 @@ fn parse_build(build: &str) -> Option<u32> {
     build.split('.').next()?.trim().parse().ok()
 }
 
-fn hive_name(hive: RegHive) -> &'static str {
+pub(crate) fn hive_name(hive: RegHive) -> &'static str {
     match hive {
         RegHive::Hkcu => "HKCU",
         RegHive::Hklm => "HKLM",

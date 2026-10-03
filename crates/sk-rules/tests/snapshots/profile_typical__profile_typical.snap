@@ -1,0 +1,394 @@
+---
+source: crates/sk-rules/tests/profile_typical.rs
+expression: snapshot
+---
+{
+  "claimed_paths": [
+    "[root]/Users/user/AppData/Local/Google/Chrome/User Data",
+    "[root]/Users/user/AppData/Local/Google/Chrome/User Data/Default/Cache",
+    "[root]/Users/user/AppData/Local/Google/Chrome/User Data/Profile 1/Cache",
+    "[root]/Users/user/AppData/Local/Google/Chrome/User Data/Default/Code Cache",
+    "[root]/Users/user/AppData/Roaming/Mozilla/Firefox",
+    "[root]/Users/user/AppData/Local/Mozilla/Firefox/Profiles",
+    "[root]/Users/user/AppData/Local/JetBrains",
+    "[root]/Users/user/AppData/Roaming/obs-studio",
+    "[root]/Users/user/.ssh",
+    "[root]/Users/user/AppData/Roaming/Telegram Desktop/tdata",
+    "[root]/Users/user/AppData/Roaming/Code/User",
+    "[root]/Users/user/.vscode/extensions/extensions.json",
+    "[root]/Users/user/AppData/Roaming/Code/Cache",
+    "[root]/Users/user/AppData/Roaming/Code/CachedData",
+    "[root]/Users/user/AppData/Roaming/Code/User/workspaceStorage"
+  ],
+  "findings": [
+    {
+      "app": {
+        "id": "chrome",
+        "installed": null,
+        "kind": "application",
+        "name": "Google Chrome",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "app_data",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "chrome.profiles"
+          }
+        }
+      ],
+      "id": "5f3ecc5a3bc3246c",
+      "notes_key": "rules.browsers.notes",
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "high",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [
+          "*/Bookmarks",
+          "*/Preferences",
+          "*/Secure Preferences",
+          "*/Extensions/**",
+          "*/Local Extension Settings/**",
+          "*/Login Data*",
+          "*/Web Data",
+          "*/History",
+          "Local State"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Local/Google/Chrome/User Data",
+        "root": "{LOCALAPPDATA}\\Google\\Chrome\\User Data"
+      },
+      "title": "rules.chrome.profiles"
+    },
+    {
+      "app": {
+        "id": "firefox",
+        "installed": null,
+        "kind": "application",
+        "name": "Mozilla Firefox",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "app_data",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "firefox.profiles"
+          }
+        }
+      ],
+      "id": "40102466d29df7de",
+      "notes_key": "rules.browsers.notes",
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "high",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [
+          "profiles.ini",
+          "Profiles/*/{places.sqlite,key4.db,logins.json,cert9.db,prefs.js,user.js,extensions/**,chrome/**,containers.json,handlers.json,sessionstore*}"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/Mozilla/Firefox",
+        "root": "{APPDATA}\\Mozilla\\Firefox"
+      },
+      "title": "rules.firefox.profiles"
+    },
+    {
+      "app": {
+        "id": "obs-studio",
+        "installed": null,
+        "kind": "application",
+        "name": "OBS Studio",
+        "process_names": [
+          "obs64.exe"
+        ],
+        "source_ids": {}
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "obs.config"
+          }
+        }
+      ],
+      "id": "ea8ba111bbc54941",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [
+        "app-running"
+      ],
+      "target": {
+        "exclude": [
+          "logs/**",
+          "crashes/**",
+          "updates/**"
+        ],
+        "include": [
+          "basic/**",
+          "global.ini",
+          "plugin_config/**"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/obs-studio",
+        "root": "{APPDATA}\\obs-studio"
+      },
+      "title": "rules.obs.config"
+    },
+    {
+      "app": {
+        "id": "openssh",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "OpenSSH",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "credentials",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "ssh.keys"
+          }
+        }
+      ],
+      "id": "6dd66f49b1b8c4af",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "high",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/.ssh",
+        "root": "{HOME}\\.ssh"
+      },
+      "title": "rules.ssh.keys"
+    },
+    {
+      "app": {
+        "id": "telegram",
+        "installed": null,
+        "kind": "application",
+        "name": "Telegram Desktop",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "app_data",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "telegram.tdata"
+          }
+        }
+      ],
+      "id": "01f88842e4cdc38a",
+      "notes_key": "rules.telegram.notes",
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "high",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [
+          "user_data/**",
+          "emoji/**",
+          "dumps/**"
+        ],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/Telegram Desktop/tdata",
+        "root": "{APPDATA}\\Telegram Desktop\\tdata"
+      },
+      "title": "rules.telegram.tdata"
+    },
+    {
+      "app": {
+        "id": "vscode",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "Visual Studio Code",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Microsoft.VisualStudioCode"
+        }
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.949999988079071,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "vscode.user-settings"
+          }
+        }
+      ],
+      "id": "70cc5018ff2f7df3",
+      "notes_key": "rules.vscode.notes",
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [
+        "ide"
+      ],
+      "target": {
+        "exclude": [
+          "workspaceStorage/**",
+          "History/**",
+          "globalStorage/**/*.vsix"
+        ],
+        "include": [
+          "settings.json",
+          "keybindings.json",
+          "snippets/**",
+          "profiles/**",
+          "tasks.json"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/Code/User",
+        "root": "{APPDATA}\\Code\\User"
+      },
+      "title": "rules.vscode.user_settings"
+    },
+    {
+      "app": {
+        "id": "vscode",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "Visual Studio Code",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Microsoft.VisualStudioCode"
+        }
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.949999988079071,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "vscode.user-settings"
+          }
+        }
+      ],
+      "id": "fec220eb3bf23ae0",
+      "notes_key": "rules.vscode.notes",
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [
+        "ide"
+      ],
+      "target": {
+        "kind": "file",
+        "path": "{HOME}\\.vscode\\extensions\\extensions.json",
+        "resolved": "[root]/Users/user/.vscode/extensions/extensions.json"
+      },
+      "title": "rules.vscode.user_settings — rules.vscode.extensions_list"
+    },
+    {
+      "app": {
+        "id": "vscode",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "Visual Studio Code",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Microsoft.VisualStudioCode"
+        }
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.949999988079071,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "vscode.user-settings"
+          }
+        }
+      ],
+      "id": "164646077ab6aaa4",
+      "notes_key": "rules.vscode.notes",
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [
+        "ide"
+      ],
+      "target": {
+        "hive": "hkcu",
+        "key": "Software\\Classes\\vscode",
+        "kind": "registry",
+        "recursive": true
+      },
+      "title": "rules.vscode.user_settings — rules.vscode.protocol"
+    }
+  ],
+  "issues": []
+}

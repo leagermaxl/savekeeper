@@ -1,0 +1,126 @@
+# Typical user profile for the rules engine (SPEC-04 §6): VS Code, Chrome with
+# two profiles, Firefox, SSH keys, OBS Studio and Telegram Desktop, each with
+# the settings worth saving next to caches and logs the rules claim or exclude.
+# Loaded into MemFs by sk_testkit::mem_fixture.
+tree:
+  # --- VS Code ---
+  - path: "{APPDATA}/Code/User/settings.json"
+    content: "{\"editor.fontSize\": 14}"
+    mtime: "-1d"
+  - path: "{APPDATA}/Code/User/keybindings.json"
+    size: 1 KiB
+    mtime: "-30d"
+  - path: "{APPDATA}/Code/User/snippets/rust.json"
+    size: 2 KiB
+    mtime: "-60d"
+  - path: "{APPDATA}/Code/User/workspaceStorage/0a1b2c/state.vscdb"
+    size: 64 KiB
+    mtime: "-1d"
+  - path: "{APPDATA}/Code/Cache/Cache_Data/f_000001"
+    size: 8 KiB
+    repeat: 5
+  - path: "{APPDATA}/Code/CachedData/1a2b3c4d/index.code"
+    size: 16 KiB
+  - path: "{HOME}/.vscode/extensions/extensions.json"
+    size: 4 KiB
+    mtime: "-7d"
+
+  # --- Chrome: Default and Profile 1 ---
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Local State"
+    size: 8 KiB
+    mtime: "-1d"
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Default/Bookmarks"
+    size: 12 KiB
+    mtime: "-2d"
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Default/Preferences"
+    size: 20 KiB
+    mtime: "-1d"
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Default/Login Data"
+    size: 40 KiB
+    mtime: "-3d"
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Default/Cache/Cache_Data/f_000001"
+    size: 32 KiB
+    repeat: 5
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Default/Code Cache/js/index"
+    size: 4 KiB
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Profile 1/Bookmarks"
+    size: 3 KiB
+    mtime: "-10d"
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Profile 1/Preferences"
+    size: 18 KiB
+    mtime: "-10d"
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Profile 1/Cache/Cache_Data/f_000001"
+    size: 32 KiB
+    repeat: 3
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/GrShaderCache/data_0"
+    size: 8 KiB
+
+  # --- Firefox ---
+  - path: "{APPDATA}/Mozilla/Firefox/profiles.ini"
+    content: "[Profile0]\nName=default-release\nIsRelative=1\nPath=Profiles/x7k2p9qa.default-release\nDefault=1\n"
+    mtime: "-90d"
+  - path: "{APPDATA}/Mozilla/Firefox/Profiles/x7k2p9qa.default-release/places.sqlite"
+    size: 5 MiB
+    mtime: "-1d"
+  - path: "{APPDATA}/Mozilla/Firefox/Profiles/x7k2p9qa.default-release/key4.db"
+    size: 288 KiB
+    mtime: "-20d"
+  - path: "{APPDATA}/Mozilla/Firefox/Profiles/x7k2p9qa.default-release/logins.json"
+    size: 2 KiB
+    mtime: "-20d"
+  - path: "{APPDATA}/Mozilla/Firefox/Profiles/x7k2p9qa.default-release/prefs.js"
+    size: 12 KiB
+    mtime: "-1d"
+  - path: "{LOCALAPPDATA}/Mozilla/Firefox/Profiles/x7k2p9qa.default-release/cache2/entries/0A1B"
+    size: 64 KiB
+    repeat: 5
+
+  # --- SSH ---
+  - path: "{HOME}/.ssh/id_ed25519"
+    size: 411
+    mtime: "-200d"
+  - path: "{HOME}/.ssh/id_ed25519.pub"
+    size: 98
+    mtime: "-200d"
+  - path: "{HOME}/.ssh/known_hosts"
+    size: 2 KiB
+    mtime: "-5d"
+  - path: "{HOME}/.ssh/config"
+    size: 300
+    mtime: "-100d"
+
+  # --- OBS Studio ---
+  - path: "{APPDATA}/obs-studio/global.ini"
+    size: 2 KiB
+    mtime: "-3d"
+  - path: "{APPDATA}/obs-studio/basic/profiles/Untitled/basic.ini"
+    size: 1 KiB
+    mtime: "-3d"
+  - path: "{APPDATA}/obs-studio/basic/scenes/Untitled.json"
+    size: 24 KiB
+    mtime: "-3d"
+  - path: "{APPDATA}/obs-studio/plugin_config/obs-websocket/config.json"
+    size: 512
+  - path: "{APPDATA}/obs-studio/logs/2026-09-30 20-00-00.txt"
+    size: 16 KiB
+    repeat: 3
+  - path: "{APPDATA}/obs-studio/crashes/Crash 2026-09-01.txt"
+    size: 8 KiB
+
+  # --- Telegram Desktop ---
+  - path: "{APPDATA}/Telegram Desktop/tdata/key_datas"
+    size: 4 KiB
+    mtime: "-1d"
+  - path: "{APPDATA}/Telegram Desktop/tdata/settingss"
+    size: 2 KiB
+    mtime: "-1d"
+  - path: "{APPDATA}/Telegram Desktop/tdata/D877F783D5D3EF8C/maps"
+    size: 1 KiB
+    mtime: "-1d"
+  - path: "{APPDATA}/Telegram Desktop/tdata/user_data/cache/0/1A2B3C"
+    size: 256 KiB
+    repeat: 4
+  - path: "{APPDATA}/Telegram Desktop/tdata/emoji/set_0.webp"
+    size: 128 KiB
+  - path: "{APPDATA}/Telegram Desktop/Telegram.exe"
+    size: 4 MiB

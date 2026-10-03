@@ -6,12 +6,14 @@
 //! [`RuleSet`] loads the built-in and user rules and merges them (§4.4, §4.6);
 //! [`conditions`] evaluates rule conditions with a per-scan cache (§4.3);
 //! [`registry`] probes registry keys for `registry_exists`;
+//! [`expand`] turns targets of matched rules into findings and claimed paths (§4.5);
 //! [`RuleError`] reports problems in rule files.
 
 pub mod compile;
 pub mod conditions;
 pub mod diagnostic;
 mod error;
+pub mod expand;
 pub mod registry;
 pub mod schema;
 mod set;
@@ -21,5 +23,6 @@ pub use compile::{CompiledRule, CompiledTarget};
 pub use conditions::{ConditionEvaluator, ConditionOutcome, APP_RUNNING_TAG};
 pub use diagnostic::{DiagnosticSeverity, RuleDiagnostic};
 pub use error::RuleError;
+pub use expand::{RuleOutput, TargetExpander};
 pub use registry::{KeyState, MemRegistry, RegistryProbe, SystemRegistry};
 pub use set::{RuleSet, RuleSource};
