@@ -3,6 +3,7 @@
 
 mod battlenet;
 mod ea;
+mod enrich;
 mod epic;
 mod findings;
 mod gog;
@@ -13,6 +14,8 @@ mod xbox;
 
 #[cfg(test)]
 mod ea_tests;
+#[cfg(test)]
+mod enrich_tests;
 #[cfg(test)]
 mod epic_tests;
 #[cfg(test)]
@@ -32,6 +35,7 @@ use sk_core::template::PathTemplate;
 
 pub use battlenet::BattleNetDetector;
 pub use ea::EaDetector;
+pub use enrich::{enrich, enrich_with_registry};
 pub use epic::EpicDetector;
 pub use gog::GogDetector;
 pub use steam::{SteamDetector, STEAM_ID64_BASE};

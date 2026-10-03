@@ -2823,6 +2823,7 @@ dependencies = [
  "async-trait",
  "serde_json",
  "sk-core",
+ "sk-games",
  "sk-rules",
  "sk-scan",
  "tempfile",

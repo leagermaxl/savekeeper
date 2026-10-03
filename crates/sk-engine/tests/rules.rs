@@ -64,6 +64,7 @@ fn pipeline(rules_dir: &Path) -> ScanPipeline {
         .with_scanner(Arc::new(profile()))
         .with_rules_dir(rules_dir.to_path_buf())
         .with_rules_registry(Arc::new(MemRegistry::new()))
+        .with_games_registry(Arc::new(MemRegistry::new()))
 }
 
 async fn run(pipeline: &ScanPipeline, opts: ScanOptions) -> (ScanReport, Vec<Event>) {

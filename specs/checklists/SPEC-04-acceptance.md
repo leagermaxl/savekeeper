@@ -40,7 +40,6 @@ Notes): у их находок должен появиться тег `app-runni
 
 | Ограничение | Затронутые правила | Ожидание сейчас |
 |---|---|---|
-| `Environment.launchers` в `scan` пуст до SPEC-05 T-05-05 (`enrich` в фазе Environment), поэтому `{STEAM}` и `{STEAM_USERID}` не раскрываются | `steam.userdata-config`, `steam.screenshots`, `wallpaper-engine.config` | находок нет даже при установленном Steam; правило проверено тестами `builtin_rules_games.rs`. Отметить «установлено», в «Ок» — «ждёт T-05-05» |
 | `Environment.installed_programs` пуст до SPEC-06 T-06-03 | `retroarch.saves` (ветка `installed` условия) | находки есть, только если существует `%APPDATA%\RetroArch`; RetroArch только в `X:\RetroArch-Win64` без папки в Roaming — без находки, «ждёт T-06-03» |
 | `claimed_paths` не выводятся в отчёт `scan` | правила `*.none` (только `claims`) | находок нет по построению; `claims` проверены тестами `builtin_rules.rs`. Проверяется только отсутствие находок |
 
@@ -158,12 +157,10 @@ foreach ($f in $r.findings) {
     $byRule[$rid] = @($byRule[$rid]) + $f | Where-Object { $_ }
   }
 }
-$waitSteam = 'steam.userdata-config', 'steam.screenshots', 'wallpaper-engine.config'
 $summary = foreach ($id in $ids) {
   $inst = [bool](& $probe[$id])
   $n = if ($byRule.ContainsKey($id)) { @($byRule[$id]).Count } else { 0 }
   $expected, $ok = if ($id -like '*.none') { 'none (claims only)', ($n -eq 0) }
-    elseif ($waitSteam -contains $id) { 'none until T-05-05', ($n -eq 0) }
     elseif ($inst) { 'finding', ($n -gt 0) }
     else { 'none', ($n -eq 0) }
   [pscustomobject]@{ rule = $id; installed = $inst; findings = $n; expected = $expected; ok = $ok }
@@ -258,7 +255,7 @@ $r.issues | Where-Object source -eq 'rules' | Format-Table severity, message_key
 | `msi-afterburner.profiles` | `Program Files (x86)\MSI Afterburner\Profiles` (явный корень внутри исключения), `files` > 0 | | | |
 | `rivatuner.profiles` | `Program Files (x86)\RivaTuner Statistics Server\Profiles`, `files` > 0 | | | |
 | `rainmeter.skins` | `Documents\Rainmeter\Skins` и `%APPDATA%\Rainmeter\Rainmeter.ini` | | | |
-| `wallpaper-engine.config` | см. §1: находок нет до T-05-05; отметить, установлен ли Wallpaper Engine | | — | |
+| `wallpaper-engine.config` | с T-05-05 `{STEAM}` раскрывается: при установленном Wallpaper Engine (Steam) ожидается находка; отметить, установлен ли Wallpaper Engine | | — | |
 | `logitech-ghub.settings` | файл `%LOCALAPPDATA%\LGHUB\settings.db`; при работающем G HUB тег `app-running`, `locked` может быть 1 | | | |
 | `razer-synapse.none` | находок нет | | — | |
 
@@ -283,7 +280,7 @@ $r.issues | Where-Object source -eq 'rules' | Format-Table severity, message_key
 
 | Правило | Что проверить | Установлено? | Находка есть? | Ок |
 |---|---|---|---|---|
-| `steam.userdata-config`, `steam.screenshots` | см. §1: находок нет до T-05-05; отметить, установлен ли Steam и сколько аккаунтов в `userdata` | | — | |
+| `steam.userdata-config`, `steam.screenshots` | с T-05-05 `{STEAM}`/`{STEAM_USERID}` раскрываются: при установленном Steam ожидаются находки по каждому аккаунту; отметить, установлен ли Steam и сколько аккаунтов в `userdata` | | — | |
 | `minecraft.java` | `%APPDATA%\.minecraft`, в объёме `saves`, `options.txt`, `servers.dat`, `resourcepacks`, `shaderpacks`, `screenshots`, `mods`; без `versions`, `libraries`, `assets` | | | |
 | `prismlauncher.instances` | `%APPDATA%\PrismLauncher\instances` | | | |
 
@@ -305,13 +302,13 @@ $r.issues | Where-Object source -eq 'rules' | Format-Table severity, message_key
 | Проверка | Результат | Примечание |
 |---|---|---|
 | 0.1 `rules validate` | | |
-| `launchers` пуст (§1) | да / нет | если не пуст — Steam-правила ожидают находки |
+| `launchers` содержит `steam` (с T-05-05) | да / нет | если Steam установлен, а `steam` нет — ошибка детектора, завести задачу |
 | 2.3 Установлено / с находками / `ok` | N / M / K из 56 | |
 | 2.3 Строки `ok = False` | | каждая → задача или объяснение |
 | 2.4 Issues `source = rules` | | |
-| Ждут T-05-05 / T-06-03 (установлено, находок нет по §1) | | перечислить правила |
+| Ждут T-06-03 (установлено, находок нет по §1) | | перечислить правила |
 | Windows (сборка), коммит | | |
 
 Критерий 2 SPEC-04 §8 выполнен, если у всех установленных программ из правил §4.7.3–§4.7.9
-есть находки, кроме правил, ожидающих T-05-05 / T-06-03 по §1 (решение о закрытии критерия
+есть находки, кроме правил, ожидающих T-06-03 по §1 (решение о закрытии критерия
 с этой оговоркой принимает пользователь).

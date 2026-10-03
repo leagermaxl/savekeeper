@@ -1,5 +1,7 @@
 //! The scan pipeline (SPEC-01 §4.4).
 
+mod environment;
+
 use std::collections::{BTreeMap, HashMap};
 use std::future::Future;
 use std::path::PathBuf;
@@ -20,7 +22,7 @@ use sk_core::path::PathSet;
 use sk_core::registry::RegistryReader;
 use sk_core::template::PathTemplate;
 use sk_core::CancellationToken;
-use sk_scan::{measure_all, ExcludeSet, MeasureOptions, RealFs};
+use sk_scan::{measure_all, ExcludeSet, MeasureOptions};
 use time::OffsetDateTime;
 use tokio::task::{JoinError, JoinSet};
 use uuid::Uuid;
@@ -52,6 +54,8 @@ pub struct ScanPipeline {
     scans_dir: Option<PathBuf>,
     /// The `rules` collector, loaded anew for each run.
     rules: BuiltinRules,
+    /// Registry of the launcher detectors; `None`: `SystemRegistry`.
+    games_registry: Option<Arc<dyn RegistryReader>>,
     app_version: String,
 }
 
@@ -67,6 +71,7 @@ impl ScanPipeline {
             environment: None,
             scans_dir: None,
             rules: BuiltinRules::default(),
+            games_registry: None,
             app_version: env!("CARGO_PKG_VERSION").to_owned(),
         }
     }
@@ -137,18 +142,10 @@ impl ScanPipeline {
             cancel: &cancel,
         };
 
-        let env = run
-            .phase(ScanPhase::Environment, async {
-                match &self.environment {
-                    Some(env) => Ok(env.clone()),
-                    None => Environment::detect(),
-                }
-            })
+        let mut acc = Accumulated::default();
+        let (env, scanner) = run
+            .phase(ScanPhase::Environment, self.environment(&mut acc, &run))
             .await??;
-        let scanner = match &self.scanner {
-            Some(scanner) => Arc::clone(scanner),
-            None => Arc::new(RealFs::new(&env)),
-        };
         let ctx = CollectContext {
             env: Arc::new(env),
             config: Arc::clone(&self.config),
@@ -157,7 +154,6 @@ impl ScanPipeline {
             cancel: cancel.child_token(),
         };
 
-        let mut acc = Accumulated::default();
         let collected = run
             .phase(ScanPhase::Collect, self.collect(&ctx, &opts.collectors))
             .await?;

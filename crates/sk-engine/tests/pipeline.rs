@@ -150,12 +150,14 @@ fn drain(rx: &mut UnboundedReceiver<Event>) -> Vec<Event> {
     out
 }
 
-/// The built-in rules run on the fake environment with an empty registry, so
-/// that nothing of this machine's registry gets into the reports.
+/// The built-in rules and the launcher detectors run on the fake environment
+/// with an empty registry, so that nothing of this machine's registry gets
+/// into the reports.
 fn pipeline() -> ScanPipeline {
     ScanPipeline::new(Arc::new(Config::default()))
         .with_environment(env())
         .with_rules_registry(Arc::new(MemRegistry::new()))
+        .with_games_registry(Arc::new(MemRegistry::new()))
         .with_app_version("test".to_owned())
 }
 

@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-games` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-04 (токены `{STEAM}`, `{STEAM_USERID}`), SPEC-07, SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-03 (T-05-04: условие обнаружения EA, тексты ключей games в T-05-09, детекторы Epic/GOG/Ubisoft/EA/Battle.net/Xbox в §4.1 и §4.4, находки лаунчеров, issue `launcher_file_unreadable` в §5; T-05-02: FR-05-11 ресурс снапшота, варианты `GamesError`, детали `ManifestStore` в §4.1, ключи issue манифеста в §5, встроенный снапшот из `third_party/ludusavi`; T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.1: реестр из sk-core, T-05-04 и T-05-09 зависят от T-02-10; T-05-03: detect_with_issues, SteamDetector, RegistryReader, детали Steam §4.4, ключи issue §5; T-05-01: API разбора манифеста, конкретные типы, параллельный разбор, бенч; §5: манифест с 0 игр; T-04-05: специализация `{STEAM_USERID}` в шаблоне находки, §4.7, §5); 2026-10-02 (§6: пути фикстур `fixtures/samples/...` и 20 игр, как в SPEC-12 §4.3; 2026-10-01: §4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
+| Последнее изменение | 2026-10-03 (T-05-05: `enrich_with_registry` в §4.1; T-05-04: условие обнаружения EA, тексты ключей games в T-05-09, детекторы Epic/GOG/Ubisoft/EA/Battle.net/Xbox в §4.1 и §4.4, находки лаунчеров, issue `launcher_file_unreadable` в §5; T-05-02: FR-05-11 ресурс снапшота, варианты `GamesError`, детали `ManifestStore` в §4.1, ключи issue манифеста в §5, встроенный снапшот из `third_party/ludusavi`; T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.1: реестр из sk-core, T-05-04 и T-05-09 зависят от T-02-10; T-05-03: detect_with_issues, SteamDetector, RegistryReader, детали Steam §4.4, ключи issue §5; T-05-01: API разбора манифеста, конкретные типы, параллельный разбор, бенч; §5: манифест с 0 игр; T-04-05: специализация `{STEAM_USERID}` в шаблоне находки, §4.7, §5); 2026-10-02 (§6: пути фикстур `fixtures/samples/...` и 20 игр, как в SPEC-12 §4.3; 2026-10-01: §4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
 
 ## 1. Цель
 
@@ -88,6 +88,7 @@ pub struct GogDetector; pub struct UbisoftDetector; pub struct EaDetector; pub s
 // все — LauncherDetector, реэкспорт из корня крейта
 pub const STEAM_ID64_BASE: u64 = 76_561_197_960_265_728;
 pub fn enrich(env: &mut Environment, fs: &dyn FsScanner) -> Vec<ScanIssue>; // вызывает все детекторы (SPEC-02 §3.3), возвращает их issues
+pub fn enrich_with_registry(env: &mut Environment, fs: &dyn FsScanner, registry: Arc<dyn RegistryReader>) -> Vec<ScanIssue>; // то же с заданным реестром (MemRegistry в тестах); enrich = с SystemRegistry. Детекторы по порядку steam, epic, gog, ubisoft, ea, battlenet, xbox видят env до вызова; записи env.launchers с id детекторов заменяются найденным (не найден — удаляются), записи с другими id сохраняются; повторный вызов даёт тот же результат.
 
 // Чтение реестра. После T-02-10 RegistryReader / SystemRegistry / MemRegistry — из sk-core::registry
 // (SPEC-02 §3.4: key_state, string_value, dword_value, subkeys); свои registry.rs, win.rs и winreg
@@ -281,7 +282,7 @@ Issue Steam: reason ∈ not_found, access_denied, locked, too_large, cloud_only,
 - [x] **T-05-02** — `ManifestStore`: HTTP с ETag, атомарная запись, кэш индекса (postcard), встроенный снапшот (zstd, `build.rs` скачивает или берёт из `third_party/ludusavi/manifest.yaml` в репо). *Зависит:* T-05-01, T-01-04.
 - [x] **T-05-03** — Детектор Steam (VDF, ACF, userdata, loginusers) + токены `{STEAM}`, `{STEAM_USERID}` в `PathTemplate::resolve`. *Зависит:* T-03-06, T-02-03.
 - [x] **T-05-04** — Детекторы Epic, GOG (реестр), Ubisoft, EA, Battle.net (Uninstall), Xbox (`wgs`-находка). *Зависит:* T-05-03, T-02-10.
-- [ ] **T-05-05** — `enrich(env, fs)` (возвращает issues детекторов: `pub fn enrich(env: &mut Environment, fs: &dyn FsScanner) -> Vec<ScanIssue>`, §4.1) и интеграция в фазу Environment `sk-engine`. *Зависит:* T-05-04, T-01-06.
+- [x] **T-05-05** — `enrich(env, fs)` (возвращает issues детекторов: `pub fn enrich(env: &mut Environment, fs: &dyn FsScanner) -> Vec<ScanIssue>`, §4.1) и интеграция в фазу Environment `sk-engine`. *Зависит:* T-05-04, T-01-06.
 - [ ] **T-05-06** — `translate` + фильтр `when` + `{GAME_DIR}`. *Зависит:* T-05-01, T-02-03.
 - [ ] **T-05-07** — Сопоставление установленных игр с манифестом (§4.5). *Зависит:* T-05-05, T-05-06.
 - [ ] **T-05-08** — Индекс якорей для неустановленных игр (§4.6). *Зависит:* T-05-06. *Готово, когда:* тест на счётчик `exists`.

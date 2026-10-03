@@ -162,6 +162,7 @@ mod tests {
             .with_environment(Environment::fake(root))
             .with_scanner(Arc::new(MemFs::new()))
             .with_rules_registry(Arc::new(MemRegistry::new()))
+            .with_games_registry(Arc::new(MemRegistry::new()))
     }
 
     /// Runs until cancelled.

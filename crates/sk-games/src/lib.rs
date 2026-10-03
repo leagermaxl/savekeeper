@@ -8,8 +8,8 @@ mod store;
 
 pub use error::GamesError;
 pub use launchers::{
-    BattleNetDetector, EaDetector, EpicDetector, GogDetector, LauncherDetector, SteamDetector,
-    UbisoftDetector, XboxDetector, STEAM_ID64_BASE,
+    enrich, enrich_with_registry, BattleNetDetector, EaDetector, EpicDetector, GogDetector,
+    LauncherDetector, SteamDetector, UbisoftDetector, XboxDetector, STEAM_ID64_BASE,
 };
 pub use manifest::{
     CloudFlags, FileRule, GameEntry, GogRef, Ids, Manifest, ManifestMeta, ManifestSource, Os,
