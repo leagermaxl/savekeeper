@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-rules`, каталог `rules/` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-07 (claimed_paths), SPEC-09, SPEC-11 (редактор правил, P4) |
-| Последнее изменение | 2026-10-03 (T-04-02: `RuleDiagnostic.severity`, API `compile`/`diagnostic` в §4.1, `hklm` в §4.2 согласован с §4.4; уточнения по T-04-01: `tags` у target, `registry.recursive` по умолчанию `true`, `file_contains.pattern` — regex, обязательные поля §4.4; 2026-10-02: T-04-07: ручные проверки критериев SPEC-03 §8; T-04-07: ручная проверка Ctrl+C из SPEC-01 §8; 2026-10-01: YAML: `serde-saphyr` вместо `serde_yaml`; `from_json` в схеме v1) |
+| Последнее изменение | 2026-10-03 (T-04-03/T-04-04: API `RuleSource`/`conditions`/`registry`, семантика условий, `installed.winget` зарезервирован, regex проверяется при компиляции, ключи issue в §5, детали слияния; T-04-02: `RuleDiagnostic.severity`, API `compile`/`diagnostic` в §4.1, `hklm` в §4.2 согласован с §4.4; уточнения по T-04-01: `tags` у target, `registry.recursive` по умолчанию `true`, `file_contains.pattern` — regex, обязательные поля §4.4; 2026-10-02: T-04-07: ручные проверки критериев SPEC-03 §8; T-04-07: ручная проверка Ctrl+C из SPEC-01 §8; 2026-10-01: YAML: `serde-saphyr` вместо `serde_yaml`; `from_json` в схеме v1) |
 
 ## 1. Цель
 
@@ -60,8 +60,12 @@ impl RuleSet {
     pub fn load(builtin: bool, user_dir: Option<&Path>) -> (Self, Vec<ScanIssue>);
     pub fn validate_file(path: &Path) -> Vec<RuleDiagnostic>;            // для CLI
     pub fn len(&self) -> usize;
+    pub fn is_empty(&self) -> bool;
     pub fn get(&self, id: &str) -> Option<&CompiledRule>;
+    pub fn source(&self, id: &str) -> Option<&RuleSource>;            // источник активного правила (бейдж «ваше правило», §4.6)
 }
+// Отключённые правила в RuleSet не входят.
+pub enum RuleSource { Builtin { file: String /* имя файла в rules/ */ }, User { file: PathBuf } } // + fn is_user(&self) -> bool
 
 pub struct RulesCollector { set: Arc<RuleSet> }
 impl Collector for RulesCollector { /* id() = "rules" */ }
@@ -79,6 +83,26 @@ pub mod compile {
     pub struct CompiledRule { pub rule: Rule, pub targets: Vec<CompiledTarget> }
     pub struct CompiledTarget { pub root: TargetRoot, /* globs, effective category/sensitivity/tags, optional, label_key */ }
     pub enum TargetRoot { Path { template: PathTemplate, glob_root: bool }, Registry(..), FromJson(..) }
+}
+
+// Условия (§4.3). Evaluator — Sync, кэш exists/installed/registry_exists/regex на один скан.
+pub mod conditions {
+    pub const APP_RUNNING_TAG: &str = "app-running";
+    pub struct ConditionOutcome { pub matched: bool, pub app_running: bool }
+    pub struct ConditionEvaluator<'a>;
+    impl ConditionEvaluator<'_> {
+        pub fn new(env: &Environment, fs: &dyn FsScanner, registry: &dyn RegistryProbe, resolve: &ResolveContext) -> Self;
+        pub fn evaluate(&self, rule: &Rule) -> ConditionOutcome;
+        pub fn take_issues(&self) -> Vec<ScanIssue>;
+    }
+}
+
+// Доступ к реестру для registry_exists.
+pub mod registry {
+    pub enum KeyState { Present, Missing, AccessDenied }
+    pub trait RegistryProbe: Send + Sync { fn key_state(&self, hive: RegHive, key: &str) -> KeyState; }
+    pub struct SystemRegistry; // winreg, только KEY_READ; не-Windows: всегда Missing
+    pub struct MemRegistry;    // фейк для тестов: new/add_key/add_denied_key, без учёта регистра, родители существуют
 }
 
 // Диагностика для CLI (RuleSet::validate_file делегирует сюда).
@@ -193,22 +217,24 @@ Obsidian, проекты Unity Hub. Правило с таким target'ом ч�
 
 | Условие | Пример | Семантика |
 |---|---|---|
-| `exists` | `exists: "{LOCALAPPDATA}\\Obsidian"` | путь существует (`FsScanner::exists`) |
-| `not_exists` | | инверсия |
-| `installed` | `installed: { display_name_regex: "(?i)^obs studio" }` или `{ winget: "OBSProject.OBSStudio" }` | совпадение в `Environment.installed_programs` (SPEC-06 §programs) |
+| `exists` | `exists: "{LOCALAPPDATA}\\Obsidian"` | путь существует (`FsScanner::exists`); шаблон, раскрывшийся в несколько путей, — существует хотя бы один; шаблон без путей не существует |
+| `not_exists` | | инверсия (шаблон без путей → истинно) |
+| `installed` | `installed: { display_name_regex: "(?i)^obs studio" }` или `{ winget: "OBSProject.OBSStudio" }` | совпадение в `Environment.installed_programs` (SPEC-06 §4.4): `display_name_regex` — regex (крейт `regex`) по `InstalledProgram.name`. Если заданы оба поля, достаточно любого (OR). `winget` в v1 зарезервирован: у `InstalledProgram` нет winget-id (SPEC-02 §3.3), поэтому критерий `winget` всегда ложен; правило с `winget` без `display_name_regex` даёт warning при компиляции (§4.4). `installed: {}` без критериев — ошибка валидации. |
 | `registry_exists` | `registry_exists: { hive: hkcu, key: "Software\\SimonTatham\\PuTTY" }` | ключ существует |
-| `file_contains` | `{ path: "...", pattern: "\"telemetry\"", max_bytes: 65536 }` | `read_small` + regex (редко, для различения форков). `pattern` — регулярное выражение (крейт `regex`); обычная подстрока — это regex без метасимволов. `max_bytes` необязателен, по умолчанию 65536. |
+| `file_contains` | `{ path: "...", pattern: "\"telemetry\"", max_bytes: 65536 }` | `read_small` + regex (редко, для различения форков). `pattern` — регулярное выражение (крейт `regex`); обычная подстрока — это regex без метасимволов. `max_bytes` необязателен, по умолчанию 65536, не больше 1 MiB (иначе ошибка валидации). Файл больше `max_bytes`, cloud-only или нечитаемый → условие ложно, без issue. |
 | `os` | `os: { min_build: 22000 }` | версия Windows |
-| `any_of` | `any_of: [ {exists: ...}, {installed: ...} ]` | OR |
+| `any_of` | `any_of: [ {exists: ...}, {installed: ...} ]` | OR; `any_of: []` ложно |
 | `process_running` | `process_running: "obs64.exe"` | **Не влияет на создание находки.** Добавляет тег `app-running` → UI/SPEC-10 предупредит «закройте программу перед бэкапом». |
 
 Пустой `conditions` означает «достаточно существования хотя бы одного target'а» (FR-04-03).
 
+`process_running` не участвует в AND/OR: правило, где оно единственное условие (или единственный элемент `any_of`), совпадает; в смешанном `any_of` оно игнорируется. `app_running` ставится, только если правило совпало.
+
 ### 4.4 Компиляция и валидация
 1. Парсинг `serde-saphyr` с `deny_unknown_fields` (опечатки ловятся сразу).
-2. Проверки: `schema_version == 1`; если у правила нет `disabled: true`, обязательны `app`, `category`, `title_key` или `title` и непустой `targets` или `claims` (правилу только с отключением, §4.6, достаточно `id`); `id` по regex и уникальность в пределах источника; `PathTemplate::parse` для всех путей (неизвестный токен — ошибка); глобы компилируются; `confidence ∈ [0,1]`; `category: credentials` ⇒ `sensitivity: high` (автоматически повышается с warning); `hive: hklm` ⇒ `category ∈ {system_settings, app_config}`; `*` в `path` только при `glob_root: true`.
+2. Проверки: `schema_version == 1`; если у правила нет `disabled: true`, обязательны `app`, `category`, `title_key` или `title` и непустой `targets` или `claims` (правилу только с отключением, §4.6, достаточно `id`); `id` по regex и уникальность в пределах источника; `PathTemplate::parse` для всех путей (неизвестный токен — ошибка); глобы компилируются; `confidence ∈ [0,1]`; `category: credentials` ⇒ `sensitivity: high` (автоматически повышается с warning); `hive: hklm` ⇒ `category ∈ {system_settings, app_config}`; `*` в `path` только при `glob_root: true`; `installed.display_name_regex` и `file_contains.pattern` (включая вложенные в `any_of`) компилируются крейтом `regex`, ошибка — ошибка валидации правила; `installed: {}` — ошибка; `installed` с `winget` без `display_name_regex` — warning; `file_contains.max_bytes` ≤ 1 MiB.
 3. Результат `CompiledRule { rule, targets: Vec<CompiledTarget { template, include: GlobSet, exclude: GlobSet, ... }> }`.
-4. Слияние источников: builtin → user (по `id`: replace / disable). Итоговый порядок: `priority desc`, затем `id`.
+4. Слияние источников: builtin → user (по `id`: replace / disable). Итоговый порядок: `priority desc`, затем `id`. Встроенные файлы — один источник: `id` уникален во всех `rules/*.yaml`, иначе `RuleError::DuplicateId` (`builtin()` возвращает первую ошибку). Пользовательские правила проверяются на уникальность внутри файла, между файлами действует §5. `disabled: true` у встроенного правила делает его неактивным. Отключение несуществующего `id` молча игнорируется. Автоисправления (warnings §4.4) в пользовательских файлах не порождают `ScanIssue`. Если встроенные правила не загрузились, `load` продолжает только с пользовательскими и добавляет `ScanIssue::Error issue.rules.builtin_invalid {error}`.
 
 ### 4.5 Алгоритм `RulesCollector::collect`
 1. Для каждого правила (параллельно через rayon, правила независимы):
@@ -221,7 +247,7 @@ Obsidian, проекты Unity Hub. Правило с таким target'ом ч�
 3. `Event::Progress { phase: Collect, current: rule_id }` каждые N правил.
 
 ### 4.6 Пользовательские правила
-- Каталог `savekeeper-data/rules.d/` (SPEC-01 §4.8.1), файлы `*.yaml`/`*.yml`, загружаются в алфавитном порядке.
+- Каталог `savekeeper-data/rules.d/` (SPEC-01 §4.8.1), файлы `*.yaml`/`*.yml`, загружаются в алфавитном порядке. Читаются только файлы прямо в `rules.d/` (без подпапок), расширение без учёта регистра; порядок алфавитный без учёта регистра, при равенстве — точное сравнение. Отсутствие `rules.d` — не ошибка.
 - Пример отключения: `rules: [{ id: discord.settings, disabled: true }]` (все остальные поля необязательны при `disabled`).
 - В UI (SPEC-11) у находки из пользовательского правила бейдж «ваше правило».
 
@@ -355,14 +381,16 @@ OneDrive, Dropbox, Google Drive, iCloud, Yandex.Disk: локальные кэш�
 
 | Ситуация | Поведение |
 |---|---|
-| Пользовательский YAML битый | `ScanIssue::Warning { source: "rules", message_key: "issue.rules.invalid_file", args: {file, line} }`, файл пропущен целиком. |
-| Два пользовательских правила с одинаковым id | Побеждает последнее по алфавиту файлов + warning. |
+| Пользовательский YAML битый | `ScanIssue::Warning { source: "rules", message_key: "issue.rules.invalid_file", args: {file (только имя файла), line?, rule_id?, error} }`, файл пропущен целиком. |
+| Два пользовательских правила с одинаковым id | Побеждает последнее по алфавиту файлов + `ScanIssue::Warning issue.rules.duplicate_id {rule_id, file, previous_file}`. |
+| Каталог `rules.d` существует, но не читается | Пользовательские правила пропущены, `ScanIssue::Warning issue.rules.user_dir_unreadable {error}`. |
 | Правило ссылается на `{STEAM}`, а Steam не установлен | resolve пустой → находки нет, без issue. |
 | `glob_root` дал > 50 совпадений | Берём первые 50 по mtime desc + warning (защита от патологий). |
 | `from_json`: файл битый, не тот формат или схема программы изменилась (`select` ничего не нашёл) | `ScanIssue::Warning issue.rules.from_json_parse` (с номером строки, если есть) / `Info issue.rules.from_json_empty`. Остальные targets правила работают. |
 | `from_json`: значение указывает на отключённый внешний диск | Путь не существует → пропуск + Info с шаблоном пути («vault на диске E:, диск не подключён»). |
 | Target — файл, а include задан | include игнорируется, warning при валидации. |
-| HKLM-ветка без прав на чтение | `registry_exists` = false, Info-issue. |
+| HKLM/HKCU-ветка без прав на чтение | `registry_exists` = false, `ScanIssue::Info issue.rules.registry_access_denied {rule_id, hive, key}`, один раз на ключ за скан. |
+| Некорректный regex в `display_name_regex`/`file_contains.pattern` (правило не прошло через компиляцию §4.4) | Условие ложно, `ScanIssue::Warning issue.rules.invalid_regex {rule_id, pattern, error}`, один раз на шаблон за скан. |
 | Портативная программа в нестандартной папке (Notepad++ portable) | Не покрывается правилами → SPEC-07. |
 | Путь внутри глобального исключения SPEC-03 (`{PROGRAMFILES_X86}\MSI Afterburner\Profiles`) | Разрешено как явный корень (SPEC-03 §4.5 `explicit_root`). |
 
