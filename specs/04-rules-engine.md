@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-rules`, каталог `rules/` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-07 (claimed_paths), SPEC-09, SPEC-11 (редактор правил, P4) |
-| Последнее изменение | 2026-10-02 (T-04-07: ручные проверки критериев SPEC-03 §8; T-04-07: ручная проверка Ctrl+C из SPEC-01 §8; 2026-10-01: YAML: `serde-saphyr` вместо `serde_yaml`; `from_json` в схеме v1) |
+| Последнее изменение | 2026-10-03 (уточнения по T-04-01: `tags` у target, `registry.recursive` по умолчанию `true`, `file_contains.pattern` — regex, обязательные поля §4.4; 2026-10-02: T-04-07: ручные проверки критериев SPEC-03 §8; T-04-07: ручная проверка Ctrl+C из SPEC-01 §8; 2026-10-01: YAML: `serde-saphyr` вместо `serde_yaml`; `from_json` в схеме v1) |
 
 ## 1. Цель
 
@@ -116,10 +116,11 @@ rules:
 |---|---|---|
 | `path` | PathTemplate | Корень. Каталог → `Target::FileSet`, файл → `Target::File`, определяется по `metadata` в рантайме. |
 | `include` / `exclude` | [glob] | Относительно `path`, синтаксис globset, `/` или `\\` допустимы, нормализуются в `/`. |
-| `registry` | {hive, key, recursive} | → `Target::Registry`. `hive: hklm` допустим только с `category: system_settings` и помечает `requires_elevation: false` (чтение HKLM доступно), экспорт `reg export` HKLM тоже работает без админа для большинства веток. |
+| `registry` | {hive, key, recursive} | → `Target::Registry`. `recursive` необязательное, по умолчанию `true`. `hive: hklm` допустим только с `category: system_settings` и помечает `requires_elevation: false` (чтение HKLM доступно), экспорт `reg export` HKLM тоже работает без админа для большинства веток. |
 | `category` / `sensitivity` | override | Переопределение для конкретного target (например, `Cookies` → high). |
 | `optional` | bool | См. FR-04-03. |
 | `label_key` | string | Суффикс заголовка. |
+| `tags` | [string] | Дополнительные теги находок этого target'а, добавляются к `tags` правила. |
 | `glob_root` | bool | Если `true`, `path` может содержать `*` в сегментах (`{APPDATA}\\Mozilla\\Firefox\\Profiles\\*`); каждое совпадение даёт отдельную находку. Глубина `*` не больше 2 сегментов. |
 | `from_json` | object | Динамические корни, прочитанные из JSON-конфига программы (§4.2.1). Взаимоисключающее с `path`/`registry`. |
 
@@ -177,7 +178,7 @@ Obsidian, проекты Unity Hub. Правило с таким target'ом ч�
 | `not_exists` | | инверсия |
 | `installed` | `installed: { display_name_regex: "(?i)^obs studio" }` или `{ winget: "OBSProject.OBSStudio" }` | совпадение в `Environment.installed_programs` (SPEC-06 §programs) |
 | `registry_exists` | `registry_exists: { hive: hkcu, key: "Software\\SimonTatham\\PuTTY" }` | ключ существует |
-| `file_contains` | `{ path: "...", pattern: "\"telemetry\"", max_bytes: 65536 }` | `read_small` + substring/regex (редко, для различения форков) |
+| `file_contains` | `{ path: "...", pattern: "\"telemetry\"", max_bytes: 65536 }` | `read_small` + regex (редко, для различения форков). `pattern` — регулярное выражение (крейт `regex`); обычная подстрока — это regex без метасимволов. `max_bytes` необязателен, по умолчанию 65536. |
 | `os` | `os: { min_build: 22000 }` | версия Windows |
 | `any_of` | `any_of: [ {exists: ...}, {installed: ...} ]` | OR |
 | `process_running` | `process_running: "obs64.exe"` | **Не влияет на создание находки.** Добавляет тег `app-running` → UI/SPEC-10 предупредит «закройте программу перед бэкапом». |
@@ -186,7 +187,7 @@ Obsidian, проекты Unity Hub. Правило с таким target'ом ч�
 
 ### 4.4 Компиляция и валидация
 1. Парсинг `serde-saphyr` с `deny_unknown_fields` (опечатки ловятся сразу).
-2. Проверки: `id` по regex и уникальность в пределах источника; `PathTemplate::parse` для всех путей (неизвестный токен — ошибка); глобы компилируются; `confidence ∈ [0,1]`; `category: credentials` ⇒ `sensitivity: high` (автоматически повышается с warning); `hive: hklm` ⇒ `category ∈ {system_settings, app_config}`; `*` в `path` только при `glob_root: true`.
+2. Проверки: `schema_version == 1`; если у правила нет `disabled: true`, обязательны `app`, `category`, `title_key` или `title` и непустой `targets` или `claims` (правилу только с отключением, §4.6, достаточно `id`); `id` по regex и уникальность в пределах источника; `PathTemplate::parse` для всех путей (неизвестный токен — ошибка); глобы компилируются; `confidence ∈ [0,1]`; `category: credentials` ⇒ `sensitivity: high` (автоматически повышается с warning); `hive: hklm` ⇒ `category ∈ {system_settings, app_config}`; `*` в `path` только при `glob_root: true`.
 3. Результат `CompiledRule { rule, targets: Vec<CompiledTarget { template, include: GlobSet, exclude: GlobSet, ... }> }`.
 4. Слияние источников: builtin → user (по `id`: replace / disable). Итоговый порядок: `priority desc`, затем `id`.
 
