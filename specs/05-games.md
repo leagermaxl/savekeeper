@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-games` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-04 (токены `{STEAM}`, `{STEAM_USERID}`), SPEC-07, SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-03 (T-05-03: detect_with_issues, SteamDetector, RegistryReader, детали Steam §4.4, ключи issue §5; T-05-01: API разбора манифеста, конкретные типы, параллельный разбор, бенч; §5: манифест с 0 игр; T-04-05: специализация `{STEAM_USERID}` в шаблоне находки, §4.7, §5); 2026-10-02 (§6: пути фикстур `fixtures/samples/...` и 20 игр, как в SPEC-12 §4.3; 2026-10-01: §4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
+| Последнее изменение | 2026-10-03 (T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.1: реестр из sk-core, T-05-04 и T-05-09 зависят от T-02-10; T-05-03: detect_with_issues, SteamDetector, RegistryReader, детали Steam §4.4, ключи issue §5; T-05-01: API разбора манифеста, конкретные типы, параллельный разбор, бенч; §5: манифест с 0 игр; T-04-05: специализация `{STEAM_USERID}` в шаблоне находки, §4.7, §5); 2026-10-02 (§6: пути фикстур `fixtures/samples/...` и 20 игр, как в SPEC-12 §4.3; 2026-10-01: §4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
 
 ## 1. Цель
 
@@ -85,7 +85,9 @@ pub struct SteamDetector;                                       // new() — с�
 pub const STEAM_ID64_BASE: u64 = 76_561_197_960_265_728;
 pub fn enrich(env: &mut Environment, fs: &dyn FsScanner) -> Vec<ScanIssue>; // вызывает все детекторы (SPEC-02 §3.3), возвращает их issues
 
-// Чтение реестра
+// Чтение реестра. После T-02-10 RegistryReader / SystemRegistry / MemRegistry — из sk-core::registry
+// (SPEC-02 §3.4: key_state, string_value, dword_value, subkeys); свои registry.rs, win.rs и winreg
+// в sk-games удаляются, SteamDetector::with_registry принимает Arc<dyn sk_core::registry::RegistryReader>.
 pub trait RegistryReader: Send + Sync { fn string_value(&self, hive: RegHive, key: &str, name: &str) -> Option<String>; } // REG_SZ/REG_EXPAND_SZ, иначе None; только KEY_READ (будет перенесён в sk-core, SPEC-02 T-02-10)
 pub struct SystemRegistry;                                      // вне Windows значений нет
 pub struct MemRegistry;                                         // new(), set_string(); имена без учёта регистра
@@ -249,12 +251,12 @@ Issue Steam: reason ∈ not_found, access_denied, locked, too_large, cloud_only,
 - [ ] **T-05-01** — Serde-модель манифеста §4.2, парсинг полного файла, бенч. *Зависит:* T-01-01. *Готово, когда:* реальный манифест парсится ≤ 3 с.
 - [ ] **T-05-02** — `ManifestStore`: HTTP с ETag, атомарная запись, кэш индекса (postcard), встроенный снапшот (zstd, `build.rs` скачивает или берёт из `third_party/ludusavi/manifest.yaml` в репо). *Зависит:* T-05-01, T-01-04.
 - [x] **T-05-03** — Детектор Steam (VDF, ACF, userdata, loginusers) + токены `{STEAM}`, `{STEAM_USERID}` в `PathTemplate::resolve`. *Зависит:* T-03-06, T-02-03.
-- [ ] **T-05-04** — Детекторы Epic, GOG (реестр), Ubisoft, EA, Battle.net (Uninstall), Xbox (`wgs`-находка). *Зависит:* T-05-03.
+- [ ] **T-05-04** — Детекторы Epic, GOG (реестр), Ubisoft, EA, Battle.net (Uninstall), Xbox (`wgs`-находка). *Зависит:* T-05-03, T-02-10.
 - [ ] **T-05-05** — `enrich(env, fs)` (возвращает issues детекторов: `pub fn enrich(env: &mut Environment, fs: &dyn FsScanner) -> Vec<ScanIssue>`, §4.1) и интеграция в фазу Environment `sk-engine`. *Зависит:* T-05-04, T-01-06.
 - [ ] **T-05-06** — `translate` + фильтр `when` + `{GAME_DIR}`. *Зависит:* T-05-01, T-02-03.
 - [ ] **T-05-07** — Сопоставление установленных игр с манифестом (§4.5). *Зависит:* T-05-05, T-05-06.
 - [ ] **T-05-08** — Индекс якорей для неустановленных игр (§4.6). *Зависит:* T-05-06. *Готово, когда:* тест на счётчик `exists`.
-- [ ] **T-05-09** — `GamesCollector` (§4.7): группировка, реестр, cloud-теги, claimed_paths, Reinstallable-находки каталогов. *Зависит:* T-05-07, T-05-08, T-01-03.
+- [ ] **T-05-09** — `GamesCollector` (§4.7): группировка, реестр, cloud-теги, claimed_paths, Reinstallable-находки каталогов. *Зависит:* T-05-07, T-05-08, T-01-03, T-02-10.
 - [ ] **T-05-10** — CLI `manifest update` + вывод источника манифеста в `savekeeper-cli env`. *Зависит:* T-05-02, T-01-07.
 - [ ] **T-05-11** — Атрибуция (FR-05-10, FR-05-11): `THIRD_PARTY_NOTICES.md`, строки в i18n «О программе», cargo-фича `embedded-manifest` (включена по умолчанию). Перед первым релизом сверить актуальную лицензию в README `ludusavi-manifest` и зафиксировать её в `THIRD_PARTY_NOTICES.md`. *Зависит:* T-05-02.
 

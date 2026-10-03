@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-system` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-04 (`installed` условие), SPEC-09, SPEC-10 (выполнение экспортов), SPEC-13, SPEC-14 (elevation-хелпер) |
-| Последнее изменение | 2026-10-01 (решение по OEM-ключу) |
+| Последнее изменение | 2026-10-03 (T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.4: чтение Uninstall через `RegistryReader`, T-06-03 зависит от T-02-10); 2026-10-01 (решение по OEM-ключу) |
 
 ## 1. Цель
 
@@ -163,6 +163,8 @@ sequenceDiagram
 
 Фильтр: пропускаем `SystemComponent = 1`, записи с `ParentKeyName` (обновления), `ReleaseType ∈ {Update, Hotfix, Security Update}`, без `DisplayName`.
 
+Чтение — через `sk_core::registry::RegistryReader` (SPEC-02 §3.4: `subkeys`, `string_value`, `dword_value`), тесты фильтров — на `MemRegistry`.
+
 ```rust
 // Тип определяется в sk-core (SPEC-02 §3.3 Environment.installed_programs)
 pub struct InstalledProgram {
@@ -238,7 +240,7 @@ pub struct InstalledProgram {
 
 - [ ] **T-06-01** — Трейт `SystemExporter`, `Availability`, `ExportContext`, `ExportResult`, `registry()`. *Зависит:* T-02-01. *Готово, когда:* компилируется, документация.
 - [ ] **T-06-02** — `Cmd` + `CmdRunner`: `CREATE_NO_WINDOW`, Job Object, таймаут, отмена, OEM-декодирование, лимиты вывода. *Зависит:* T-06-01. *Готово, когда:* Windows-тест таймаута и unit-тест декодирования.
-- [ ] **T-06-03** — `enrich`: installed programs (4 источника, фильтры, дедуп). *Зависит:* T-02-05. *Готово, когда:* unit на фикстуре + ручная сверка с «Приложения и возможности».
+- [ ] **T-06-03** — `enrich`: installed programs (4 источника, фильтры, дедуп). *Зависит:* T-02-05, T-02-10. *Готово, когда:* unit на фикстуре + ручная сверка с «Приложения и возможности».
 - [ ] **T-06-04** — `SystemCollector` (detect+plan параллельно, ≤ 3 с). *Зависит:* T-06-01, T-01-03.
 - [ ] **T-06-05** — Экспортёры `programs`, `winget`. *Зависит:* T-06-02, T-06-03.
 - [ ] **T-06-06** — `export_registry` + экспортёры `registry-user`, `env-vars`. *Зависит:* T-06-02.
