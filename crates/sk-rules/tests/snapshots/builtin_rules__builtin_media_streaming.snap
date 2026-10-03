@@ -1,0 +1,290 @@
+---
+source: crates/sk-rules/tests/builtin_rules.rs
+expression: snapshot
+---
+{
+  "claimed_paths": [
+    "[root]/Users/user/AppData/Roaming/foobar2000-v2",
+    "[root]/Users/user/AppData/Roaming/obs-studio",
+    "[root]/Users/user/Documents/ShareX",
+    "[root]/Users/user/Documents/ShareX/Screenshots",
+    "[root]/Users/user/AppData/Roaming/Spotify",
+    "[root]/Users/user/AppData/Local/Spotify",
+    "[root]/Users/user/AppData/Roaming/vlc"
+  ],
+  "findings": [
+    {
+      "app": {
+        "id": "foobar2000",
+        "installed": null,
+        "kind": "application",
+        "name": "foobar2000",
+        "process_names": [
+          "foobar2000.exe"
+        ],
+        "source_ids": {
+          "winget": "PeterPawlowski.foobar2000"
+        }
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "foobar2000.config"
+          }
+        }
+      ],
+      "id": "94ddcdb48367bf54",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/foobar2000-v2",
+        "root": "{APPDATA}\\foobar2000-v2"
+      },
+      "title": "rules.foobar2000.config — rules.foobar2000.label_v2"
+    },
+    {
+      "app": {
+        "id": "mpc-hc",
+        "installed": null,
+        "kind": "application",
+        "name": "MPC-HC",
+        "process_names": [],
+        "source_ids": {
+          "winget": "clsid2.mpc-hc"
+        }
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "mpc-hc.settings"
+          }
+        }
+      ],
+      "id": "5b4160676469abcd",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "hive": "hkcu",
+        "key": "Software\\MPC-HC",
+        "kind": "registry",
+        "recursive": true
+      },
+      "title": "rules.mpc_hc.settings"
+    },
+    {
+      "app": {
+        "id": "obs",
+        "installed": null,
+        "kind": "application",
+        "name": "OBS Studio",
+        "process_names": [
+          "obs64.exe"
+        ],
+        "source_ids": {
+          "winget": "OBSProject.OBSStudio"
+        }
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "obs.config"
+          }
+        }
+      ],
+      "id": "ea8ba111bbc54941",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [
+        "app-running"
+      ],
+      "target": {
+        "exclude": [
+          "logs/**",
+          "crashes/**",
+          "updates/**"
+        ],
+        "include": [
+          "basic/**",
+          "global.ini",
+          "plugin_config/**"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/obs-studio",
+        "root": "{APPDATA}\\obs-studio"
+      },
+      "title": "rules.obs.config"
+    },
+    {
+      "app": {
+        "id": "sharex",
+        "installed": null,
+        "kind": "application",
+        "name": "ShareX",
+        "process_names": [
+          "sharex.exe"
+        ],
+        "source_ids": {
+          "winget": "ShareX.ShareX"
+        }
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "sharex.config"
+          }
+        }
+      ],
+      "id": "d6f25a59c352563a",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [
+          "Screenshots/**",
+          "Logs/**"
+        ],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/Documents/ShareX",
+        "root": "{DOCUMENTS}\\ShareX"
+      },
+      "title": "rules.sharex.config"
+    },
+    {
+      "app": {
+        "id": "sharex",
+        "installed": null,
+        "kind": "application",
+        "name": "ShareX",
+        "process_names": [],
+        "source_ids": {
+          "winget": "ShareX.ShareX"
+        }
+      },
+      "category": "user_files",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "sharex.screenshots"
+          }
+        }
+      ],
+      "id": "e0ec86b30de05bff",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/Documents/ShareX/Screenshots",
+        "root": "{DOCUMENTS}\\ShareX\\Screenshots"
+      },
+      "title": "rules.sharex.screenshots"
+    },
+    {
+      "app": {
+        "id": "vlc",
+        "installed": null,
+        "kind": "application",
+        "name": "VLC media player",
+        "process_names": [],
+        "source_ids": {
+          "winget": "VideoLAN.VLC"
+        }
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "vlc.config"
+          }
+        }
+      ],
+      "id": "d1ffdc01a80e4718",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [
+          "art/**"
+        ],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/vlc",
+        "root": "{APPDATA}\\vlc"
+      },
+      "title": "rules.vlc.config"
+    }
+  ],
+  "issues": []
+}

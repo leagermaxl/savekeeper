@@ -1,0 +1,107 @@
+---
+source: crates/sk-rules/tests/builtin_rules.rs
+expression: snapshot
+---
+{
+  "claimed_paths": [
+    "[root]/Users/user/AppData/Roaming/discord/settings.json",
+    "[root]/Users/user/AppData/Roaming/discord",
+    "[root]/Users/user/AppData/Local/Discord",
+    "[root]/Users/user/AppData/Roaming/Telegram Desktop/tdata",
+    "[root]/Users/user/AppData/Local/Packages/5319275A.WhatsAppDesktop_cv1g1gvanyjgm"
+  ],
+  "findings": [
+    {
+      "app": {
+        "id": "discord",
+        "installed": null,
+        "kind": "application",
+        "name": "Discord",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Discord.Discord"
+        }
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "discord.settings"
+          }
+        }
+      ],
+      "id": "2928894496901083",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "kind": "file",
+        "path": "{APPDATA}\\discord\\settings.json",
+        "resolved": "[root]/Users/user/AppData/Roaming/discord/settings.json"
+      },
+      "title": "rules.discord.settings"
+    },
+    {
+      "app": {
+        "id": "telegram",
+        "installed": null,
+        "kind": "application",
+        "name": "Telegram Desktop",
+        "process_names": [
+          "telegram.exe"
+        ],
+        "source_ids": {
+          "winget": "Telegram.TelegramDesktop"
+        }
+      },
+      "category": "app_data",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "telegram.tdata"
+          }
+        }
+      ],
+      "id": "1cfd4450d53aae88",
+      "notes_key": "rules.telegram.notes",
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "high",
+      "stats": null,
+      "tags": [
+        "app-running"
+      ],
+      "target": {
+        "exclude": [
+          "user_data/**",
+          "user_data#*/**",
+          "emoji/**",
+          "dumps/**"
+        ],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/Telegram Desktop/tdata",
+        "root": "{APPDATA}\\Telegram Desktop\\tdata"
+      },
+      "title": "rules.telegram.tdata"
+    }
+  ],
+  "issues": []
+}

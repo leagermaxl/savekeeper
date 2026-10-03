@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-rules`, каталог `rules/` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-07 (claimed_paths), SPEC-09, SPEC-11 (редактор правил, P4) |
-| Последнее изменение | 2026-10-03 (T-04-06: API RulesCollector, прогресс, слияние, отмена, T-04-13; T-04-12: from_json issues/args, нормализация, claims конфига; T-04-05: условие срабатывания правила (FR-04-03), reparse-корни targets, специализация мульти-значных токенов, заголовок с `label_key`, семантика `claims` и `glob_root`, API `expand` в §4.1, поля находки, issues `glob_root_truncated` и доступ к реестру для targets в §5); 2026-10-03 (T-04-03/T-04-04: API `RuleSource`/`conditions`/`registry`, семантика условий, `installed.winget` зарезервирован, regex проверяется при компиляции, ключи issue в §5, детали слияния; T-04-02: `RuleDiagnostic.severity`, API `compile`/`diagnostic` в §4.1, `hklm` в §4.2 согласован с §4.4; уточнения по T-04-01: `tags` у target, `registry.recursive` по умолчанию `true`, `file_contains.pattern` — regex, обязательные поля §4.4; 2026-10-02: T-04-07: ручные проверки критериев SPEC-03 §8; T-04-07: ручная проверка Ctrl+C из SPEC-01 §8; 2026-10-01: YAML: `serde-saphyr` вместо `serde_yaml`; `from_json` в схеме v1) |
+| Последнее изменение | 2026-10-03 (T-04-08: соглашения §4.7 для claims-only правил, process_running, ключей i18n; уточнены пути WhatsApp/Skype/Razer/Outlook/Sticky Notes/PowerToys; T-04-06: API RulesCollector, прогресс, слияние, отмена, T-04-13; T-04-12: from_json issues/args, нормализация, claims конфига; T-04-05: условие срабатывания правила (FR-04-03), reparse-корни targets, специализация мульти-значных токенов, заголовок с `label_key`, семантика `claims` и `glob_root`, API `expand` в §4.1, поля находки, issues `glob_root_truncated` и доступ к реестру для targets в §5); 2026-10-03 (T-04-03/T-04-04: API `RuleSource`/`conditions`/`registry`, семантика условий, `installed.winget` зарезервирован, regex проверяется при компиляции, ключи issue в §5, детали слияния; T-04-02: `RuleDiagnostic.severity`, API `compile`/`diagnostic` в §4.1, `hklm` в §4.2 согласован с §4.4; уточнения по T-04-01: `tags` у target, `registry.recursive` по умолчанию `true`, `file_contains.pattern` — regex, обязательные поля §4.4; 2026-10-02: T-04-07: ручные проверки критериев SPEC-03 §8; T-04-07: ручная проверка Ctrl+C из SPEC-01 §8; 2026-10-01: YAML: `serde-saphyr` вместо `serde_yaml`; `from_json` в схеме v1) |
 
 ## 1. Цель
 
@@ -285,6 +285,8 @@ Issues `from_json` создаются при чтении target'а незави
 Группировка по файлам. Для каждого правила указаны `id`, target(s) и категория. Детальные
 include/exclude пишутся в YAML при реализации T-04-07..T-04-09 по этому списку.
 
+Правила только с `claims` (`*.none`) имеют `category: reinstallable` (поле обязательно, §4.4; находок они не дают) и `conditions` на существование заявляемых папок (`exists` или `any_of` из `exists`): `claims` без `*` добавляются без проверки существования (§4.5 п. 4). То же условие получают правила, у которых `claims` лежат вне корней targets. Для `claims` с `{PACKAGE:…}` условие не нужно — токен раскрывается только для установленного пакета. Правила программ, которые держат файлы открытыми, содержат `process_running` с именем процесса (на срабатывание не влияет, §4.3). Ключи i18n: `title_key` = `rules.<app.id>.<суффикс id>`, `label_key` = `rules.<app.id>.label_<имя>`, `notes_key` = `rules.<app.id>.notes` (у `windows.*` — `rules.windows.<суффикс>_notes`); `-` в ключах заменяется на `_`.
+
 #### 4.7.1 `rules/browsers.yaml` (category `app_data`, sensitivity `high`, note: «пароли и закладки надёжнее синхронизировать аккаунтом браузера»)
 | id | Путь | Include / Exclude / claims |
 |---|---|---|
@@ -324,7 +326,7 @@ include/exclude пишутся в YAML при реализации T-04-07..T-04
 | id | Путь | Категория |
 |---|---|---|
 | `obs.config` | `{APPDATA}\obs-studio` | `app_config`; include `basic/**, global.ini, plugin_config/**`; exclude `logs/**, crashes/**, updates/**` |
-| `sharex.config` | `{DOCUMENTS}\ShareX` | `app_config`; exclude `Screenshots/**` (они отдельной находкой `sharex.screenshots` → `user_files`) |
+| `sharex.config` | `{DOCUMENTS}\ShareX` | `app_config`; exclude `Screenshots/**, Logs/**` (скриншоты отдельной находкой `sharex.screenshots` → `user_files`) |
 | `vlc.config` | `{APPDATA}\vlc` | `app_config`, exclude `art/**` |
 | `mpc-hc.settings` | registry `HKCU\Software\MPC-HC` | `app_config` |
 | `foobar2000.config` | `{APPDATA}\foobar2000-v2`, `{APPDATA}\foobar2000` | `app_config` |
@@ -333,11 +335,11 @@ include/exclude пишутся в YAML при реализации T-04-07..T-04
 #### 4.7.4 `rules/messengers.yaml`
 | id | Путь | Примечание |
 |---|---|---|
-| `telegram.tdata` | `{APPDATA}\Telegram Desktop\tdata` | `app_data`, sensitivity **high** (сессия = вход в аккаунт без 2FA), exclude `user_data/**, emoji/**, dumps/**`; note: «лучше войти заново» |
+| `telegram.tdata` | `{APPDATA}\Telegram Desktop\tdata` | `app_data`, sensitivity **high** (сессия = вход в аккаунт без 2FA), exclude `user_data/**, user_data#*/**, emoji/**, dumps/**` (`user_data#*` — второй и следующие аккаунты); note: «лучше войти заново» |
 | `discord.settings` | `{APPDATA}\discord\settings.json` | `app_config`; claims `{APPDATA}\discord` целиком, `{LOCALAPPDATA}\Discord` (reinstallable) |
 | `slack.none` | claims `{APPDATA}\Slack` | в облаке |
-| `whatsapp.none` | claims `{LOCALAPPDATA}\Packages\5319275A.WhatsAppDesktop_*` | история в облаке/телефоне |
-| `skype.none` | claims | |
+| `whatsapp.none` | claims `{PACKAGE:5319275A.WhatsAppDesktop}` | история в облаке/телефоне |
+| `skype.none` | claims `{APPDATA}\Skype`, `{APPDATA}\Microsoft\Skype for Desktop`, `{PACKAGE:Microsoft.SkypeApp}` | |
 
 #### 4.7.5 `rules/productivity.yaml`
 | id | Путь | Примечание |
@@ -349,7 +351,7 @@ include/exclude пишутся в YAML при реализации T-04-07..T-04
 | `notepadpp.config` | `{APPDATA}\Notepad++` | `app_config`; include `*.xml, userDefineLangs/**, themes/**, plugins/config/**, backup/**` (несохранённые вкладки!) |
 | `sublime.config` | `{APPDATA}\Sublime Text\Packages\User`, `...\Local\Session.sublime_session` | |
 | `office.templates` | `{APPDATA}\Microsoft\Templates`, `{APPDATA}\Microsoft\UProof` (пользовательский словарь) | `app_config` |
-| `outlook.pst` | `{DOCUMENTS}\Outlook Files`, `{LOCALAPPDATA}\Microsoft\Outlook\*.pst` | `app_data`, tag `large`; `*.ost` → claims (кэш Exchange) |
+| `outlook.pst` | `{DOCUMENTS}\Outlook Files`, `{LOCALAPPDATA}\Microsoft\Outlook\*.pst` (glob_root) | `app_data`, tag `large`; claims `{LOCALAPPDATA}\Microsoft\Outlook\*.ost` (кэш Exchange) |
 | `autohotkey.scripts` | `{DOCUMENTS}\AutoHotkey` | `user_files` |
 | `sevenzip.settings` | registry `HKCU\Software\7-Zip` | `app_config` |
 | `total-commander.config` | `{APPDATA}\GHISLER` | `app_config` |
@@ -371,8 +373,8 @@ include/exclude пишутся в YAML при реализации T-04-07..T-04
 | `rivatuner.profiles` | `{PROGRAMFILES_X86}\RivaTuner Statistics Server\Profiles` | `app_config` |
 | `rainmeter.skins` | `{DOCUMENTS}\Rainmeter\Skins`, `{APPDATA}\Rainmeter\Rainmeter.ini` | `app_config` |
 | `wallpaper-engine.config` | `{STEAM}\steamapps\common\wallpaper_engine\config.json` | `app_config` |
-| `logitech-ghub.settings` | `{LOCALAPPDATA}\LGHUB\settings.db` | `app_config` |
-| `razer-synapse.none` | claims | профили в облаке |
+| `logitech-ghub.settings` | `{LOCALAPPDATA}\LGHUB\settings.db` | `app_config`; `process_running: lghub_agent.exe` (держит `settings.db`) |
+| `razer-synapse.none` | claims `{LOCALAPPDATA}\Razer`, `{PROGRAMDATA}\Razer` | профили в облаке |
 
 #### 4.7.7 `rules/windows-shell.yaml` (category `system_settings`)
 | id | Target | Примечание |
@@ -381,9 +383,9 @@ include/exclude пишутся в YAML при реализации T-04-07..T-04
 | `windows.sendto` | `{APPDATA}\Microsoft\Windows\SendTo` | |
 | `windows.user-fonts` | — | **не здесь**, SPEC-06 (`fonts`) |
 | `windows.explorer-quickaccess` | `{APPDATA}\Microsoft\Windows\Recent\AutomaticDestinations\f01b4d95cf55d32a.automaticDestinations-ms` | «Быстрый доступ» |
-| `windows.sticky-notes` | `{LOCALAPPDATA}\Packages\Microsoft.MicrosoftStickyNotes_8wekyb3d8bbwe\LocalState\plum.sqlite` | `app_data` |
+| `windows.sticky-notes` | `{PACKAGE:Microsoft.MicrosoftStickyNotes}\LocalState` | `app_data`; include `plum.sqlite*` (база в режиме WAL: `-wal`, `-shm`) |
 | `windows.snipping-screenshots` | `{PICTURES}\Screenshots` | `user_files` |
-| `windows.powertoys` | `{LOCALAPPDATA}\Microsoft\PowerToys` | `app_config`, include `**/settings.json` |
+| `windows.powertoys` | `{LOCALAPPDATA}\Microsoft\PowerToys` | `app_config`, include `**/*.json`, exclude `**/Logs/**, Updates/**` (переназначения Keyboard Manager, раскладки FancyZones) |
 
 #### 4.7.8 `rules/cloud-claims.yaml` — только `claims`, без находок
 OneDrive, Dropbox, Google Drive, iCloud, Yandex.Disk: локальные кэши/служебные папки (`{LOCALAPPDATA}\Microsoft\OneDrive`, `{LOCALAPPDATA}\Dropbox`, `{LOCALAPPDATA}\Google\DriveFS`) помечаются как объяснённые. Содержимое синхронизируемых папок сохранять не нужно (оно в облаке), но SPEC-07 помечает его тегом `cloud-synced`.
@@ -446,7 +448,7 @@ OneDrive, Dropbox, Google Drive, iCloud, Yandex.Disk: локальные кэш�
 - [x] **T-04-12** — Target `from_json` (§4.2.1): JSONC-препроцессор, вычисление `select` с `*`, нормализация и фильтры путей, создание находок и `claimed_paths`. *Зависит:* T-04-05, T-03-06. *Готово, когда:* тесты из §6 по `from_json` проходят.
 - [x] **T-04-13** — Подключение `RulesCollector` в `sk-engine`: `ScanPipeline::new` регистрирует его, правила загружаются `RuleSet::load(true, rules_dir)` в начале каждого `run` (пользовательские правила подхватываются без перезапуска), issues загрузки (`source: "rules"`) идут в отчёт и `Event::Issue`; `sk-cli scan` передаёт `DataDir::rules()`. *Зависит:* T-04-06, T-01-06, T-01-07. *Готово, когда:* интеграционный тест `sk-engine` с `MemFs` + `rules.d` во временной папке даёт находки правил и issue битого файла.
 - [ ] **T-04-07** — YAML-правила §4.7.1–§4.7.2 (браузеры, dev, включая `unityhub.projects`). *Зависит:* T-04-02, T-04-12, T-04-13. *Готово, когда:* проверены вручную на Windows-машине разработчика (чек-лист в PR); ручная проверка критерия SPEC-01 §8: Ctrl+C во время `savekeeper-cli scan` по реальному профилю завершает процесс за ≤ 1 с с кодом 2 (перенесено из SPEC-03 T-03-04: первый скан, который идёт по реальным файлам); ручная проверка критериев SPEC-03 §8 на том же скане: OneDrive-папка «только онлайн» после скана остаётся с облачным значком (файлы не гидрированы), junction'ы профиля (`Application Data` и т.д.) не дают двойного счёта размеров.
-- [ ] **T-04-08** — YAML-правила §4.7.3–§4.7.7 (включая `obsidian.vaults`). *Зависит:* T-04-02, T-04-12.
+- [x] **T-04-08** — YAML-правила §4.7.3–§4.7.7 (включая `obsidian.vaults`). *Зависит:* T-04-02, T-04-12.
 - [ ] **T-04-09** — YAML-правила §4.7.8–§4.7.9. *Зависит:* T-04-02, T-05-03 (токены Steam).
 - [ ] **T-04-10** — CLI `rules validate` + вывод диагностики. *Зависит:* T-04-02, T-01-07.
 - [ ] **T-04-11** — i18n-ключи для всех `title_key`/`notes_key` (ru, en) в `app/src/i18n/*.json` (генерация списка ключей тестом). *Зависит:* T-04-07..09.

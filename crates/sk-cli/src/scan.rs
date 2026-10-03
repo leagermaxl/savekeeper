@@ -137,6 +137,8 @@ mod tests {
     use async_trait::async_trait;
     use sk_core::collector::{CollectContext, CollectOutput, Collector};
     use sk_core::error::CollectorError;
+    use sk_rules::MemRegistry;
+    use sk_scan::MemFs;
 
     use super::*;
     use crate::cli::LlmArg;
@@ -152,9 +154,14 @@ mod tests {
         }
     }
 
+    /// The built-in rules run on an empty fake profile and an empty
+    /// registry, so that nothing of this machine gets into the reports.
     fn pipeline() -> ScanPipeline {
         let root = Path::new(if cfg!(windows) { r"C:\fake" } else { "/fake" });
-        ScanPipeline::new(Arc::new(Config::default())).with_environment(Environment::fake(root))
+        ScanPipeline::new(Arc::new(Config::default()))
+            .with_environment(Environment::fake(root))
+            .with_scanner(Arc::new(MemFs::new()))
+            .with_rules_registry(Arc::new(MemRegistry::new()))
     }
 
     /// Runs until cancelled.

@@ -29,5 +29,6 @@ tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal", "
 assert_cmd.workspace = true
 async-trait.workspace = true
 predicates.workspace = true
+sk-rules.workspace = true
 tempfile.workspace = true
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal", "sync", "time"] }

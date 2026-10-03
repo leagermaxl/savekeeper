@@ -1,0 +1,159 @@
+# Notes, password managers, editors, office and everyday tools
+# (SPEC-04 §4.7.5).
+schema_version: 1
+rules:
+  - id: obsidian.config
+    app: { id: obsidian, name: Obsidian, kind: application, winget: Obsidian.Obsidian }
+    category: app_config
+    title_key: rules.obsidian.config
+    targets:
+      - path: "{APPDATA}\\obsidian\\obsidian.json"
+
+  # The vault list is read from the Obsidian config (SPEC-04 §4.2.1).
+  - id: obsidian.vaults
+    app: { id: obsidian, name: Obsidian, kind: application, winget: Obsidian.Obsidian }
+    category: user_files
+    title_key: rules.obsidian.vault
+    conditions:
+      - exists: "{APPDATA}\\obsidian\\obsidian.json"
+    targets:
+      - from_json:
+          file: "{APPDATA}\\obsidian\\obsidian.json"
+          format: json
+          select: "/vaults/*/path"
+          max_matches: 50
+        include: []
+        exclude: [".trash/**"]
+        tags: [notes]
+
+  # The databases (.kdbx) are found by the heuristics (SPEC-07) as credentials.
+  - id: keepass.config
+    app: { id: keepass, name: KeePass, kind: application, winget: DominikReichl.KeePass }
+    category: app_config
+    title_key: rules.keepass.config
+    targets:
+      - path: "{APPDATA}\\KeePass"
+
+  - id: keepassxc.config
+    app: { id: keepassxc, name: KeePassXC, kind: application, winget: KeePassXCTeam.KeePassXC }
+    category: app_config
+    title_key: rules.keepassxc.config
+    targets:
+      - path: "{APPDATA}\\KeePassXC"
+
+  # backup/ holds the unsaved tabs.
+  - id: notepadpp.config
+    app: { id: notepadpp, name: Notepad++, kind: application, winget: Notepad++.Notepad++ }
+    category: app_config
+    title_key: rules.notepadpp.config
+    conditions:
+      - process_running: notepad++.exe
+    targets:
+      - path: "{APPDATA}\\Notepad++"
+        include: ["*.xml", "userDefineLangs/**", "themes/**", "plugins/config/**", "backup/**"]
+
+  - id: sublime.config
+    app: { id: sublime, name: Sublime Text, kind: application, winget: SublimeHQ.SublimeText.4 }
+    category: app_config
+    title_key: rules.sublime.config
+    conditions:
+      - process_running: sublime_text.exe
+    targets:
+      - path: "{APPDATA}\\Sublime Text\\Packages\\User"
+        label_key: rules.sublime.label_user_packages
+      - path: "{APPDATA}\\Sublime Text\\Local\\Session.sublime_session"
+        label_key: rules.sublime.label_session
+
+  - id: office.templates
+    app: { id: office, name: Microsoft Office, kind: application }
+    category: app_config
+    title_key: rules.office.templates
+    targets:
+      - path: "{APPDATA}\\Microsoft\\Templates"
+        label_key: rules.office.label_templates
+      - path: "{APPDATA}\\Microsoft\\UProof"
+        label_key: rules.office.label_dictionary
+
+  # .ost files are an Exchange cache: claimed, not saved.
+  - id: outlook.pst
+    app: { id: outlook, name: Microsoft Outlook, kind: application }
+    category: app_data
+    title_key: rules.outlook.pst
+    tags: [large]
+    conditions:
+      - process_running: outlook.exe
+    targets:
+      - path: "{DOCUMENTS}\\Outlook Files"
+        label_key: rules.outlook.label_documents
+      - path: "{LOCALAPPDATA}\\Microsoft\\Outlook\\*.pst"
+        glob_root: true
+        label_key: rules.outlook.label_local
+    claims:
+      - "{LOCALAPPDATA}\\Microsoft\\Outlook\\*.ost"
+
+  - id: autohotkey.scripts
+    app: { id: autohotkey, name: AutoHotkey, kind: application, winget: AutoHotkey.AutoHotkey }
+    category: user_files
+    title_key: rules.autohotkey.scripts
+    targets:
+      - path: "{DOCUMENTS}\\AutoHotkey"
+
+  - id: sevenzip.settings
+    app: { id: sevenzip, name: 7-Zip, kind: application, winget: 7zip.7zip }
+    category: app_config
+    title_key: rules.sevenzip.settings
+    targets:
+      - registry: { hive: hkcu, key: "Software\\7-Zip" }
+
+  - id: total-commander.config
+    app: { id: total-commander, name: Total Commander, kind: application, winget: Ghisler.TotalCommander }
+    category: app_config
+    title_key: rules.total_commander.config
+    targets:
+      - path: "{APPDATA}\\GHISLER"
+
+  - id: everything.config
+    app: { id: everything, name: Everything, kind: application, winget: voidtools.Everything }
+    category: app_config
+    title_key: rules.everything.config
+    targets:
+      - path: "{APPDATA}\\Everything\\Everything.ini"
+
+  # Active torrents: the resume data in BT_backup.
+  - id: qbittorrent.config
+    app: { id: qbittorrent, name: qBittorrent, kind: application, winget: qBittorrent.qBittorrent }
+    category: app_data
+    title_key: rules.qbittorrent.config
+    conditions:
+      - process_running: qbittorrent.exe
+    targets:
+      - path: "{APPDATA}\\qBittorrent"
+        label_key: rules.qbittorrent.label_settings
+      - path: "{LOCALAPPDATA}\\qBittorrent\\BT_backup"
+        label_key: rules.qbittorrent.label_torrents
+
+  - id: figma.settings
+    app: { id: figma, name: Figma, kind: application, winget: Figma.Figma }
+    category: app_config
+    title_key: rules.figma.settings
+    conditions:
+      - exists: "{APPDATA}\\Figma"
+    targets:
+      - path: "{APPDATA}\\Figma\\settings.json"
+    claims:
+      - "{APPDATA}\\Figma"
+
+  - id: adobe.settings
+    app: { id: adobe, name: Adobe, kind: application }
+    category: app_config
+    title_key: rules.adobe.settings
+    targets:
+      - path: "{APPDATA}\\Adobe\\Adobe Photoshop *\\Adobe Photoshop * Settings"
+        glob_root: true
+        label_key: rules.adobe.label_photoshop
+      - path: "{APPDATA}\\Adobe\\Lightroom\\Presets"
+        label_key: rules.adobe.label_lightroom_presets
+      - path: "{APPDATA}\\Adobe\\CameraRaw\\Settings"
+        label_key: rules.adobe.label_camera_raw
+    claims:
+      - "{APPDATA}\\Adobe\\Common\\Media Cache*"

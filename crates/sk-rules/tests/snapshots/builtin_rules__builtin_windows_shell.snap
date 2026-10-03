@@ -1,0 +1,264 @@
+---
+source: crates/sk-rules/tests/builtin_rules.rs
+expression: snapshot
+---
+{
+  "claimed_paths": [
+    "[root]/Users/user/AppData/Roaming/Microsoft/Windows/Recent/AutomaticDestinations/f01b4d95cf55d32a.automaticDestinations-ms",
+    "[root]/Users/user/AppData/Local/Microsoft/PowerToys",
+    "[root]/Users/user/AppData/Roaming/Microsoft/Windows/SendTo",
+    "[root]/Users/user/Pictures/Screenshots",
+    "[root]/Users/user/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned",
+    "[root]/Users/user/AppData/Local/Packages/Microsoft.MicrosoftStickyNotes_8wekyb3d8bbwe/LocalState"
+  ],
+  "findings": [
+    {
+      "app": {
+        "id": "windows",
+        "installed": null,
+        "kind": "system",
+        "name": "Windows",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "system_settings",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "windows.explorer-quickaccess"
+          }
+        }
+      ],
+      "id": "eba779bfc0d4d36f",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "kind": "file",
+        "path": "{APPDATA}\\Microsoft\\Windows\\Recent\\AutomaticDestinations\\f01b4d95cf55d32a.automaticDestinations-ms",
+        "resolved": "[root]/Users/user/AppData/Roaming/Microsoft/Windows/Recent/AutomaticDestinations/f01b4d95cf55d32a.automaticDestinations-ms"
+      },
+      "title": "rules.windows.explorer_quickaccess"
+    },
+    {
+      "app": {
+        "id": "windows",
+        "installed": null,
+        "kind": "system",
+        "name": "Windows",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "windows.powertoys"
+          }
+        }
+      ],
+      "id": "136700159ffa1276",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [
+          "**/Logs/**",
+          "Updates/**"
+        ],
+        "include": [
+          "**/*.json"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Local/Microsoft/PowerToys",
+        "root": "{LOCALAPPDATA}\\Microsoft\\PowerToys"
+      },
+      "title": "rules.windows.powertoys"
+    },
+    {
+      "app": {
+        "id": "windows",
+        "installed": null,
+        "kind": "system",
+        "name": "Windows",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "system_settings",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "windows.sendto"
+          }
+        }
+      ],
+      "id": "b8c96c41017b20cd",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/Microsoft/Windows/SendTo",
+        "root": "{APPDATA}\\Microsoft\\Windows\\SendTo"
+      },
+      "title": "rules.windows.sendto"
+    },
+    {
+      "app": {
+        "id": "windows",
+        "installed": null,
+        "kind": "system",
+        "name": "Windows",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "user_files",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "windows.snipping-screenshots"
+          }
+        }
+      ],
+      "id": "54460f8923e2dd5d",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/Pictures/Screenshots",
+        "root": "{PICTURES}\\Screenshots"
+      },
+      "title": "rules.windows.snipping_screenshots"
+    },
+    {
+      "app": {
+        "id": "windows",
+        "installed": null,
+        "kind": "system",
+        "name": "Windows",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "system_settings",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "windows.start-taskbar-pins"
+          }
+        }
+      ],
+      "id": "e37a4763b14a94be",
+      "notes_key": "rules.windows.start_taskbar_pins_notes",
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned",
+        "root": "{APPDATA}\\Microsoft\\Internet Explorer\\Quick Launch\\User Pinned"
+      },
+      "title": "rules.windows.start_taskbar_pins"
+    },
+    {
+      "app": {
+        "id": "windows",
+        "installed": null,
+        "kind": "system",
+        "name": "Windows",
+        "process_names": [
+          "microsoft.notes.exe"
+        ],
+        "source_ids": {}
+      },
+      "category": "app_data",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "windows.sticky-notes"
+          }
+        }
+      ],
+      "id": "6d30df298d64f423",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [
+          "plum.sqlite*"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Local/Packages/Microsoft.MicrosoftStickyNotes_8wekyb3d8bbwe/LocalState",
+        "root": "{PACKAGE:Microsoft.MicrosoftStickyNotes}\\LocalState"
+      },
+      "title": "rules.windows.sticky_notes"
+    }
+  ],
+  "issues": []
+}

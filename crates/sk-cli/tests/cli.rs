@@ -14,6 +14,7 @@ use assert_cmd::Command;
 use predicates::prelude::*;
 use predicates::str::contains;
 use sk_core::model::{FolderSummary, Marker, ScanReport};
+use sk_rules::compile::compile_yaml;
 use tempfile::TempDir;
 
 /// A copy of the CLI in its own folder.
@@ -41,11 +42,43 @@ impl Cli {
         cmd.args(args).current_dir(self.path()).env_remove("SK_LOG");
         cmd
     }
+
+    /// Disables every built-in rule (repository `rules/`) through the user
+    /// folder `rules.d`, so that a scan of this machine gives no findings or
+    /// issues whatever programs are installed (SPEC-04 FR-04-06).
+    fn disable_builtin_rules(&self) {
+        let builtin = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../rules");
+        let mut ids = Vec::new();
+        for entry in std::fs::read_dir(&builtin).unwrap() {
+            let path = entry.unwrap().path();
+            let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+            if !ext.eq_ignore_ascii_case("yaml") && !ext.eq_ignore_ascii_case("yml") {
+                continue;
+            }
+            let text = std::fs::read_to_string(&path).unwrap();
+            let compiled =
+                compile_yaml(&text).unwrap_or_else(|e| panic!("{}: {e:?}", path.display()));
+            ids.extend(compiled.rules.iter().map(|r| r.id().to_owned()));
+        }
+        assert!(!ids.is_empty(), "no built-in rules found");
+        let rules: String = ids
+            .iter()
+            .map(|id| format!("  - {{ id: {id}, disabled: true }}\n"))
+            .collect();
+        let dir = self.path().join("savekeeper-data").join("rules.d");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join("disable-builtin.yaml"),
+            format!("schema_version: 1\nrules:\n{rules}"),
+        )
+        .unwrap();
+    }
 }
 
 #[test]
 fn scan_out_writes_a_valid_report() {
     let cli = Cli::new();
+    cli.disable_builtin_rules();
     cli.cmd(&["scan", "--out", "r.json", "--no-games"])
         .assert()
         .code(0)
@@ -71,6 +104,7 @@ fn scan_out_writes_a_valid_report() {
 #[test]
 fn scan_prints_the_report_without_out() {
     let cli = Cli::new();
+    cli.disable_builtin_rules();
     let output = cli.cmd(&["scan", "--pretty"]).assert().code(0);
     let stdout = String::from_utf8(output.get_output().stdout.clone()).unwrap();
     assert!(stdout.starts_with("{\n"));

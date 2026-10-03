@@ -1,0 +1,70 @@
+# Media players, recording and streaming tools (SPEC-04 §4.7.3).
+schema_version: 1
+rules:
+  - id: obs.config
+    app: { id: obs, name: OBS Studio, kind: application, winget: OBSProject.OBSStudio }
+    category: app_config
+    title_key: rules.obs.config
+    conditions:
+      - process_running: obs64.exe
+    targets:
+      - path: "{APPDATA}\\obs-studio"
+        include: ["basic/**", "global.ini", "plugin_config/**"]
+        exclude: ["logs/**", "crashes/**", "updates/**"]
+
+  - id: sharex.config
+    app: { id: sharex, name: ShareX, kind: application, winget: ShareX.ShareX }
+    category: app_config
+    title_key: rules.sharex.config
+    conditions:
+      - process_running: ShareX.exe
+    targets:
+      - path: "{DOCUMENTS}\\ShareX"
+        exclude: ["Screenshots/**", "Logs/**"]
+
+  - id: sharex.screenshots
+    app: { id: sharex, name: ShareX, kind: application, winget: ShareX.ShareX }
+    category: user_files
+    title_key: rules.sharex.screenshots
+    targets:
+      - path: "{DOCUMENTS}\\ShareX\\Screenshots"
+
+  - id: vlc.config
+    app: { id: vlc, name: VLC media player, kind: application, winget: VideoLAN.VLC }
+    category: app_config
+    title_key: rules.vlc.config
+    targets:
+      - path: "{APPDATA}\\vlc"
+        exclude: ["art/**"]
+
+  - id: mpc-hc.settings
+    app: { id: mpc-hc, name: MPC-HC, kind: application, winget: clsid2.mpc-hc }
+    category: app_config
+    title_key: rules.mpc_hc.settings
+    targets:
+      - registry: { hive: hkcu, key: "Software\\MPC-HC" }
+
+  - id: foobar2000.config
+    app: { id: foobar2000, name: foobar2000, kind: application, winget: PeterPawlowski.foobar2000 }
+    category: app_config
+    title_key: rules.foobar2000.config
+    conditions:
+      - process_running: foobar2000.exe
+    targets:
+      - path: "{APPDATA}\\foobar2000-v2"
+        label_key: rules.foobar2000.label_v2
+      - path: "{APPDATA}\\foobar2000"
+        label_key: rules.foobar2000.label_v1
+
+  # Everything is in the Spotify account; the local folders are only explained.
+  - id: spotify.none
+    app: { id: spotify, name: Spotify, kind: application, winget: Spotify.Spotify }
+    category: reinstallable
+    title_key: rules.spotify.none
+    conditions:
+      - any_of:
+          - exists: "{APPDATA}\\Spotify"
+          - exists: "{LOCALAPPDATA}\\Spotify"
+    claims:
+      - "{APPDATA}\\Spotify"
+      - "{LOCALAPPDATA}\\Spotify"

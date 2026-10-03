@@ -1,0 +1,206 @@
+# Everyday applications for the built-in rules of SPEC-04 §4.7.3–§4.7.7: media
+# and streaming, messengers, productivity, hardware tuning and the Windows
+# shell. Each application has the settings worth saving next to logs and
+# caches the rules exclude or claim. Some applications of those groups are
+# absent on purpose (Slack, Skype, KeePass, Figma ...): their rules give no
+# findings and claim nothing. Not here, added by the test: the Obsidian
+# config (it holds absolute vault paths), the Store packages of
+# `Environment.store_packages`, registry keys and running processes.
+# Loaded into MemFs by sk_testkit::mem_fixture.
+launchers:
+  steam: { root: "Program Files (x86)/Steam", users: ["12345678"] }
+tree:
+  # === media-streaming.yaml ===
+  # --- OBS Studio ---
+  - path: "{APPDATA}/obs-studio/global.ini"
+    size: 2 KiB
+    mtime: "-3d"
+  - path: "{APPDATA}/obs-studio/basic/scenes/Untitled.json"
+    size: 24 KiB
+    mtime: "-3d"
+  - path: "{APPDATA}/obs-studio/logs/2026-09-30 20-00-00.txt"
+    size: 16 KiB
+    repeat: 2
+  # --- ShareX ---
+  - path: "{DOCUMENTS}/ShareX/ApplicationConfig.json"
+    size: 6 KiB
+    mtime: "-5d"
+  - path: "{DOCUMENTS}/ShareX/Screenshots/2026-09/Screenshot_001.png"
+    size: 300 KiB
+    repeat: 3
+  - path: "{DOCUMENTS}/ShareX/Logs/ShareX-Log-2026-09.txt"
+    size: 12 KiB
+  # --- VLC ---
+  - path: "{APPDATA}/vlc/vlcrc"
+    size: 40 KiB
+    mtime: "-20d"
+  - path: "{APPDATA}/vlc/art/artistalbum/Artist/Album/art.jpg"
+    size: 80 KiB
+  # --- foobar2000 v2 only ---
+  - path: "{APPDATA}/foobar2000-v2/config.sqlite"
+    size: 256 KiB
+    mtime: "-2d"
+  - path: "{APPDATA}/foobar2000-v2/playlists-v2.0/index.txt"
+    size: 1 KiB
+  # --- Spotify (claims only) ---
+  - path: "{LOCALAPPDATA}/Spotify/Storage/0a/0a1b2c3d.file"
+    size: 512 KiB
+    repeat: 3
+  - path: "{APPDATA}/Spotify/Spotify.exe"
+    size: 4 MiB
+
+  # === messengers.yaml ===
+  # --- Telegram Desktop, two accounts ---
+  - path: "{APPDATA}/Telegram Desktop/tdata/key_datas"
+    size: 4 KiB
+    mtime: "-1d"
+  - path: "{APPDATA}/Telegram Desktop/tdata/D877F783D5D3EF8C/maps"
+    size: 1 KiB
+    mtime: "-1d"
+  - path: "{APPDATA}/Telegram Desktop/tdata/user_data/cache/0/1A2B3C"
+    size: 256 KiB
+    repeat: 2
+  - path: "{APPDATA}/Telegram Desktop/tdata/user_data#2/cache/0/4D5E6F"
+    size: 256 KiB
+  - path: "{APPDATA}/Telegram Desktop/tdata/emoji/set_0.webp"
+    size: 128 KiB
+  # --- Discord ---
+  - path: "{APPDATA}/discord/settings.json"
+    content: "{\"BACKGROUND_COLOR\":\"#202225\"}"
+    mtime: "-4d"
+  - path: "{APPDATA}/discord/Cache/Cache_Data/f_000001"
+    size: 32 KiB
+    repeat: 3
+  - path: "{LOCALAPPDATA}/Discord/app-1.0.9165/Discord.exe"
+    size: 4 MiB
+  # --- WhatsApp (Store package, claims only) ---
+  - path: "{LOCALAPPDATA}/Packages/5319275A.WhatsAppDesktop_cv1g1gvanyjgm/LocalState/sessions/db.sqlite"
+    size: 2 MiB
+
+  # === productivity.yaml ===
+  # --- Obsidian: a vault in Documents (the config is added by the test) ---
+  - path: "{DOCUMENTS}/Notes/Welcome.md"
+    content: "# Welcome\n"
+    mtime: "-1d"
+  - path: "{DOCUMENTS}/Notes/.obsidian/app.json"
+    content: "{}"
+  - path: "{DOCUMENTS}/Notes/.trash/Old.md"
+    size: 1 KiB
+  # --- KeePassXC ---
+  - path: "{APPDATA}/KeePassXC/keepassxc.ini"
+    size: 2 KiB
+    mtime: "-10d"
+  # --- Notepad++ with an unsaved tab ---
+  - path: "{APPDATA}/Notepad++/config.xml"
+    size: 8 KiB
+    mtime: "-1d"
+  - path: "{APPDATA}/Notepad++/session.xml"
+    size: 1 KiB
+    mtime: "-1d"
+  - path: "{APPDATA}/Notepad++/backup/new 1@2026-09-30_120000"
+    size: 3 KiB
+    mtime: "-1d"
+  - path: "{APPDATA}/Notepad++/plugins/config/converter.ini"
+    size: 512
+  # --- Sublime Text ---
+  - path: "{APPDATA}/Sublime Text/Packages/User/Preferences.sublime-settings"
+    size: 1 KiB
+    mtime: "-15d"
+  - path: "{APPDATA}/Sublime Text/Local/Session.sublime_session"
+    size: 20 KiB
+    mtime: "-1d"
+  - path: "{APPDATA}/Sublime Text/Cache/Python/Python.sublime-syntax.cache"
+    size: 64 KiB
+  # --- Outlook: a local archive and an Exchange cache ---
+  - path: "{LOCALAPPDATA}/Microsoft/Outlook/archive.pst"
+    size: 50 MiB
+    mtime: "-30d"
+  - path: "{LOCALAPPDATA}/Microsoft/Outlook/user@example.com.ost"
+    size: 200 MiB
+    mtime: "-1d"
+  # --- Everything ---
+  - path: "{APPDATA}/Everything/Everything.ini"
+    size: 6 KiB
+    mtime: "-7d"
+  - path: "{APPDATA}/Everything/Everything.db"
+    size: 20 MiB
+  # --- qBittorrent ---
+  - path: "{APPDATA}/qBittorrent/qBittorrent.ini"
+    size: 4 KiB
+    mtime: "-1d"
+  - path: "{LOCALAPPDATA}/qBittorrent/BT_backup/0a1b2c3d4e5f.fastresume"
+    size: 2 KiB
+    repeat: 2
+  - path: "{LOCALAPPDATA}/qBittorrent/logs/qbittorrent.log"
+    size: 64 KiB
+  # --- Adobe: two Photoshop versions and Camera Raw ---
+  - path: "{APPDATA}/Adobe/Adobe Photoshop 2024/Adobe Photoshop 2024 Settings/Adobe Photoshop 2024 Prefs.psp"
+    size: 120 KiB
+    mtime: "-200d"
+  - path: "{APPDATA}/Adobe/Adobe Photoshop 2025/Adobe Photoshop 2025 Settings/Adobe Photoshop 2025 Prefs.psp"
+    size: 130 KiB
+    mtime: "-3d"
+  - path: "{APPDATA}/Adobe/CameraRaw/Settings/Portrait.xmp"
+    size: 4 KiB
+  - path: "{APPDATA}/Adobe/Common/Media Cache Files/clip.cfa"
+    size: 8 MiB
+  - path: "{APPDATA}/Adobe/Common/Media Cache/media.db"
+    size: 1 MiB
+
+  # === hardware-tuning.yaml ===
+  - path: "{PROGRAMFILES_X86}/MSI Afterburner/Profiles/MSIAfterburner.cfg"
+    size: 4 KiB
+    mtime: "-60d"
+  - path: "{PROGRAMFILES_X86}/MSI Afterburner/MSIAfterburner.exe"
+    size: 8 MiB
+  - path: "{DOCUMENTS}/Rainmeter/Skins/illustro/Clock/Clock.ini"
+    size: 2 KiB
+  - path: "{APPDATA}/Rainmeter/Rainmeter.ini"
+    size: 3 KiB
+    mtime: "-2d"
+  - path: "{STEAM}/steamapps/common/wallpaper_engine/config.json"
+    size: 16 KiB
+    mtime: "-1d"
+  - path: "{PROGRAMDATA}/Razer/Synapse3/Log/Razer Synapse 3.log"
+    size: 128 KiB
+
+  # === windows-shell.yaml ===
+  - path: "{APPDATA}/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/File Explorer.lnk"
+    size: 1 KiB
+  - path: "{APPDATA}/Microsoft/Windows/SendTo/Desktop (create shortcut).DeskLink"
+    size: 0
+  - path: "{APPDATA}/Microsoft/Windows/Recent/AutomaticDestinations/f01b4d95cf55d32a.automaticDestinations-ms"
+    size: 24 KiB
+    mtime: "-1d"
+  # --- Sticky Notes: the database in WAL mode next to unrelated state ---
+  - path: "{LOCALAPPDATA}/Packages/Microsoft.MicrosoftStickyNotes_8wekyb3d8bbwe/LocalState/plum.sqlite"
+    size: 96 KiB
+    mtime: "-2d"
+  - path: "{LOCALAPPDATA}/Packages/Microsoft.MicrosoftStickyNotes_8wekyb3d8bbwe/LocalState/plum.sqlite-wal"
+    size: 32 KiB
+    mtime: "-1d"
+  - path: "{LOCALAPPDATA}/Packages/Microsoft.MicrosoftStickyNotes_8wekyb3d8bbwe/LocalState/plum.sqlite-shm"
+    size: 32 KiB
+    mtime: "-1d"
+  - path: "{LOCALAPPDATA}/Packages/Microsoft.MicrosoftStickyNotes_8wekyb3d8bbwe/LocalState/Telemetry/events.dat"
+    size: 8 KiB
+  - path: "{PICTURES}/Screenshots/Screenshot 2026-09-30 120000.png"
+    size: 400 KiB
+    repeat: 2
+  # --- PowerToys: module JSON next to logs and downloaded updates ---
+  - path: "{LOCALAPPDATA}/Microsoft/PowerToys/settings.json"
+    size: 2 KiB
+  - path: "{LOCALAPPDATA}/Microsoft/PowerToys/FancyZones/settings.json"
+    size: 3 KiB
+  - path: "{LOCALAPPDATA}/Microsoft/PowerToys/FancyZones/custom-layouts.json"
+    size: 1 KiB
+  - path: "{LOCALAPPDATA}/Microsoft/PowerToys/Keyboard Manager/default.json"
+    size: 1 KiB
+  - path: "{LOCALAPPDATA}/Microsoft/PowerToys/FancyZones/Logs/log.txt"
+    size: 16 KiB
+  - path: "{LOCALAPPDATA}/Microsoft/PowerToys/FancyZones/Logs/0.85.0/state.json"
+    size: 4 KiB
+  - path: "{LOCALAPPDATA}/Microsoft/PowerToys/Updates/PowerToysUserSetup-0.86.0-x64.exe"
+    size: 300 MiB
+  - path: "{LOCALAPPDATA}/Microsoft/PowerToys/Updates/release.json"
+    size: 2 KiB

@@ -1,0 +1,626 @@
+---
+source: crates/sk-rules/tests/builtin_rules.rs
+expression: snapshot
+---
+{
+  "claimed_paths": [
+    "[root]/Users/user/AppData/Roaming/Adobe/Adobe Photoshop 2024/Adobe Photoshop 2024 Settings",
+    "[root]/Users/user/AppData/Roaming/Adobe/Adobe Photoshop 2025/Adobe Photoshop 2025 Settings",
+    "[root]/Users/user/AppData/Roaming/Adobe/CameraRaw/Settings",
+    "[root]/Users/user/AppData/Roaming/Adobe/Common/Media Cache",
+    "[root]/Users/user/AppData/Roaming/Adobe/Common/Media Cache Files",
+    "[root]/Users/user/AppData/Roaming/Everything/Everything.ini",
+    "[root]/Users/user/AppData/Roaming/KeePassXC",
+    "[root]/Users/user/AppData/Roaming/Notepad++",
+    "[root]/Users/user/AppData/Roaming/obsidian/obsidian.json",
+    "[root]/Users/user/Documents/Notes",
+    "[root]/Users/user/AppData/Local/Microsoft/Outlook/archive.pst",
+    "[root]/Users/user/AppData/Local/Microsoft/Outlook/user@example.com.ost",
+    "[root]/Users/user/AppData/Roaming/qBittorrent",
+    "[root]/Users/user/AppData/Local/qBittorrent/BT_backup",
+    "[root]/Users/user/AppData/Roaming/Sublime Text/Packages/User",
+    "[root]/Users/user/AppData/Roaming/Sublime Text/Local/Session.sublime_session"
+  ],
+  "findings": [
+    {
+      "app": {
+        "id": "adobe",
+        "installed": null,
+        "kind": "application",
+        "name": "Adobe",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "adobe.settings"
+          }
+        }
+      ],
+      "id": "a015c7e7d227f0c1",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/Adobe/Adobe Photoshop 2024/Adobe Photoshop 2024 Settings",
+        "root": "{APPDATA}\\Adobe\\Adobe Photoshop 2024\\Adobe Photoshop 2024 Settings"
+      },
+      "title": "rules.adobe.settings — rules.adobe.label_photoshop"
+    },
+    {
+      "app": {
+        "id": "adobe",
+        "installed": null,
+        "kind": "application",
+        "name": "Adobe",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "adobe.settings"
+          }
+        }
+      ],
+      "id": "0f9b2e22992ca974",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/Adobe/Adobe Photoshop 2025/Adobe Photoshop 2025 Settings",
+        "root": "{APPDATA}\\Adobe\\Adobe Photoshop 2025\\Adobe Photoshop 2025 Settings"
+      },
+      "title": "rules.adobe.settings — rules.adobe.label_photoshop"
+    },
+    {
+      "app": {
+        "id": "adobe",
+        "installed": null,
+        "kind": "application",
+        "name": "Adobe",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "adobe.settings"
+          }
+        }
+      ],
+      "id": "b3a186e089acad50",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/Adobe/CameraRaw/Settings",
+        "root": "{APPDATA}\\Adobe\\CameraRaw\\Settings"
+      },
+      "title": "rules.adobe.settings — rules.adobe.label_camera_raw"
+    },
+    {
+      "app": {
+        "id": "everything",
+        "installed": null,
+        "kind": "application",
+        "name": "Everything",
+        "process_names": [],
+        "source_ids": {
+          "winget": "voidtools.Everything"
+        }
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "everything.config"
+          }
+        }
+      ],
+      "id": "1a3537d8b53f87fe",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "kind": "file",
+        "path": "{APPDATA}\\Everything\\Everything.ini",
+        "resolved": "[root]/Users/user/AppData/Roaming/Everything/Everything.ini"
+      },
+      "title": "rules.everything.config"
+    },
+    {
+      "app": {
+        "id": "keepassxc",
+        "installed": null,
+        "kind": "application",
+        "name": "KeePassXC",
+        "process_names": [],
+        "source_ids": {
+          "winget": "KeePassXCTeam.KeePassXC"
+        }
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "keepassxc.config"
+          }
+        }
+      ],
+      "id": "45417a311453229e",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/KeePassXC",
+        "root": "{APPDATA}\\KeePassXC"
+      },
+      "title": "rules.keepassxc.config"
+    },
+    {
+      "app": {
+        "id": "notepadpp",
+        "installed": null,
+        "kind": "application",
+        "name": "Notepad++",
+        "process_names": [
+          "notepad++.exe"
+        ],
+        "source_ids": {
+          "winget": "Notepad++.Notepad++"
+        }
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "notepadpp.config"
+          }
+        }
+      ],
+      "id": "f8479f3fe91c744d",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [
+          "*.xml",
+          "userDefineLangs/**",
+          "themes/**",
+          "plugins/config/**",
+          "backup/**"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/Notepad++",
+        "root": "{APPDATA}\\Notepad++"
+      },
+      "title": "rules.notepadpp.config"
+    },
+    {
+      "app": {
+        "id": "obsidian",
+        "installed": null,
+        "kind": "application",
+        "name": "Obsidian",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Obsidian.Obsidian"
+        }
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "obsidian.config"
+          }
+        }
+      ],
+      "id": "c85753ec8ab552dc",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "kind": "file",
+        "path": "{APPDATA}\\obsidian\\obsidian.json",
+        "resolved": "[root]/Users/user/AppData/Roaming/obsidian/obsidian.json"
+      },
+      "title": "rules.obsidian.config"
+    },
+    {
+      "app": {
+        "id": "obsidian",
+        "installed": null,
+        "kind": "application",
+        "name": "Obsidian",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Obsidian.Obsidian"
+        }
+      },
+      "category": "user_files",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {
+            "file": "{APPDATA}\\obsidian\\obsidian.json",
+            "name": "Notes",
+            "select": "/vaults/*/path"
+          },
+          "message_key": "evidence.rule_from_json",
+          "source": {
+            "kind": "rule",
+            "rule_id": "obsidian.vaults"
+          }
+        }
+      ],
+      "id": "76b70f93e1562efa",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [
+        "notes"
+      ],
+      "target": {
+        "exclude": [
+          ".trash/**"
+        ],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/Documents/Notes",
+        "root": "{DOCUMENTS}\\Notes"
+      },
+      "title": "rules.obsidian.vault"
+    },
+    {
+      "app": {
+        "id": "outlook",
+        "installed": null,
+        "kind": "application",
+        "name": "Microsoft Outlook",
+        "process_names": [
+          "outlook.exe"
+        ],
+        "source_ids": {}
+      },
+      "category": "app_data",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "outlook.pst"
+          }
+        }
+      ],
+      "id": "bfc928a1138fd870",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [
+        "large"
+      ],
+      "target": {
+        "kind": "file",
+        "path": "{LOCALAPPDATA}\\Microsoft\\Outlook\\archive.pst",
+        "resolved": "[root]/Users/user/AppData/Local/Microsoft/Outlook/archive.pst"
+      },
+      "title": "rules.outlook.pst — rules.outlook.label_local"
+    },
+    {
+      "app": {
+        "id": "qbittorrent",
+        "installed": null,
+        "kind": "application",
+        "name": "qBittorrent",
+        "process_names": [
+          "qbittorrent.exe"
+        ],
+        "source_ids": {
+          "winget": "qBittorrent.qBittorrent"
+        }
+      },
+      "category": "app_data",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "qbittorrent.config"
+          }
+        }
+      ],
+      "id": "8167e31a303ac30f",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/qBittorrent",
+        "root": "{APPDATA}\\qBittorrent"
+      },
+      "title": "rules.qbittorrent.config — rules.qbittorrent.label_settings"
+    },
+    {
+      "app": {
+        "id": "qbittorrent",
+        "installed": null,
+        "kind": "application",
+        "name": "qBittorrent",
+        "process_names": [
+          "qbittorrent.exe"
+        ],
+        "source_ids": {
+          "winget": "qBittorrent.qBittorrent"
+        }
+      },
+      "category": "app_data",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "qbittorrent.config"
+          }
+        }
+      ],
+      "id": "33fa79fc21f4889e",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Local/qBittorrent/BT_backup",
+        "root": "{LOCALAPPDATA}\\qBittorrent\\BT_backup"
+      },
+      "title": "rules.qbittorrent.config — rules.qbittorrent.label_torrents"
+    },
+    {
+      "app": {
+        "id": "sevenzip",
+        "installed": null,
+        "kind": "application",
+        "name": "7-Zip",
+        "process_names": [],
+        "source_ids": {
+          "winget": "7zip.7zip"
+        }
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "sevenzip.settings"
+          }
+        }
+      ],
+      "id": "d75c1459d30cae90",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "hive": "hkcu",
+        "key": "Software\\7-Zip",
+        "kind": "registry",
+        "recursive": true
+      },
+      "title": "rules.sevenzip.settings"
+    },
+    {
+      "app": {
+        "id": "sublime",
+        "installed": null,
+        "kind": "application",
+        "name": "Sublime Text",
+        "process_names": [
+          "sublime_text.exe"
+        ],
+        "source_ids": {
+          "winget": "SublimeHQ.SublimeText.4"
+        }
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "sublime.config"
+          }
+        }
+      ],
+      "id": "45d176e8ff5cd332",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/Sublime Text/Packages/User",
+        "root": "{APPDATA}\\Sublime Text\\Packages\\User"
+      },
+      "title": "rules.sublime.config — rules.sublime.label_user_packages"
+    },
+    {
+      "app": {
+        "id": "sublime",
+        "installed": null,
+        "kind": "application",
+        "name": "Sublime Text",
+        "process_names": [
+          "sublime_text.exe"
+        ],
+        "source_ids": {
+          "winget": "SublimeHQ.SublimeText.4"
+        }
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "sublime.config"
+          }
+        }
+      ],
+      "id": "77b4a4224709fdc2",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "kind": "file",
+        "path": "{APPDATA}\\Sublime Text\\Local\\Session.sublime_session",
+        "resolved": "[root]/Users/user/AppData/Roaming/Sublime Text/Local/Session.sublime_session"
+      },
+      "title": "rules.sublime.config — rules.sublime.label_session"
+    }
+  ],
+  "issues": []
+}

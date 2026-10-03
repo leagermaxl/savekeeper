@@ -1,0 +1,179 @@
+---
+source: crates/sk-rules/tests/builtin_rules.rs
+expression: snapshot
+---
+{
+  "claimed_paths": [
+    "[root]/Program Files (x86)/MSI Afterburner/Profiles",
+    "[root]/Users/user/Documents/Rainmeter/Skins",
+    "[root]/Users/user/AppData/Roaming/Rainmeter/Rainmeter.ini",
+    "[root]/Users/user/AppData/Local/Razer",
+    "[root]/ProgramData/Razer",
+    "[root]/Program Files (x86)/Steam/steamapps/common/wallpaper_engine/config.json"
+  ],
+  "findings": [
+    {
+      "app": {
+        "id": "msi-afterburner",
+        "installed": null,
+        "kind": "application",
+        "name": "MSI Afterburner",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Guru3D.Afterburner"
+        }
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "msi-afterburner.profiles"
+          }
+        }
+      ],
+      "id": "9de8ce42a57ad36a",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Program Files (x86)/MSI Afterburner/Profiles",
+        "root": "{PROGRAMFILES_X86}\\MSI Afterburner\\Profiles"
+      },
+      "title": "rules.msi_afterburner.profiles"
+    },
+    {
+      "app": {
+        "id": "rainmeter",
+        "installed": null,
+        "kind": "application",
+        "name": "Rainmeter",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Rainmeter.Rainmeter"
+        }
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "rainmeter.skins"
+          }
+        }
+      ],
+      "id": "44bcf5758dc09ab5",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/Documents/Rainmeter/Skins",
+        "root": "{DOCUMENTS}\\Rainmeter\\Skins"
+      },
+      "title": "rules.rainmeter.skins — rules.rainmeter.label_skins"
+    },
+    {
+      "app": {
+        "id": "rainmeter",
+        "installed": null,
+        "kind": "application",
+        "name": "Rainmeter",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Rainmeter.Rainmeter"
+        }
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "rainmeter.skins"
+          }
+        }
+      ],
+      "id": "4383d134f755eac2",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "kind": "file",
+        "path": "{APPDATA}\\Rainmeter\\Rainmeter.ini",
+        "resolved": "[root]/Users/user/AppData/Roaming/Rainmeter/Rainmeter.ini"
+      },
+      "title": "rules.rainmeter.skins — rules.rainmeter.label_settings"
+    },
+    {
+      "app": {
+        "id": "wallpaper-engine",
+        "installed": null,
+        "kind": "application",
+        "name": "Wallpaper Engine",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "app_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "wallpaper-engine.config"
+          }
+        }
+      ],
+      "id": "9410d970c27e6c00",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "kind": "file",
+        "path": "{STEAM}\\steamapps\\common\\wallpaper_engine\\config.json",
+        "resolved": "[root]/Program Files (x86)/Steam/steamapps/common/wallpaper_engine/config.json"
+      },
+      "title": "rules.wallpaper_engine.config"
+    }
+  ],
+  "issues": []
+}

@@ -1,0 +1,57 @@
+# Hardware tuning, overlays and desktop customization (SPEC-04 §4.7.6).
+schema_version: 1
+rules:
+  # Explicit root inside a global exclusion (SPEC-03 §4.5).
+  - id: msi-afterburner.profiles
+    app: { id: msi-afterburner, name: MSI Afterburner, kind: application, winget: Guru3D.Afterburner }
+    category: app_config
+    title_key: rules.msi_afterburner.profiles
+    targets:
+      - path: "{PROGRAMFILES_X86}\\MSI Afterburner\\Profiles"
+
+  - id: rivatuner.profiles
+    app: { id: rivatuner, name: RivaTuner Statistics Server, kind: application, winget: Guru3D.RTSS }
+    category: app_config
+    title_key: rules.rivatuner.profiles
+    targets:
+      - path: "{PROGRAMFILES_X86}\\RivaTuner Statistics Server\\Profiles"
+
+  - id: rainmeter.skins
+    app: { id: rainmeter, name: Rainmeter, kind: application, winget: Rainmeter.Rainmeter }
+    category: app_config
+    title_key: rules.rainmeter.skins
+    targets:
+      - path: "{DOCUMENTS}\\Rainmeter\\Skins"
+        label_key: rules.rainmeter.label_skins
+      - path: "{APPDATA}\\Rainmeter\\Rainmeter.ini"
+        label_key: rules.rainmeter.label_settings
+
+  - id: wallpaper-engine.config
+    app: { id: wallpaper-engine, name: Wallpaper Engine, kind: application }
+    category: app_config
+    title_key: rules.wallpaper_engine.config
+    targets:
+      - path: "{STEAM}\\steamapps\\common\\wallpaper_engine\\config.json"
+
+  - id: logitech-ghub.settings
+    app: { id: logitech-ghub, name: Logitech G HUB, kind: application, winget: Logitech.GHUB }
+    category: app_config
+    title_key: rules.logitech_ghub.settings
+    conditions:
+      # The agent, not the UI, keeps settings.db open.
+      - process_running: lghub_agent.exe
+    targets:
+      - path: "{LOCALAPPDATA}\\LGHUB\\settings.db"
+
+  # Synapse keeps the profiles in the Razer account.
+  - id: razer-synapse.none
+    app: { id: razer-synapse, name: Razer Synapse, kind: application }
+    category: reinstallable
+    title_key: rules.razer_synapse.none
+    conditions:
+      - any_of:
+          - exists: "{LOCALAPPDATA}\\Razer"
+          - exists: "{PROGRAMDATA}\\Razer"
+    claims:
+      - "{LOCALAPPDATA}\\Razer"
+      - "{PROGRAMDATA}\\Razer"

@@ -1,0 +1,62 @@
+# Messengers (SPEC-04 §4.7.4). Most of them keep the history in the cloud or
+# on the phone: their folders are only claimed.
+schema_version: 1
+rules:
+  # The session in tdata signs in to the account without 2FA.
+  - id: telegram.tdata
+    app: { id: telegram, name: Telegram Desktop, kind: application, winget: Telegram.TelegramDesktop }
+    category: app_data
+    sensitivity: high
+    title_key: rules.telegram.tdata
+    conditions:
+      - process_running: Telegram.exe
+    targets:
+      - path: "{APPDATA}\\Telegram Desktop\\tdata"
+        exclude: ["user_data/**", "user_data#*/**", "emoji/**", "dumps/**"]
+    notes_key: rules.telegram.notes
+
+  - id: discord.settings
+    app: { id: discord, name: Discord, kind: application, winget: Discord.Discord }
+    category: app_config
+    title_key: rules.discord.settings
+    conditions:
+      - any_of:
+          - exists: "{APPDATA}\\discord"
+          - exists: "{LOCALAPPDATA}\\Discord"
+    targets:
+      - path: "{APPDATA}\\discord\\settings.json"
+    # Electron caches and the program itself (reinstallable).
+    claims:
+      - "{APPDATA}\\discord"
+      - "{LOCALAPPDATA}\\Discord"
+
+  - id: slack.none
+    app: { id: slack, name: Slack, kind: application, winget: SlackTechnologies.Slack }
+    category: reinstallable
+    title_key: rules.slack.none
+    conditions:
+      - exists: "{APPDATA}\\Slack"
+    claims:
+      - "{APPDATA}\\Slack"
+
+  # The Store package resolves only when it is installed.
+  - id: whatsapp.none
+    app: { id: whatsapp, name: WhatsApp, kind: application }
+    category: reinstallable
+    title_key: rules.whatsapp.none
+    claims:
+      - "{PACKAGE:5319275A.WhatsAppDesktop}"
+
+  - id: skype.none
+    app: { id: skype, name: Skype, kind: application }
+    category: reinstallable
+    title_key: rules.skype.none
+    conditions:
+      - any_of:
+          - exists: "{APPDATA}\\Skype"
+          - exists: "{APPDATA}\\Microsoft\\Skype for Desktop"
+          - exists: "{PACKAGE:Microsoft.SkypeApp}"
+    claims:
+      - "{APPDATA}\\Skype"
+      - "{APPDATA}\\Microsoft\\Skype for Desktop"
+      - "{PACKAGE:Microsoft.SkypeApp}"

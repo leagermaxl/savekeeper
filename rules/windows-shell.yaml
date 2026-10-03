@@ -1,0 +1,58 @@
+# Windows shell settings kept in the user profile (SPEC-04 §4.7.7). User fonts
+# are exported by SPEC-06 (`fonts`), not here.
+schema_version: 1
+rules:
+  # Informational: Windows does not take the pins back from a copied folder.
+  - id: windows.start-taskbar-pins
+    app: { id: windows, name: Windows, kind: system }
+    category: system_settings
+    title_key: rules.windows.start_taskbar_pins
+    targets:
+      - path: "{APPDATA}\\Microsoft\\Internet Explorer\\Quick Launch\\User Pinned"
+    notes_key: rules.windows.start_taskbar_pins_notes
+
+  - id: windows.sendto
+    app: { id: windows, name: Windows, kind: system }
+    category: system_settings
+    title_key: rules.windows.sendto
+    targets:
+      - path: "{APPDATA}\\Microsoft\\Windows\\SendTo"
+
+  # Quick access in Explorer: the pinned folders.
+  - id: windows.explorer-quickaccess
+    app: { id: windows, name: Windows, kind: system }
+    category: system_settings
+    title_key: rules.windows.explorer_quickaccess
+    targets:
+      - path: "{APPDATA}\\Microsoft\\Windows\\Recent\\AutomaticDestinations\\f01b4d95cf55d32a.automaticDestinations-ms"
+
+  # The notes database runs in WAL mode: `plum.sqlite-wal` and
+  # `plum.sqlite-shm` hold changes not yet merged into `plum.sqlite`.
+  - id: windows.sticky-notes
+    app: { id: windows, name: Windows, kind: system }
+    category: app_data
+    title_key: rules.windows.sticky_notes
+    conditions:
+      - process_running: Microsoft.Notes.exe
+    targets:
+      - path: "{PACKAGE:Microsoft.MicrosoftStickyNotes}\\LocalState"
+        include: ["plum.sqlite*"]
+
+  - id: windows.snipping-screenshots
+    app: { id: windows, name: Windows, kind: system }
+    category: user_files
+    title_key: rules.windows.snipping_screenshots
+    targets:
+      - path: "{PICTURES}\\Screenshots"
+
+  # Every module keeps JSON: settings, Keyboard Manager remappings
+  # (`default.json`), FancyZones layouts. Logs and downloaded updates are not
+  # settings.
+  - id: windows.powertoys
+    app: { id: windows, name: Windows, kind: system }
+    category: app_config
+    title_key: rules.windows.powertoys
+    targets:
+      - path: "{LOCALAPPDATA}\\Microsoft\\PowerToys"
+        include: ["**/*.json"]
+        exclude: ["**/Logs/**", "Updates/**"]
