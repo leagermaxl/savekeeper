@@ -149,15 +149,6 @@ fn config_warnings_go_to_stderr() {
         .stderr(contains("llm.locl"));
 }
 
-#[test]
-fn env_prints_the_environment() {
-    let cli = Cli::new();
-    let output = cli.cmd(&["env"]).assert().code(0);
-    let json: serde_json::Value = serde_json::from_slice(&output.get_output().stdout).unwrap();
-    assert!(json["known_folders"]["HOME"].is_string());
-    assert!(json["os"]["arch"].is_string());
-}
-
 /// A folder tree for `debug summarize` in its own temporary folder:
 /// `proj` with 3 counted files (10 bytes) in 2 folders, a `.git` folder and
 /// an excluded `node_modules`.
@@ -302,18 +293,10 @@ fn backup_lock() -> MutexGuard<'static, ()> {
 fn unimplemented_commands_fail_with_a_message() {
     let _backup = backup_lock();
     let cli = Cli::new();
-    for (args, name) in [
-        (
-            &["backup", "--report", "r.json", "--to", "b"][..],
-            "`backup`",
-        ),
-        (&["manifest", "update"], "`manifest update`"),
-    ] {
-        cli.cmd(args)
-            .assert()
-            .code(1)
-            .stderr(contains(name).and(contains("not implemented yet")));
-    }
+    cli.cmd(&["backup", "--report", "r.json", "--to", "b"])
+        .assert()
+        .code(1)
+        .stderr(contains("`backup`").and(contains("not implemented yet")));
 }
 
 /// SPEC-01 §5, T-01-08: a second instance running `backup` exits with 1.

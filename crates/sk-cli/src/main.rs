@@ -5,6 +5,7 @@
 
 mod cli;
 mod commands;
+mod manifest;
 mod progress;
 mod rules;
 mod scan;
@@ -70,7 +71,7 @@ fn run(cli: Cli) -> anyhow::Result<Status> {
             runtime.shutdown_background();
             result
         }
-        Command::Env => commands::env(),
+        Command::Env => block_on(manifest::env()),
         Command::Debug {
             command: DebugCommand::Summarize(args),
         } => {
@@ -94,9 +95,22 @@ fn run(cli: Cli) -> anyhow::Result<Status> {
             command: RulesCommand::Validate(args),
         } => rules::validate(args),
         Command::Manifest {
-            command: ManifestCommand::Update(_),
-        } => commands::not_implemented("manifest update", "SPEC-05, T-05-10"),
+            command: ManifestCommand::Update(args),
+        } => block_on(manifest::update(args.force)),
     }
+}
+
+/// Runs an async command on a multi-threaded runtime. Blocking work left
+/// behind by Ctrl+C (an unfinished parse) does not delay the exit.
+fn block_on(
+    command: impl std::future::Future<Output = anyhow::Result<Status>>,
+) -> anyhow::Result<Status> {
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()?;
+    let result = runtime.block_on(command);
+    runtime.shutdown_background();
+    result
 }
 
 #[cfg(test)]

@@ -34,7 +34,8 @@ pub(crate) enum Command {
         #[command(subcommand)]
         command: ConfigCommand,
     },
-    /// Print the detected environment (known folders, launchers) as JSON.
+    /// Print the detected environment (known folders, launchers) and the
+    /// source of the Ludusavi manifest as JSON.
     Env,
     /// Debugging tools.
     Debug {
@@ -99,8 +100,15 @@ pub(crate) struct ValidateArgs {
 
 #[derive(Debug, Subcommand)]
 pub(crate) enum ManifestCommand {
-    /// Download a fresh Ludusavi manifest (not implemented yet).
-    Update(StubArgs),
+    /// Download a fresh Ludusavi manifest into the cache if it changed.
+    Update(UpdateArgs),
+}
+
+#[derive(Debug, Args)]
+pub(crate) struct UpdateArgs {
+    /// Download even when the cached copy is current (no `If-None-Match`).
+    #[arg(long)]
+    pub(crate) force: bool,
 }
 
 #[derive(Debug, Subcommand)]
@@ -199,10 +207,28 @@ mod tests {
         for args in [
             &["backup", "--report", "r.json", "--to", "E:\\b", "--encrypt"][..],
             &["backup"],
-            &["manifest", "update"],
         ] {
             assert!(parse(args).is_ok(), "{args:?}");
         }
+    }
+
+    #[test]
+    fn manifest_update_takes_only_force() {
+        for (args, force) in [
+            (&["manifest", "update"][..], false),
+            (&["manifest", "update", "--force"], true),
+        ] {
+            let Command::Manifest {
+                command: ManifestCommand::Update(parsed),
+            } = parse(args).unwrap().command
+            else {
+                panic!("not manifest update: {args:?}");
+            };
+            assert_eq!(parsed.force, force, "{args:?}");
+        }
+        assert!(parse(&["manifest", "update", "x"]).is_err());
+        assert!(parse(&["manifest", "update", "--strict"]).is_err());
+        assert!(parse(&["manifest"]).is_err());
     }
 
     #[test]

@@ -202,8 +202,12 @@ impl ManifestStore {
     }
 
     /// Takes the issues collected by [`ManifestStore::load`] and
-    /// [`ManifestStore::update`] (for `GamesCollector`, T-05-09).
-    pub(crate) fn take_issues(&self) -> Vec<ScanIssue> {
+    /// [`ManifestStore::update`] since the last call (SPEC-05 §5):
+    /// `issue.games.manifest_offline`, `issue.games.manifest_invalid`,
+    /// `issue.games.manifest_cache_failed`, source `games`. Used by
+    /// `GamesCollector` for the scan report and by the CLI `manifest update`
+    /// (exit code 3 when not empty).
+    pub fn take_issues(&self) -> Vec<ScanIssue> {
         std::mem::take(&mut *self.issues.lock().unwrap_or_else(PoisonError::into_inner))
     }
 

@@ -1,19 +1,12 @@
-//! `env`, `config` and the commands that are not implemented yet.
+//! `config`, the shared data folder and config helpers, and the commands
+//! that are not implemented yet (`env` is in `manifest`).
 
 use std::path::PathBuf;
 
 use anyhow::Context as _;
 use sk_core::config::{Config, ConfigWarning, DataDir, LoadedConfig};
-use sk_core::env::Environment;
 
 use crate::Status;
-
-/// `env`: the detected environment as pretty JSON.
-pub(crate) fn env() -> anyhow::Result<Status> {
-    let env = Environment::detect().context("cannot detect the environment")?;
-    println!("{}", serde_json::to_string_pretty(&env)?);
-    Ok(Status::Success)
-}
 
 /// `config show`: the loaded config as pretty JSON.
 pub(crate) fn config_show() -> anyhow::Result<Status> {
