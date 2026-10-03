@@ -1,0 +1,20 @@
+{
+  "title": {
+    "save": "saves",
+    "config": "settings",
+    "install_dir": "install folder"
+  },
+  "note": {
+    "xbox_wgs": "Xbox saves are encrypted and usually synced through Xbox Cloud: after reinstalling, sign in with the same Microsoft account. The local copy is only a spare.",
+    "reinstallable": "The game can be installed again from its launcher; saves found inside this folder are offered separately."
+  },
+  "launcher": {
+    "steam": "Steam",
+    "epic": "Epic Games Launcher",
+    "gog": "GOG",
+    "ubisoft": "Ubisoft Connect",
+    "ea": "EA app",
+    "battlenet": "Battle.net",
+    "xbox": "Xbox / Microsoft Store"
+  }
+}

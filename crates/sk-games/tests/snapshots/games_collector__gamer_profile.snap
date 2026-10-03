@@ -1,0 +1,114 @@
+---
+source: crates/sk-games/tests/games_collector.rs
+expression: text
+---
+GameSave dir {STEAM}\steamapps\common\Portal 2\portal2\SAVE []
+  title: Portal 2 — games.title.save
+  app: portal-2 installed=Some(true)
+  tags: steam
+  evidence: evidence.ludusavi_match 1.00; evidence.games.installed 1.00
+GameConfig file {STEAM}\steamapps\common\Portal 2\portal2\cfg\config.cfg []
+  title: Portal 2 — games.title.config
+  app: portal-2 installed=Some(true)
+  tags: steam
+  evidence: evidence.ludusavi_match 1.00; evidence.games.installed 1.00
+GameSave dir {STEAM}\userdata\12345678\620\remote []
+  title: Portal 2 — games.title.save — Fixture Gamer
+  app: portal-2 installed=Some(true)
+  tags: steam
+  evidence: evidence.ludusavi_match 1.00; evidence.games.installed 1.00
+GameSave dir {STEAM}\userdata\87654321\620\remote []
+  title: Portal 2 — games.title.save — Sibling
+  app: portal-2 installed=Some(true)
+  tags: steam
+  evidence: evidence.ludusavi_match 1.00; evidence.games.installed 1.00
+Reinstallable dir {STEAM}\steamapps\common\Portal 2 []
+  title: Portal 2 — games.title.install_dir
+  app: portal-2 installed=Some(true)
+  tags: steam
+  evidence: evidence.games.install_dir 1.00
+GameConfig dir {STEAM}\steamapps\common\SlayTheSpire\preferences []
+  title: Slay the Spire — games.title.config
+  app: slay-the-spire installed=Some(true)
+  tags: steam
+  evidence: evidence.ludusavi_match 1.00; evidence.games.installed 1.00
+GameSave dir {STEAM}\steamapps\common\SlayTheSpire\saves []
+  title: Slay the Spire — games.title.save
+  app: slay-the-spire installed=Some(true)
+  tags: steam
+  evidence: evidence.ludusavi_match 1.00; evidence.games.installed 1.00
+Reinstallable dir {STEAM}\steamapps\common\SlayTheSpire []
+  title: Slay the Spire — games.title.install_dir
+  app: slay-the-spire installed=Some(true)
+  tags: steam
+  evidence: evidence.games.install_dir 1.00
+GameSave dir {APPDATA}\EldenRing []
+  title: ELDEN RING — games.title.save
+  app: elden-ring installed=Some(true)
+  tags: steam
+  evidence: evidence.ludusavi_match 1.00; evidence.games.installed 1.00
+Reinstallable dir {STEAM}\steamapps\common\ELDEN RING []
+  title: ELDEN RING — games.title.install_dir
+  app: elden-ring installed=Some(true)
+  tags: steam
+  evidence: evidence.games.install_dir 1.00
+GameConfig dir {LOCALAPPDATA}\FactoryGame\Saved\Config\Windows []
+  title: Satisfactory — games.title.config
+  app: satisfactory installed=Some(true)
+  tags: epic
+  evidence: evidence.ludusavi_match 1.00; evidence.games.installed 1.00
+GameSave dir {LOCALAPPDATA}\FactoryGame\Saved\SaveGames []
+  title: Satisfactory — games.title.save
+  app: satisfactory installed=Some(true)
+  tags: epic
+  evidence: evidence.ludusavi_match 1.00; evidence.games.installed 1.00
+Reinstallable dir {PROGRAMFILES}\Epic Games\SatisfactoryEarlyAccess []
+  title: Satisfactory — games.title.install_dir
+  app: satisfactory installed=Some(true)
+  tags: epic
+  evidence: evidence.games.install_dir 1.00
+GameSave dir {LOCALLOW}\Team Cherry\Hollow Knight [*.dat]
+  title: Hollow Knight — games.title.save
+  app: hollow-knight installed=Some(false)
+  tags: not-installed
+  evidence: evidence.ludusavi_match 1.00
+GameConfig dir {DOCUMENTS}\My Games\Skyrim Special Edition [*.ini]
+  title: The Elder Scrolls V: Skyrim Special Edition — games.title.config
+  app: the-elder-scrolls-v-skyrim-special-edition installed=Some(false)
+  tags: not-installed
+  evidence: evidence.ludusavi_match 1.00
+GameSave dir {DOCUMENTS}\My Games\Skyrim Special Edition\Saves []
+  title: The Elder Scrolls V: Skyrim Special Edition — games.title.save
+  app: the-elder-scrolls-v-skyrim-special-edition installed=Some(false)
+  tags: not-installed
+  evidence: evidence.ludusavi_match 1.00
+GameConfig reg Hkcu\Software\Team Cherry\Hollow Knight []
+  title: Hollow Knight — games.title.config
+  app: hollow-knight installed=Some(false)
+  tags: not-installed
+  evidence: evidence.ludusavi_match 1.00
+claimed:
+  {STEAM}\steamapps\common\Portal 2\portal2\SAVE
+  {STEAM}\steamapps\common\Portal 2\portal2\cfg\config.cfg
+  {STEAM}\userdata\12345678\620\remote
+  {STEAM}\userdata\87654321\620\remote
+  {STEAM}\steamapps\common\Portal 2
+  {STEAM}\steamapps\common\SlayTheSpire\preferences
+  {STEAM}\steamapps\common\SlayTheSpire\saves
+  {STEAM}\steamapps\common\SlayTheSpire
+  {APPDATA}\EldenRing
+  {STEAM}\steamapps\common\ELDEN RING
+  {LOCALAPPDATA}\FactoryGame\Saved\Config\Windows
+  {LOCALAPPDATA}\FactoryGame\Saved\SaveGames
+  {PROGRAMFILES}\Epic Games\SatisfactoryEarlyAccess
+  {LOCALLOW}\Team Cherry\Hollow Knight
+  {DOCUMENTS}\My Games\Skyrim Special Edition
+  {DOCUMENTS}\My Games\Skyrim Special Edition\Saves
+  {STEAM}\appcache
+  {STEAM}\config
+  {STEAM}\steam.exe
+  {STEAM}\steamapps\appmanifest_1245620.acf
+  {STEAM}\steamapps\appmanifest_620.acf
+  {STEAM}\steamapps\appmanifest_646570.acf
+  {PROGRAMDATA}\Epic\EpicGamesLauncher
+issues:

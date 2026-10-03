@@ -20,5 +20,26 @@
       "duplicate": "путь уже встречался в конфиге",
       "missing": "путь не найден (возможно, диск не подключён)"
     }
+  },
+  "games": {
+    "manifest_offline": "Не удалось обновить манифест игр Ludusavi, используется сохранённая копия: {{reason}}",
+    "manifest_invalid": "Скачанный манифест игр Ludusavi повреждён и не используется: {{reason}}",
+    "manifest_cache_failed": "Не удалось использовать кэш манифеста Ludusavi, в следующий раз он будет прочитан заново: {{reason}}",
+    "steam_libraryfolders_unreadable": "Не удалось прочитать список библиотек Steam ($t(issue.games.file_reason.{{reason}})), проверяется только основная библиотека",
+    "steam_library_unavailable": "Библиотека Steam недоступна ($t(issue.games.file_reason.{{reason}})), её игры пропущены",
+    "steam_appmanifest_unreadable": "Не удалось прочитать манифест игры Steam ($t(issue.games.file_reason.{{reason}})), игра пропущена",
+    "launcher_file_unreadable": "Не удалось прочитать файл данных лаунчера ($t(issue.games.file_reason.{{reason}})), перечисленные в нём игры пропущены",
+    "registry_hklm_skipped": "Раздел реестра {{key}} игры «{{game}}» относится ко всему компьютеру (HKLM) и не сохраняется",
+    "file_reason": {
+      "not_found": "не найден",
+      "access_denied": "нет доступа",
+      "locked": "файл занят другой программой",
+      "too_large": "файл слишком большой",
+      "cloud_only": "файл есть только в облаке",
+      "cancelled": "скан отменён",
+      "io": "ошибка чтения",
+      "invalid": "формат файла не распознан",
+      "drive_missing": "диск не подключён"
+    }
   }
 }

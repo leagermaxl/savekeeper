@@ -1,4 +1,11 @@
 {
   "rule_match": "Known program data location from the rule base",
-  "rule_from_json": "“{{name}}” is listed in the program's config {{file}}"
+  "rule_from_json": "“{{name}}” is listed in the program's config {{file}}",
+  "ludusavi_match": "Save location of “{{game}}” from the Ludusavi manifest (PCGamingWiki data)",
+  "games": {
+    "installed": "“{{name}}” is installed through $t(games.launcher.{{launcher}})",
+    "install_dir": "Install folder of “{{name}}”: the game can be installed again from $t(games.launcher.{{launcher}})",
+    "xbox_wgs": "Saves of the Xbox / Microsoft Store game from package {{package}}",
+    "ubisoft_savegames": "Local saves of Ubisoft Connect games"
+  }
 }

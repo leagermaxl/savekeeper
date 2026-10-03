@@ -5,7 +5,7 @@ mod battlenet;
 mod ea;
 mod enrich;
 mod epic;
-mod findings;
+pub(crate) mod findings;
 mod gog;
 mod steam;
 mod ubisoft;

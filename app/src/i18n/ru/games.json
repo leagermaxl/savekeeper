@@ -1,0 +1,20 @@
+{
+  "title": {
+    "save": "сохранения",
+    "config": "настройки",
+    "install_dir": "каталог установки"
+  },
+  "note": {
+    "xbox_wgs": "Сохранения Xbox зашифрованы и обычно синхронизируются через облако Xbox: после переустановки войдите в ту же учётную запись Microsoft. Локальная копия — только запасной вариант.",
+    "reinstallable": "Игру можно установить заново из её лаунчера; сохранения внутри этого каталога предлагаются отдельно."
+  },
+  "launcher": {
+    "steam": "Steam",
+    "epic": "Epic Games Launcher",
+    "gog": "GOG",
+    "ubisoft": "Ubisoft Connect",
+    "ea": "EA app",
+    "battlenet": "Battle.net",
+    "xbox": "Xbox / Microsoft Store"
+  }
+}

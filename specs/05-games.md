@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-games` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-04 (токены `{STEAM}`, `{STEAM_USERID}`), SPEC-07, SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-03 (T-05-08: §4.6 — глубина якоря, корни для `read_dir`, API `AnchorIndex`; T-05-07: §4.5 — алиасы, fallback Steam/GOG на имя, нормализация без транслитерации, порядок при неоднозначности, пометка `game-unmatched` для SPEC-07, API `MatchIndex`; T-05-06: `GameCtx`, глобы, `<home>/AppData`, `Saved Games` и причины пропуска в §4.3, соответствие store → лаунчер в FR-05-05; T-05-05: `enrich_with_registry` в §4.1; T-05-04: условие обнаружения EA, тексты ключей games в T-05-09, детекторы Epic/GOG/Ubisoft/EA/Battle.net/Xbox в §4.1 и §4.4, находки лаунчеров, issue `launcher_file_unreadable` в §5; T-05-02: FR-05-11 ресурс снапшота, варианты `GamesError`, детали `ManifestStore` в §4.1, ключи issue манифеста в §5, встроенный снапшот из `third_party/ludusavi`; T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.1: реестр из sk-core, T-05-04 и T-05-09 зависят от T-02-10; T-05-03: detect_with_issues, SteamDetector, RegistryReader, детали Steam §4.4, ключи issue §5; T-05-01: API разбора манифеста, конкретные типы, параллельный разбор, бенч; §5: манифест с 0 игр; T-04-05: специализация `{STEAM_USERID}` в шаблоне находки, §4.7, §5); 2026-10-02 (§6: пути фикстур `fixtures/samples/...` и 20 игр, как в SPEC-12 §4.3; 2026-10-01: §4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
+| Последнее изменение | 2026-10-03 (T-05-09: `{GAME_DIR}` → шаблон каталога установки, builder `GamesCollector`, HKCU/HKLM в FR-05-07, cloud-теги FR-05-08, §4.7 п. 3, 8, 10, 11, `app-running` отложен, задачи T-05-12, T-05-13; T-05-08: §4.6 — глубина якоря, корни для `read_dir`, API `AnchorIndex`; T-05-07: §4.5 — алиасы, fallback Steam/GOG на имя, нормализация без транслитерации, порядок при неоднозначности, пометка `game-unmatched` для SPEC-07, API `MatchIndex`; T-05-06: `GameCtx`, глобы, `<home>/AppData`, `Saved Games` и причины пропуска в §4.3, соответствие store → лаунчер в FR-05-05; T-05-05: `enrich_with_registry` в §4.1; T-05-04: условие обнаружения EA, тексты ключей games в T-05-09, детекторы Epic/GOG/Ubisoft/EA/Battle.net/Xbox в §4.1 и §4.4, находки лаунчеров, issue `launcher_file_unreadable` в §5; T-05-02: FR-05-11 ресурс снапшота, варианты `GamesError`, детали `ManifestStore` в §4.1, ключи issue манифеста в §5, встроенный снапшот из `third_party/ludusavi`; T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.1: реестр из sk-core, T-05-04 и T-05-09 зависят от T-02-10; T-05-03: detect_with_issues, SteamDetector, RegistryReader, детали Steam §4.4, ключи issue §5; T-05-01: API разбора манифеста, конкретные типы, параллельный разбор, бенч; §5: манифест с 0 игр; T-04-05: специализация `{STEAM_USERID}` в шаблоне находки, §4.7, §5); 2026-10-02 (§6: пути фикстур `fixtures/samples/...` и 20 игр, как в SPEC-12 §4.3; 2026-10-01: §4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
 
 ## 1. Цель
 
@@ -42,8 +42,8 @@
 - **FR-05-04** — Для остальных игр манифеста проверяются только записи, которые раскрываются без `<base>`/`<game>`/`<storeGameId>` (сохранения в AppData/Documents остаются после удаления игры, и это частый сценарий). Проверка идёт через индекс §4.6, не перебором.
 - **FR-05-05** — Учитываются только записи `when` без ограничений или с `os: windows`. `store` в `when` учитывается, если соответствующий лаунчер есть, либо store не указан. Соответствие store → лаунчер: steam→steam, epic→epic, gog/gogGalaxy→gog, ea/origin→ea, uplay→ubisoft, microsoft→xbox; prime, heroic, legendary, lutris, other и неизвестные — лаунчера нет, условие не выполняется. `os` кроме `windows` (в т.ч. `dos`) — не выполняется.
 - **FR-05-06** — Теги Ludusavi `save` → `Category::GameSave`, `config` → `Category::GameConfig`. Без тегов → `GameSave` с confidence 0.7.
-- **FR-05-07** — Реестровые записи манифеста (`registry:`) → `Target::Registry` (только HKCU. HKLM → issue Info, не сохраняем).
-- **FR-05-08** — Если у игры в манифесте `cloud: { steam: true, ... }`, у находки тег `cloud-steam` (и т.п.). **Находка всё равно создаётся**: облако бывает выключено или неполно. SPEC-09 учитывает это в скоринге.
+- **FR-05-07** — Реестровые записи манифеста (`registry:`) → `Target::Registry` (только HKCU. HKLM → issue Info, не сохраняем). HKCU-записи проверяются и у неустановленных игр (находка с тегом `not-installed`). HKLM: если ключ существует у установленной игры — Info `issue.games.registry_hklm_skipped` {game, key}, source `games`; у неустановленных игр HKLM молча пропускается. Ключи с `<…>`, `*`, `?` пропускаются.
+- **FR-05-08** — Если у игры в манифесте `cloud: { steam: true, ... }`, у находки тег `cloud-steam` (и т.п.). **Находка всё равно создаётся**: облако бывает выключено или неполно. SPEC-09 учитывает это в скоринге. Теги: `cloud-steam`, `cloud-epic`, `cloud-gog`, `cloud-ea` (origin), `cloud-ubisoft` (uplay) — по id лаунчеров, как `cloud-xbox`.
 - **FR-05-09** — Все корни найденных сохранений и каталоги установки игр (`{GAME_DIR}`) попадают в `claimed_paths`. Каталоги установки дополнительно дают находку `Category::Reinstallable` (не выбрана по умолчанию), чтобы UI показал «игра X, 60 ГБ, переустанавливается из Steam».
 - **FR-05-10** — Атрибуция: в UI «О программе», в `report.html` и в `THIRD_PARTY_NOTICES.md` указывается «Game save data: Ludusavi Manifest (MIT, github.com/mtkennerly/ludusavi-manifest) / PCGamingWiki (CC BY-NC-SA 3.0)», со ссылкой на текст лицензии и с пометкой, что встроенный снапшот не изменялся (или перечнем изменений, если он сжат или отфильтрован).
 - **FR-05-11** — Условия CC BY-NC-SA для встроенного снапшота: (1) SaveKeeper распространяется **бесплатно и некоммерчески**; (2) снапшот лежит в бинарнике отдельным ресурсом (zstd-файл, который `build.rs` собирает из `third_party/ludusavi/manifest.yaml`, §4.1) и сохраняет свою лицензию (ShareAlike относится к данным, а не к коду SaveKeeper); (3) атрибуция по FR-05-10. Если проект станет коммерческим, сборка выполняется с `--no-default-features` без фичи `embedded-manifest`, и манифест только скачивается.
@@ -113,7 +113,7 @@ pub struct InstalledGame {
     pub manifest_key: Option<String>,                          // сопоставленное имя в Ludusavi (§4.5)
 }
 
-pub struct GamesCollector { store: ManifestStore }
+pub struct GamesCollector { store: ManifestStore }            // new(store) — реестр SystemRegistry, сеть разрешена; with_registry(Arc<dyn RegistryReader>); with_network(bool) — allow_network для load (§4.7 п.1)
 impl Collector for GamesCollector { /* id() = "games" */ }
 ```
 
@@ -240,14 +240,16 @@ Steam, детали: корень — первый существующий ка
 
 ### 4.7 Алгоритм `GamesCollector::collect`
 1. `manifest = store.load(allow_network = !offline)` (параллельно с фазой Environment через `tokio::spawn` в `sk-engine`).
-2. Для каждой установленной игры (`env.launchers[*].games`): сопоставить (§4.5) → для каждой `files`-записи с учётом `when` → `translate` с `GameCtx { game_dir, store_user_ids, store_game_id }` → `resolve` → существующие пути → Finding. Перед созданием находки мульти-значные токены специализируются, как в SPEC-04 §4.5 и SPEC-02 §3.2: `{STEAM_USERID}` → конкретный id3 (стабилен для аккаунта); `FindingId` считается от специализированного шаблона, поэтому id находок SPEC-04 и SPEC-05 для одного пути совпадают. Каждый аккаунт Steam даёт отдельную находку.
-3. Неустановленные: индекс §4.6 → Finding с тегом `not-installed` (UI: «игра удалена, но сохранения остались»).
+2. Для каждой установленной игры (`env.launchers[*].games`): сопоставить (§4.5) → для каждой `files`-записи с учётом `when` → `translate` с `GameCtx` (§4.3) → `resolve` → существующие пути → Finding. `{GAME_DIR}` в начале шаблона находки заменяется шаблоном каталога установки (`PathTemplate::from_path(install_dir)`, напр. `{STEAM}\steamapps\common\Celeste\Saves`): иначе записи `<base>/…` разных игр дают один `FindingId`, и находка не раскрывается без контекста игры. Перед созданием находки мульти-значные токены специализируются, как в SPEC-04 §4.5 и SPEC-02 §3.2: `{STEAM_USERID}` → конкретный id3 (стабилен для аккаунта); `FindingId` считается от специализированного шаблона, поэтому id находок SPEC-04 и SPEC-05 для одного пути совпадают. Каждый аккаунт Steam даёт отдельную находку.
+3. Неустановленные: индекс §4.6 → Finding с тегом `not-installed` (UI: «игра удалена, но сохранения остались»). Для записей с include-глобами коллектор проверяет, что есть хотя бы один подходящий файл (останов на первом).
 4. `registry`-записи (HKCU) → проверка `registry_exists` → `Target::Registry`.
 5. Группировка: все files-записи одной игры с одинаковым корнем объединяются в один Finding (union include). Разные корни дают разные находки с одним `AppRef`.
 6. `AppRef { id: normalize(key), name: key, kind: Game, source_ids: {ludusavi: key, steam: id?, gog: id?}, installed: Some(bool) }`.
 7. Evidence: `EvidenceSource::Ludusavi { game: key, manifest_version: etag|snapshot_date }`, `message_key: "evidence.ludusavi_match"`, + для установленных `EvidenceSource::Launcher { launcher }`.
-8. `claimed_paths`: корни находок + install dirs + корни лаунчеров (`{STEAM}` целиком, кроме `userdata`, который объясняется SPEC-04).
+8. `claimed_paths`: корни находок + install dirs сопоставленных игр (несопоставленные — нет, §4.5 п. 4) + корни лаунчеров (`{STEAM}` целиком, кроме `userdata`, который объясняется SPEC-04, и `steamapps\common`, где заявляются только каталоги сопоставленных игр).
 9. Title: `"{name} — сохранения"` / `"{name} — настройки"` (i18n `games.title.save` / `games.title.config`).
+10. Evidence и категория: `evidence.ludusavi_match` {game}, confidence = 1.0 (0.7 без тегов) × confidence сопоставления; у установленной игры + `evidence.games.installed` {launcher, name}. Категория группы — `GameSave`, если хоть одна запись save/без тегов; у находок установленной игры — тег id лаунчера. Находка каталога установки: title `{name} — games.title.install_dir`, evidence `evidence.games.install_dir` {launcher, name}, note `games.note.reinstallable`, теги [лаунчер(, `game-unmatched`)]. Аргумент `launcher` переводится через `$t(games.launcher.{{launcher}})`, `reason` в issue лаунчеров — через `$t(issue.games.file_reason.{{reason}})`.
+11. Сбои: ошибка `load`, кроме `Cancelled`, → `Err(CollectorError::Other)`; при отмене вывод пуст.
 
 ### 4.8 Конфигурация
 `games.manifest_url`, `games.auto_update`, `games.update_interval_hours` (SPEC-01 §4.8.2). Флаг `ScanOptions.collectors.games`.
@@ -270,7 +272,7 @@ Steam, детали: корень — первый существующий ка
 | Сохранения внутри каталога игры (`<base>/saves`) | Находка `game_save` внутри `Reinstallable`-находки каталога. SPEC-09 merge не должен поглотить её родителем (правило «Reinstallable не поглощает»). |
 | Одинаковый путь у двух игр (общий движок, `<winDocuments>/My Games`) | Один FindingId → одна находка, два Evidence и `AppRef` первой игры + тег `multi-game`. |
 | Огромные сохранения (> 2 ГБ: симуляторы, Minecraft-миры) | Создаём, скоринг решает про `default_selected` (SPEC-09). |
-| Игра запущена | Тег `app-running` по процессу из `install_dir` (см. SPEC-04 §4.3 process snapshot). |
+| Игра запущена | Тег `app-running` по процессу из `install_dir` (см. SPEC-04 §4.3 process snapshot). **Отложено:** `Environment.running_processes` хранит только имена exe без путей, привязать к `install_dir` нельзя; см. §9. |
 | Манифест содержит путь с `..` | Отбрасываем запись (защита от выхода за корень) + debug-лог. |
 
 Issue Steam: reason ∈ not_found, access_denied, locked, too_large, cloud_only, cancelled, io, invalid, drive_missing; path — `PathTemplate::from_path`; source `games.steam`.
@@ -296,9 +298,11 @@ Issue Steam: reason ∈ not_found, access_denied, locked, too_large, cloud_only,
 - [x] **T-05-06** — `translate` + фильтр `when` + `{GAME_DIR}`. *Зависит:* T-05-01, T-02-03.
 - [x] **T-05-07** — Сопоставление установленных игр с манифестом (§4.5). *Зависит:* T-05-05, T-05-06.
 - [x] **T-05-08** — Индекс якорей для неустановленных игр (§4.6). *Зависит:* T-05-06. *Готово, когда:* тест на счётчик `exists`.
-- [ ] **T-05-09** — `GamesCollector` (§4.7): группировка, реестр, cloud-теги, claimed_paths, Reinstallable-находки каталогов, находки лаунчеров (§4.4); ru/en тексты всех ключей `issue.games.*`, `evidence.games.*`, `games.*` (формат ресурсов как в SPEC-04 T-04-11) с тестом покрытия ключей. *Зависит:* T-05-07, T-05-08, T-01-03, T-02-10.
+- [x] **T-05-09** — `GamesCollector` (§4.7): группировка, реестр, cloud-теги, claimed_paths, Reinstallable-находки каталогов, находки лаунчеров (§4.4); ru/en тексты всех ключей `issue.games.*`, `evidence.games.*`, `games.*` (формат ресурсов как в SPEC-04 T-04-11) с тестом покрытия ключей. *Зависит:* T-05-07, T-05-08, T-01-03, T-02-10.
 - [ ] **T-05-10** — CLI `manifest update` + вывод источника манифеста в `savekeeper-cli env`. *Зависит:* T-05-02, T-01-07.
 - [ ] **T-05-11** — Атрибуция (FR-05-10, FR-05-11): `THIRD_PARTY_NOTICES.md`, строки в i18n «О программе», cargo-фича `embedded-manifest` (включена по умолчанию). Перед первым релизом сверить актуальную лицензию в README `ludusavi-manifest` и зафиксировать её в `THIRD_PARTY_NOTICES.md`. *Зависит:* T-05-02.
+- [ ] **T-05-12** — Регистрация `GamesCollector` в конвейере: `sk-engine` создаёт `ManifestStore` из `Config`/`DataDir` и добавляет коллектор (id `games`, `CollectorToggles.games`), `with_network(!offline)`; `MemRegistry` в тестах через `with_games_registry`; `issues` стора попадают в отчёт. Заголовок находок лаунчеров — `{app.name} — games.title.save`. *Зависит:* T-05-09, T-01-06. *Готово, когда:* `sk-cli scan` на профиле `gamer` выдаёт находки игр, интеграционный тест в `sk-engine`.
+- [ ] **T-05-13** — Глобы Ludusavi по каталогам (`*/saves`, `**/Saved`): include сейчас считает только файлы; сопоставлять глоб с каталогом и включать его содержимое (в `translate` — глоб + `/**`, либо поддержка в `measure`, SPEC-03). Также `{STORE_GAME_ID}`/`{GAME_DIR_NAME}` в шаблонах находок установленных игр подставлять экранированным текстом (как `{GAME_DIR}`, §4.7 п. 2), чтобы `<game>`/`<storeGameId>` разных игр не давали один `FindingId`. *Зависит:* T-05-09.
 
 ## 8. Критерии приёмки
 
@@ -308,6 +312,8 @@ Issue Steam: reason ∈ not_found, access_denied, locked, too_large, cloud_only,
 - [ ] NFR-05-01..03 выполнены.
 
 ## 9. Открытые вопросы
+
+- Тег `app-running` (§5): нужен путь exe в `Environment.running_processes` (SPEC-02 §3.3). До этого не реализуется.
 
 - ~~Лицензирование снапшота~~ **Решено (2026-10-01):** проект некоммерческий, поэтому снапшот встраивается на условиях FR-05-11. Перепроверка текста лицензии входит в T-05-11.
 - ~~**Предложение к SPEC-02 §3.3:** типы `LauncherInfo`, `StoreUser`, `InstalledGame` должны жить в `sk-core` (поле `Environment.launchers`), иначе `sk-core` зависит от `sk-games`. Предлагаю перенести их определения в SPEC-02 §3.3 как есть из §4.1.~~ **Решено: SPEC-02 §3.3** (типы определены в `sk-core::env`, `sk-games` их реэкспортирует).

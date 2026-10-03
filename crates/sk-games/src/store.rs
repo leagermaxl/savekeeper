@@ -203,7 +203,6 @@ impl ManifestStore {
 
     /// Takes the issues collected by [`ManifestStore::load`] and
     /// [`ManifestStore::update`] (for `GamesCollector`, T-05-09).
-    #[cfg_attr(not(test), allow(dead_code))]
     pub(crate) fn take_issues(&self) -> Vec<ScanIssue> {
         std::mem::take(&mut *self.issues.lock().unwrap_or_else(PoisonError::into_inner))
     }
@@ -217,7 +216,7 @@ impl ManifestStore {
         tracing::warn!("ludusavi manifest cache: {reason}");
         self.push_issue(issue(
             IssueSeverity::Warning,
-            "manifest_cache_failed",
+            "issue.games.manifest_cache_failed",
             reason,
         ));
     }
@@ -435,20 +434,30 @@ fn refresh_issue(e: RefreshError) -> ScanIssue {
     match e {
         RefreshError::Offline(reason) => {
             tracing::info!("ludusavi manifest not downloaded: {reason}");
-            issue(IssueSeverity::Info, "manifest_offline", reason)
+            issue(IssueSeverity::Info, "issue.games.manifest_offline", reason)
         }
         RefreshError::Invalid(reason) => {
             tracing::warn!("downloaded ludusavi manifest rejected: {reason}");
-            issue(IssueSeverity::Warning, "manifest_invalid", reason)
+            issue(
+                IssueSeverity::Warning,
+                "issue.games.manifest_invalid",
+                reason,
+            )
         }
         RefreshError::Io(e) => {
             // Only a failed (panicked) parse task gets here.
             tracing::warn!("downloaded ludusavi manifest not processed: {e}");
-            issue(IssueSeverity::Warning, "manifest_invalid", e.to_string())
+            issue(
+                IssueSeverity::Warning,
+                "issue.games.manifest_invalid",
+                e.to_string(),
+            )
         }
-        RefreshError::Cancelled => {
-            issue(IssueSeverity::Info, "manifest_offline", "cancelled".into())
-        }
+        RefreshError::Cancelled => issue(
+            IssueSeverity::Info,
+            "issue.games.manifest_offline",
+            "cancelled".into(),
+        ),
     }
 }
 
@@ -457,7 +466,7 @@ fn issue(severity: IssueSeverity, key: &str, reason: String) -> ScanIssue {
         severity,
         source: ISSUE_SOURCE.to_owned(),
         path: None,
-        message_key: format!("issue.games.{key}"),
+        message_key: key.to_owned(),
         message_args: BTreeMap::from([("reason".to_owned(), reason)]),
     }
 }

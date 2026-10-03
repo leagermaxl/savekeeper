@@ -34,7 +34,6 @@ const UBISOFT_SAVEGAMES_CONFIDENCE: f32 = 0.9;
 /// The launcher findings of `launcher` with the issues met on the way:
 /// `xbox.wgs` for "xbox", `ubisoft.savegames` for "ubisoft" (if
 /// `<root>\savegames` is a folder), nothing for the others. Only reads.
-#[cfg_attr(not(test), allow(dead_code))] // called by GamesCollector (T-05-09)
 pub(crate) fn launcher_findings(
     launcher: &LauncherInfo,
     fs: &dyn FsScanner,
@@ -157,7 +156,7 @@ fn evidence(launcher: &str, key: &str, args: &[(&str, &str)], confidence: f32) -
 
 /// `AppRef` id (SPEC-02 §2.4) of an ASCII name: lowercase, every run of
 /// other characters than `a-z0-9` becomes `-`, trimmed of `-`.
-fn slug(name: &str) -> String {
+pub(crate) fn slug(name: &str) -> String {
     let mut out = String::with_capacity(name.len());
     for c in name.chars().map(|c| c.to_ascii_lowercase()) {
         if c.is_ascii_alphanumeric() {

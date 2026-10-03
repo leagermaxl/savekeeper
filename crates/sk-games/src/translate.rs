@@ -37,7 +37,6 @@ pub(crate) struct GameCtx {
     pub(crate) os_user_name: Option<String>,
 }
 
-#[cfg_attr(not(test), allow(dead_code))] // used by GamesCollector (T-05-07..T-05-09)
 impl GameCtx {
     /// `<game>`: the last component of [`game_dir`](Self::game_dir).
     pub(crate) fn game_dir_name(&self) -> Option<String> {
@@ -128,7 +127,6 @@ const HOME_FOLDERS: [(&[&str], &str); 4] = [
 /// or a drive (`C:`), a root placeholder elsewhere, a `.` or `..` segment
 /// (SPEC-05 §5), a placeholder whose value `ctx` lacks, or a result that is not
 /// a valid template.
-#[cfg_attr(not(test), allow(dead_code))] // used by GamesCollector (T-05-07..T-05-09)
 pub(crate) fn translate(path: &str, ctx: &GameCtx) -> Option<(PathTemplate, Vec<String>)> {
     let normalized = path.replace('\\', "/");
     if normalized.starts_with('/') {

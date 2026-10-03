@@ -2836,8 +2836,10 @@ dependencies = [
 name = "sk-games"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "criterion",
  "globset",
+ "insta",
  "keyvalues-parser",
  "postcard",
  "reqwest",
@@ -2847,6 +2849,7 @@ dependencies = [
  "serde_json",
  "sk-core",
  "sk-scan",
+ "sk-testkit",
  "tempfile",
  "thiserror",
  "time",

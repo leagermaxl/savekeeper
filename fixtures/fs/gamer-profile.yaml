@@ -1,0 +1,120 @@
+# Gamer profile for the games collector (SPEC-05 §6): Steam with two
+# accounts and three games (ELDEN RING, Portal 2, Slay the Spire), Hollow
+# Knight deleted but with saves left in {LOCALLOW}, an Epic game
+# (Satisfactory) and Skyrim saves in Documents without the game. The Epic
+# `.item` holds an absolute path and is added by the test
+# (crates/sk-games/tests/games_collector.rs); without libraryfolders.vdf only
+# the main Steam library is read. Loaded into MemFs by sk_testkit::mem_fixture.
+# Steam accounts: id3 12345678 = id64 76561197972611406,
+# id3 87654321 = id64 76561198047920049.
+launchers:
+  steam: { root: "Program Files (x86)/Steam", users: ["12345678", "87654321"] }
+tree:
+  # --- Steam ---
+  - path: "{STEAM}/steam.exe"
+    size: 4 MiB
+  - path: "{STEAM}/appcache/httpcache/00/0000000000000001"
+    size: 8 KiB
+  - path: "{STEAM}/config/loginusers.vdf"
+    content: |
+      "users"
+      {
+        "76561197972611406"
+        {
+          "AccountName"   "fixture_gamer"
+          "PersonaName"   "Fixture Gamer"
+        }
+        "76561198047920049"
+        {
+          "AccountName"   "fixture_sibling"
+          "PersonaName"   "Sibling"
+        }
+      }
+  - path: "{STEAM}/userdata/12345678/config/localconfig.vdf"
+    size: 24 KiB
+  - path: "{STEAM}/userdata/87654321/config/localconfig.vdf"
+    size: 16 KiB
+  - path: "{STEAM}/steamapps/appmanifest_1245620.acf"
+    content: |
+      "AppState"
+      {
+        "appid"        "1245620"
+        "name"         "ELDEN RING"
+        "installdir"   "ELDEN RING"
+        "SizeOnDisk"   "51352018534"
+      }
+  - path: "{STEAM}/steamapps/appmanifest_620.acf"
+    content: |
+      "AppState"
+      {
+        "appid"        "620"
+        "name"         "Portal 2"
+        "installdir"   "Portal 2"
+        "SizeOnDisk"   "12000000000"
+      }
+  - path: "{STEAM}/steamapps/appmanifest_646570.acf"
+    content: |
+      "AppState"
+      {
+        "appid"        "646570"
+        "name"         "Slay the Spire"
+        "installdir"   "SlayTheSpire"
+        "SizeOnDisk"   "500000000"
+      }
+
+  # --- ELDEN RING: save in Roaming AppData under the Steam id64 ---
+  - path: "{STEAM}/steamapps/common/ELDEN RING/Game/eldenring.exe"
+    size: 2 MiB
+  - path: "{APPDATA}/EldenRing/76561197972611406/ER0000.sl2"
+    size: 27 MiB
+    mtime: "-1d"
+
+  # --- Portal 2: saves in the game folder and Steam Cloud per account ---
+  - path: "{STEAM}/steamapps/common/Portal 2/portal2.exe"
+    size: 1 MiB
+  - path: "{STEAM}/steamapps/common/Portal 2/portal2/SAVE/quick.sav"
+    size: 2 MiB
+    mtime: "-3d"
+  - path: "{STEAM}/steamapps/common/Portal 2/portal2/cfg/config.cfg"
+    size: 4 KiB
+  - path: "{STEAM}/userdata/12345678/620/remote/SAVE/autosave.sav"
+    size: 2 MiB
+  - path: "{STEAM}/userdata/87654321/620/remote/SAVE/autosave.sav"
+    size: 2 MiB
+
+  # --- Slay the Spire: saves and preferences in the game folder ---
+  - path: "{STEAM}/steamapps/common/SlayTheSpire/SlayTheSpire.exe"
+    size: 1 MiB
+  - path: "{STEAM}/steamapps/common/SlayTheSpire/saves/IRONCLAD.autosave"
+    size: 20 KiB
+  - path: "{STEAM}/steamapps/common/SlayTheSpire/preferences/STSPlayer"
+    size: 2 KiB
+
+  # --- Satisfactory from Epic: Unreal Saved folder in Local AppData ---
+  - path: "{PROGRAMFILES}/Epic Games/SatisfactoryEarlyAccess/FactoryGame.exe"
+    size: 1 MiB
+  - path: "{LOCALAPPDATA}/FactoryGame/Saved/SaveGames/76561197972611406/autosave_0.sav"
+    size: 3 MiB
+    mtime: "-2h"
+  - path: "{LOCALAPPDATA}/FactoryGame/Saved/Config/Windows/GameUserSettings.ini"
+    size: 3 KiB
+  - path: "{LOCALAPPDATA}/FactoryGame/Saved/Logs/FactoryGame.log"
+    size: 256 KiB
+
+  # --- Hollow Knight: deleted, saves left in LocalLow (+ HKCU key in the test) ---
+  - path: "{LOCALLOW}/Team Cherry/Hollow Knight/user1.dat"
+    size: 12 KiB
+    mtime: "-30d"
+  - path: "{LOCALLOW}/Team Cherry/Hollow Knight/output_log.txt"
+    size: 30 KiB
+
+  # --- Skyrim Special Edition: not installed, saves in Documents\My Games ---
+  - path: "{DOCUMENTS}/My Games/Skyrim Special Edition/Saves/Save1_Tamriel.ess"
+    size: 6 MiB
+    mtime: "-10d"
+  - path: "{DOCUMENTS}/My Games/Skyrim Special Edition/Skyrim.ini"
+    size: 2 KiB
+
+  # --- Terraria: only a stray file, its manifest folders do not exist ---
+  - path: "{DOCUMENTS}/My Games/Terraria/readme.txt"
+    size: 1 KiB

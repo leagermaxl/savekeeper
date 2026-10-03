@@ -20,5 +20,26 @@
       "duplicate": "the path is listed twice in the config",
       "missing": "the path does not exist (the drive may be disconnected)"
     }
+  },
+  "games": {
+    "manifest_offline": "Could not update the Ludusavi game manifest, the saved copy is used: {{reason}}",
+    "manifest_invalid": "The downloaded Ludusavi game manifest is invalid and was not used: {{reason}}",
+    "manifest_cache_failed": "Could not use the Ludusavi manifest cache, the manifest will be read again next time: {{reason}}",
+    "steam_libraryfolders_unreadable": "Could not read the list of Steam libraries ($t(issue.games.file_reason.{{reason}})), only the main library is checked",
+    "steam_library_unavailable": "A Steam library is unavailable ($t(issue.games.file_reason.{{reason}})), its games are skipped",
+    "steam_appmanifest_unreadable": "Could not read a Steam game manifest ($t(issue.games.file_reason.{{reason}})), the game is skipped",
+    "launcher_file_unreadable": "Could not read a launcher data file ($t(issue.games.file_reason.{{reason}})), the games it lists are skipped",
+    "registry_hklm_skipped": "Registry key {{key}} of “{{game}}” belongs to the whole computer (HKLM) and is not saved",
+    "file_reason": {
+      "not_found": "not found",
+      "access_denied": "access denied",
+      "locked": "the file is in use by another program",
+      "too_large": "the file is too large",
+      "cloud_only": "the file is only in the cloud",
+      "cancelled": "the scan was cancelled",
+      "io": "read error",
+      "invalid": "the file format is not recognized",
+      "drive_missing": "the drive is not connected"
+    }
   }
 }

@@ -1,4 +1,11 @@
 {
   "rule_match": "Известное место хранения данных программы из базы правил",
-  "rule_from_json": "Путь «{{name}}» указан в конфиге программы {{file}}"
+  "rule_from_json": "Путь «{{name}}» указан в конфиге программы {{file}}",
+  "ludusavi_match": "Место сохранений игры «{{game}}» из манифеста Ludusavi (данные PCGamingWiki)",
+  "games": {
+    "installed": "Игра «{{name}}» установлена через $t(games.launcher.{{launcher}})",
+    "install_dir": "Каталог установки игры «{{name}}»: её можно заново установить из $t(games.launcher.{{launcher}})",
+    "xbox_wgs": "Сохранения игры Xbox / Microsoft Store из пакета {{package}}",
+    "ubisoft_savegames": "Локальные сохранения игр Ubisoft Connect"
+  }
 }

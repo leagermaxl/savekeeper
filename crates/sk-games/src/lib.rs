@@ -1,6 +1,7 @@
 //! Game save discovery: Ludusavi manifest and launchers (SPEC-05).
 
 mod anchors;
+mod collector;
 mod embedded;
 mod error;
 pub mod launchers;
@@ -10,6 +11,7 @@ mod store;
 mod translate;
 mod when;
 
+pub use collector::GamesCollector;
 pub use error::GamesError;
 pub use launchers::{
     enrich, enrich_with_registry, BattleNetDetector, EaDetector, EpicDetector, GogDetector,

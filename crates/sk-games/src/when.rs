@@ -11,7 +11,6 @@ use crate::manifest::{Os, Store, When};
 /// must match. An item matches when its `os` is missing or `windows`, and its
 /// `store` is missing or its launcher (see [`store_launcher`]) is among
 /// `launchers`.
-#[cfg_attr(not(test), allow(dead_code))] // used by GamesCollector (T-05-07..T-05-09)
 pub(crate) fn when_applies(when: &[When], launchers: &[LauncherInfo]) -> bool {
     when.is_empty()
         || when.iter().any(|item| {

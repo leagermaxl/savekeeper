@@ -67,7 +67,6 @@ pub(crate) struct MatchIndex {
     dirs: HashMap<String, Vec<usize>>,
 }
 
-#[cfg_attr(not(test), allow(dead_code))] // used by GamesCollector (T-05-09)
 impl MatchIndex {
     /// Builds the tables of `manifest`.
     ///
@@ -172,6 +171,7 @@ impl MatchIndex {
     }
 
     /// Sets `manifest_key` of every game of `launchers` to its match (or `None`).
+    #[cfg_attr(not(test), allow(dead_code))] // GamesCollector matches each game itself
     pub(crate) fn annotate(&self, launchers: &mut [LauncherInfo]) {
         for launcher in launchers {
             for game in &mut launcher.games {

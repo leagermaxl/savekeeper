@@ -78,7 +78,6 @@ pub(crate) struct AnchorIndex {
     bases: BTreeMap<String, Base>,
 }
 
-#[cfg_attr(not(test), allow(dead_code))] // used by GamesCollector (T-05-09)
 impl AnchorIndex {
     /// Indexes the `files` entries of `manifest` that a game which is not
     /// installed can have (FR-05-04, FR-05-05).
@@ -187,6 +186,7 @@ impl AnchorIndex {
     /// "Wide" entries: the first segment after the root is a glob
     /// (`<winAppData>/*/Saves`), so they have no anchor. They are checked only
     /// for installed games, like every entry of an installed game (§4.7 step 2).
+    #[cfg_attr(not(test), allow(dead_code))] // GamesCollector checks every entry of an installed game
     pub(crate) fn wide(&self) -> impl Iterator<Item = &AnchoredRule> {
         self.wide.iter().filter_map(|&entry| self.rules.get(entry))
     }
