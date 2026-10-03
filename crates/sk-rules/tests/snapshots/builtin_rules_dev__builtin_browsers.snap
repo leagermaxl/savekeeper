@@ -1,0 +1,409 @@
+---
+source: crates/sk-rules/tests/builtin_rules_dev.rs
+expression: snapshot(&out)
+---
+{
+  "claimed_paths": [
+    "[root]/Users/user/AppData/Local/Google/Chrome/User Data",
+    "[root]/Users/user/AppData/Local/Google/Chrome/User Data/Default/Cache",
+    "[root]/Users/user/AppData/Local/Google/Chrome/User Data/Profile 1/Cache",
+    "[root]/Users/user/AppData/Local/Google/Chrome/User Data/Default/Code Cache",
+    "[root]/Users/user/AppData/Local/Google/Chrome/User Data/Default/GPUCache",
+    "[root]/Users/user/AppData/Local/Google/Chrome/User Data/Default/Service Worker/CacheStorage",
+    "[root]/Users/user/AppData/Local/Microsoft/Edge/User Data",
+    "[root]/Users/user/AppData/Local/Microsoft/Edge/User Data/Default/Cache",
+    "[root]/Users/user/AppData/Roaming/Mozilla/Firefox",
+    "[root]/Users/user/AppData/Local/Mozilla/Firefox/Profiles",
+    "[root]/Users/user/AppData/Roaming/Opera Software/Opera Stable",
+    "[root]/Users/user/AppData/Roaming/Opera Software/Opera GX Stable",
+    "[root]/Users/user/AppData/Roaming/Opera Software/Opera GX Stable/Default/Cache",
+    "[root]/Users/user/AppData/Local/Opera Software",
+    "[root]/Users/user/AppData/Roaming/Thunderbird",
+    "[root]/Users/user/AppData/Local/Thunderbird",
+    "[root]/Users/user/AppData/Local/Yandex/YandexBrowser/User Data",
+    "[root]/Users/user/AppData/Local/Yandex/YandexBrowser/User Data/Default/Cache"
+  ],
+  "findings": [
+    {
+      "app": {
+        "id": "chrome",
+        "installed": null,
+        "kind": "application",
+        "name": "Google Chrome",
+        "process_names": [
+          "chrome.exe"
+        ],
+        "source_ids": {
+          "winget": "Google.Chrome"
+        }
+      },
+      "category": "app_data",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "chrome.profiles"
+          }
+        }
+      ],
+      "id": "5f3ecc5a3bc3246c",
+      "notes_key": "rules.chrome.notes",
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "high",
+      "stats": null,
+      "tags": [
+        "app-running"
+      ],
+      "target": {
+        "exclude": [],
+        "include": [
+          "*/Bookmarks",
+          "*/Preferences",
+          "*/Secure Preferences",
+          "*/Extensions/**",
+          "*/Local Extension Settings/**",
+          "*/Login Data*",
+          "*/Web Data",
+          "*/History",
+          "Local State"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Local/Google/Chrome/User Data",
+        "root": "{LOCALAPPDATA}\\Google\\Chrome\\User Data"
+      },
+      "title": "rules.chrome.profiles"
+    },
+    {
+      "app": {
+        "id": "edge",
+        "installed": null,
+        "kind": "application",
+        "name": "Microsoft Edge",
+        "process_names": [
+          "msedge.exe"
+        ],
+        "source_ids": {
+          "winget": "Microsoft.Edge"
+        }
+      },
+      "category": "app_data",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "edge.profiles"
+          }
+        }
+      ],
+      "id": "db7c577178236838",
+      "notes_key": "rules.edge.notes",
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "high",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [
+          "*/Bookmarks",
+          "*/Preferences",
+          "*/Secure Preferences",
+          "*/Extensions/**",
+          "*/Local Extension Settings/**",
+          "*/Login Data*",
+          "*/Web Data",
+          "*/History",
+          "Local State"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Local/Microsoft/Edge/User Data",
+        "root": "{LOCALAPPDATA}\\Microsoft\\Edge\\User Data"
+      },
+      "title": "rules.edge.profiles"
+    },
+    {
+      "app": {
+        "id": "firefox",
+        "installed": null,
+        "kind": "application",
+        "name": "Mozilla Firefox",
+        "process_names": [
+          "firefox.exe"
+        ],
+        "source_ids": {
+          "winget": "Mozilla.Firefox"
+        }
+      },
+      "category": "app_data",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "firefox.profiles"
+          }
+        }
+      ],
+      "id": "1a3f9ccb71518c57",
+      "notes_key": "rules.firefox.notes",
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "high",
+      "stats": null,
+      "tags": [
+        "app-running"
+      ],
+      "target": {
+        "exclude": [],
+        "include": [
+          "profiles.ini",
+          "Profiles/*/{places.sqlite,key4.db,logins.json,cert9.db,prefs.js,user.js,extensions/**,chrome/**,containers.json,handlers.json,sessionstore*,sessionstore-backups/**}"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/Mozilla/Firefox",
+        "root": "{APPDATA}\\Mozilla\\Firefox"
+      },
+      "title": "rules.firefox.profiles"
+    },
+    {
+      "app": {
+        "id": "opera",
+        "installed": null,
+        "kind": "application",
+        "name": "Opera",
+        "process_names": [
+          "opera.exe"
+        ],
+        "source_ids": {}
+      },
+      "category": "app_data",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "opera.profiles"
+          }
+        }
+      ],
+      "id": "40c82425ea936731",
+      "notes_key": "rules.opera.notes",
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "high",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [
+          "Bookmarks",
+          "Preferences",
+          "Secure Preferences",
+          "Extensions/**",
+          "Local Extension Settings/**",
+          "Login Data*",
+          "Web Data",
+          "History",
+          "Local State",
+          "*/Bookmarks",
+          "*/Preferences",
+          "*/Secure Preferences",
+          "*/Extensions/**",
+          "*/Local Extension Settings/**",
+          "*/Login Data*",
+          "*/Web Data",
+          "*/History"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/Opera Software/Opera Stable",
+        "root": "{APPDATA}\\Opera Software\\Opera Stable"
+      },
+      "title": "rules.opera.profiles — rules.opera.label_stable"
+    },
+    {
+      "app": {
+        "id": "opera",
+        "installed": null,
+        "kind": "application",
+        "name": "Opera",
+        "process_names": [
+          "opera.exe"
+        ],
+        "source_ids": {}
+      },
+      "category": "app_data",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "opera.profiles"
+          }
+        }
+      ],
+      "id": "8c5537ff3028d9d7",
+      "notes_key": "rules.opera.notes",
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "high",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [
+          "Bookmarks",
+          "Preferences",
+          "Secure Preferences",
+          "Extensions/**",
+          "Local Extension Settings/**",
+          "Login Data*",
+          "Web Data",
+          "History",
+          "Local State",
+          "*/Bookmarks",
+          "*/Preferences",
+          "*/Secure Preferences",
+          "*/Extensions/**",
+          "*/Local Extension Settings/**",
+          "*/Login Data*",
+          "*/Web Data",
+          "*/History"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/Opera Software/Opera GX Stable",
+        "root": "{APPDATA}\\Opera Software\\Opera GX Stable"
+      },
+      "title": "rules.opera.profiles — rules.opera.label_gx"
+    },
+    {
+      "app": {
+        "id": "thunderbird",
+        "installed": null,
+        "kind": "application",
+        "name": "Mozilla Thunderbird",
+        "process_names": [
+          "thunderbird.exe"
+        ],
+        "source_ids": {
+          "winget": "Mozilla.Thunderbird"
+        }
+      },
+      "category": "app_data",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "thunderbird.profiles"
+          }
+        }
+      ],
+      "id": "978542335d7360d1",
+      "notes_key": "rules.thunderbird.notes",
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "high",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [
+          "**/cache2/**"
+        ],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/Thunderbird",
+        "root": "{APPDATA}\\Thunderbird"
+      },
+      "title": "rules.thunderbird.profiles"
+    },
+    {
+      "app": {
+        "id": "yandex",
+        "installed": null,
+        "kind": "application",
+        "name": "Yandex Browser",
+        "process_names": [
+          "browser.exe"
+        ],
+        "source_ids": {
+          "winget": "Yandex.Browser"
+        }
+      },
+      "category": "app_data",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "yandex.profiles"
+          }
+        }
+      ],
+      "id": "f63ef811ee939b02",
+      "notes_key": "rules.yandex.notes",
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "high",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [
+          "*/Bookmarks",
+          "*/Preferences",
+          "*/Secure Preferences",
+          "*/Extensions/**",
+          "*/Local Extension Settings/**",
+          "*/Login Data*",
+          "*/Ya Passman Data*",
+          "*/Web Data",
+          "*/History",
+          "Local State"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Local/Yandex/YandexBrowser/User Data",
+        "root": "{LOCALAPPDATA}\\Yandex\\YandexBrowser\\User Data"
+      },
+      "title": "rules.yandex.profiles"
+    }
+  ],
+  "issues": []
+}

@@ -6,19 +6,16 @@
 // Helpers outside `#[test]` functions are not covered by `allow-unwrap-in-tests`.
 #![allow(clippy::unwrap_used)]
 
-use std::collections::BTreeSet;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
+mod common;
 
-use serde_json::{json, Value};
-use sk_core::collector::{CollectContext, CollectOutput, Collector};
-use sk_core::config::Config;
+use std::collections::BTreeSet;
+
+use common::{finding_rules, findings_of, load_file, measure_finding, root, s, snapshot, under};
+use sk_core::collector::CollectOutput;
 use sk_core::env::{Environment, KnownFolder};
-use sk_core::model::{EvidenceSource, RegHive, Target};
-use sk_core::CancellationToken;
-use sk_rules::{MemRegistry, RuleSet, RuleSource, RulesCollector};
-use sk_scan::{measure, DirStatsCache, ExcludeSet, MeasureOptions, MemFs};
-use tokio::sync::mpsc::unbounded_channel;
+use sk_core::model::{RegHive, Target};
+use sk_rules::{MemRegistry, RuleSet, RuleSource};
+use sk_scan::MemFs;
 
 /// The rule files of this task with the ids of their rules (SPEC-04 §4.7.3–§4.7.7).
 const GROUPS: [(&str, &str, &[&str]); 5] = [
@@ -125,20 +122,6 @@ const WITH_FINDINGS: &[&str] = &[
     "windows.sticky-notes",
 ];
 
-fn root() -> PathBuf {
-    PathBuf::from(if cfg!(windows) { r"C:\fake" } else { "/fake" })
-}
-
-/// Absolute path of `rel` (`/`-separated) under a known folder of `env`.
-fn under(env: &Environment, folder: KnownFolder, rel: &str) -> PathBuf {
-    let base = env.known_folder(folder).unwrap().to_path_buf();
-    rel.split('/').fold(base, |p, c| p.join(c))
-}
-
-fn s(path: &Path) -> String {
-    path.to_string_lossy().into_owned()
-}
-
 /// The fixture plus what it cannot describe: the Obsidian config with the
 /// absolute path of its vault, the Store packages, running processes and the
 /// registry keys of MPC-HC and 7-Zip.
@@ -169,46 +152,10 @@ fn setup() -> (MemFs, Environment, MemRegistry) {
     (fs, env, registry)
 }
 
-/// Replaces the fake root at the start of every string with `[root]` and
-/// makes the rest `/`-separated, so the snapshot is the same on every OS.
-fn redact(value: &mut Value, root: &str) {
-    match value {
-        Value::String(s) => {
-            if let Some(rest) = s.strip_prefix(root) {
-                *s = format!("[root]{}", rest.replace('\\', "/"));
-            }
-        }
-        Value::Array(items) => items.iter_mut().for_each(|v| redact(v, root)),
-        Value::Object(map) => map.values_mut().for_each(|v| redact(v, root)),
-        _ => {}
-    }
-}
-
 /// Runs `set` through `RulesCollector` on the fixture.
 async fn collect(set: RuleSet) -> CollectOutput {
     let (fs, env, registry) = setup();
-    let (events, _rx) = unbounded_channel();
-    let ctx = CollectContext {
-        env: Arc::new(env),
-        config: Arc::new(Config::default()),
-        scanner: Arc::new(fs),
-        events,
-        cancel: CancellationToken::new(),
-    };
-    let collector = RulesCollector::new(Arc::new(set)).with_registry(Arc::new(registry));
-    collector.collect(&ctx).await.unwrap()
-}
-
-/// Ids of the rules behind the findings.
-fn finding_rules(out: &CollectOutput) -> BTreeSet<String> {
-    out.findings
-        .iter()
-        .flat_map(|f| &f.evidence)
-        .filter_map(|e| match &e.source {
-            EvidenceSource::Rule { rule_id } => Some(rule_id.clone()),
-            _ => None,
-        })
-        .collect()
+    common::collect(set, fs, env, registry).await
 }
 
 /// Every rule of §4.7.3–§4.7.7 is built in, from its file.
@@ -268,32 +215,16 @@ async fn builtin_set_on_profile_apps() {
 async fn builtin_file_sets_pick_their_files() {
     let out = collect(RuleSet::builtin().unwrap()).await;
     let (fs, env, _) = setup();
-    let mut opts = MeasureOptions::new(Arc::new(ExcludeSet::builtin(&env)), 64);
-    opts.include_excluded = true;
-    opts.probe_locks = false;
-    let cache = DirStatsCache::new();
-    let cancel = CancellationToken::new();
 
     let cases = [
         ("windows.powertoys", 4, (2 + 3 + 1 + 1) * 1024),
         ("windows.sticky-notes", 3, (96 + 32 + 32) * 1024),
     ];
     for (rule, files, bytes) in cases {
-        let finding = out
-            .findings
-            .iter()
-            .find(|f| {
-                f.evidence.iter().any(
-                    |e| matches!(&e.source, EvidenceSource::Rule { rule_id } if rule_id == rule),
-                )
-            })
-            .unwrap();
+        let finding = findings_of(&out, rule)[0];
         assert!(matches!(finding.target, Target::FileSet { .. }), "{rule}");
-        let stats = measure(&fs, &finding.target, &cache, &opts, &cancel)
-            .unwrap()
-            .unwrap();
         assert_eq!(
-            (stats.file_count, stats.total_bytes),
+            measure_finding(&fs, &env, finding),
             (files, bytes),
             "{rule}"
         );
@@ -305,23 +236,14 @@ async fn builtin_file_sets_pick_their_files() {
 #[tokio::test]
 async fn builtin_groups_snapshots() {
     for (file, text, ids) in GROUPS {
-        let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join(file), text).unwrap();
-        let (set, issues) = RuleSet::load(false, Some(dir.path()));
-        assert_eq!(issues, vec![], "{file}");
+        let set = load_file(file, text);
         assert_eq!(set.len(), ids.len(), "{file}");
 
         let out = collect(set).await;
-        let mut snapshot = json!({
-            "findings": out.findings,
-            "claimed_paths": out.claimed_paths,
-            "issues": out.issues,
-        });
-        redact(&mut snapshot, &root().to_string_lossy());
         let name = format!(
             "builtin_{}",
             file.trim_end_matches(".yaml").replace('-', "_")
         );
-        insta::assert_json_snapshot!(name, snapshot);
+        insta::assert_json_snapshot!(name, snapshot(&out));
     }
 }

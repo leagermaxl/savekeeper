@@ -1,0 +1,1059 @@
+---
+source: crates/sk-rules/tests/builtin_rules_dev.rs
+expression: snapshot(&out)
+---
+{
+  "claimed_paths": [
+    "[root]/Users/user/.aws",
+    "[root]/Users/user/.cargo/config.toml",
+    "[root]/Users/user/.cargo/credentials.toml",
+    "[root]/Users/user/AppData/Roaming/Cursor/User",
+    "[root]/Users/user/AppData/Roaming/Cursor/Cache",
+    "[root]/Users/user/AppData/Roaming/Cursor/CachedData",
+    "[root]/Users/user/AppData/Roaming/Cursor/User/workspaceStorage",
+    "[root]/Users/user/AppData/Roaming/DBeaverData/workspace6/General/.dbeaver",
+    "[root]/Users/user/.docker/config.json",
+    "[root]/Users/user/.gitconfig",
+    "[root]/Users/user/.config/git",
+    "[root]/Users/user/AppData/Roaming/JetBrains/IntelliJIdea2024.3",
+    "[root]/Users/user/AppData/Roaming/JetBrains/PyCharm2024.2",
+    "[root]/Users/user/AppData/Roaming/JetBrains/Rider2025.1",
+    "[root]/Users/user/AppData/Local/JetBrains",
+    "[root]/Users/user/.kube/config",
+    "[root]/Users/user/.npmrc",
+    "[root]/Users/user/Documents/PowerShell",
+    "[root]/Users/user/.ssh",
+    "[root]/Users/user/Unity/Space Game",
+    "[root]/Users/user/AppData/Roaming/UnityHub/projects-v1.json",
+    "[root]/Users/user/AppData/Local/Microsoft/VisualStudio/17.0_1a2b3c4d",
+    "[root]/Users/user/.vscode/extensions/extensions.json",
+    "[root]/Users/user/AppData/Roaming/Code/User",
+    "[root]/Users/user/AppData/Roaming/Code/Cache",
+    "[root]/Users/user/AppData/Roaming/Code/CachedData",
+    "[root]/Users/user/AppData/Roaming/Code/User/workspaceStorage",
+    "[root]/Users/user/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState",
+    "[root]/Users/user/AppData/Roaming/WinSCP.ini"
+  ],
+  "findings": [
+    {
+      "app": {
+        "id": "aws",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "AWS CLI",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Amazon.AWSCLI"
+        }
+      },
+      "category": "credentials",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "aws.config"
+          }
+        }
+      ],
+      "id": "f9819b2f1eab8d73",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "high",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/.aws",
+        "root": "{HOME}\\.aws"
+      },
+      "title": "rules.aws.config"
+    },
+    {
+      "app": {
+        "id": "cargo",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "Cargo",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "dev_environment",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "cargo.config"
+          }
+        }
+      ],
+      "id": "7684b5afd4a13415",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "kind": "file",
+        "path": "{HOME}\\.cargo\\config.toml",
+        "resolved": "[root]/Users/user/.cargo/config.toml"
+      },
+      "title": "rules.cargo.config — rules.cargo.label_config"
+    },
+    {
+      "app": {
+        "id": "cargo",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "Cargo",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "credentials",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "cargo.config"
+          }
+        }
+      ],
+      "id": "9f5d3c3a9d77899f",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "high",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "kind": "file",
+        "path": "{HOME}\\.cargo\\credentials.toml",
+        "resolved": "[root]/Users/user/.cargo/credentials.toml"
+      },
+      "title": "rules.cargo.config — rules.cargo.label_credentials"
+    },
+    {
+      "app": {
+        "id": "cursor",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "Cursor",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Anysphere.Cursor"
+        }
+      },
+      "category": "dev_environment",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "cursor.user-settings"
+          }
+        }
+      ],
+      "id": "ab53c6a9c2d9015a",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [
+        "ide"
+      ],
+      "target": {
+        "exclude": [
+          "workspaceStorage/**",
+          "History/**",
+          "globalStorage/**/*.vsix"
+        ],
+        "include": [
+          "settings.json",
+          "keybindings.json",
+          "snippets/**",
+          "profiles/**",
+          "tasks.json"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/Cursor/User",
+        "root": "{APPDATA}\\Cursor\\User"
+      },
+      "title": "rules.cursor.user_settings"
+    },
+    {
+      "app": {
+        "id": "dbeaver",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "DBeaver",
+        "process_names": [],
+        "source_ids": {
+          "winget": "dbeaver.dbeaver"
+        }
+      },
+      "category": "dev_environment",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "dbeaver.config"
+          }
+        }
+      ],
+      "id": "1373624da2b07de6",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "high",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/DBeaverData/workspace6/General/.dbeaver",
+        "root": "{APPDATA}\\DBeaverData\\workspace6\\General\\.dbeaver"
+      },
+      "title": "rules.dbeaver.config"
+    },
+    {
+      "app": {
+        "id": "docker",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "Docker",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Docker.DockerDesktop"
+        }
+      },
+      "category": "dev_environment",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "docker.config"
+          }
+        }
+      ],
+      "id": "e465f09ee2bd0425",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "high",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "kind": "file",
+        "path": "{HOME}\\.docker\\config.json",
+        "resolved": "[root]/Users/user/.docker/config.json"
+      },
+      "title": "rules.docker.config"
+    },
+    {
+      "app": {
+        "id": "git",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "Git",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Git.Git"
+        }
+      },
+      "category": "dev_environment",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "git.config"
+          }
+        }
+      ],
+      "id": "eb15fece43024a3a",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "kind": "file",
+        "path": "{HOME}\\.gitconfig",
+        "resolved": "[root]/Users/user/.gitconfig"
+      },
+      "title": "rules.git.config — rules.git.label_gitconfig"
+    },
+    {
+      "app": {
+        "id": "git",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "Git",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Git.Git"
+        }
+      },
+      "category": "dev_environment",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "git.config"
+          }
+        }
+      ],
+      "id": "db29517975345bea",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/.config/git",
+        "root": "{HOME}\\.config\\git"
+      },
+      "title": "rules.git.config — rules.git.label_xdg_config"
+    },
+    {
+      "app": {
+        "id": "jetbrains",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "JetBrains IDEs",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "dev_environment",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "jetbrains.config"
+          }
+        }
+      ],
+      "id": "abcd85ffc7057596",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [
+        "ide"
+      ],
+      "target": {
+        "exclude": [],
+        "include": [
+          "options/**",
+          "keymaps/**",
+          "codestyles/**",
+          "templates/**",
+          "colors/**",
+          "*.key"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/JetBrains/IntelliJIdea2024.3",
+        "root": "{APPDATA}\\JetBrains\\IntelliJIdea2024.3"
+      },
+      "title": "rules.jetbrains.config"
+    },
+    {
+      "app": {
+        "id": "jetbrains",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "JetBrains IDEs",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "dev_environment",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "jetbrains.config"
+          }
+        }
+      ],
+      "id": "cab89529dfa8f775",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [
+        "ide"
+      ],
+      "target": {
+        "exclude": [],
+        "include": [
+          "options/**",
+          "keymaps/**",
+          "codestyles/**",
+          "templates/**",
+          "colors/**",
+          "*.key"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/JetBrains/PyCharm2024.2",
+        "root": "{APPDATA}\\JetBrains\\PyCharm2024.2"
+      },
+      "title": "rules.jetbrains.config"
+    },
+    {
+      "app": {
+        "id": "jetbrains",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "JetBrains IDEs",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "dev_environment",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "jetbrains.config"
+          }
+        }
+      ],
+      "id": "83211286112bffad",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [
+        "ide"
+      ],
+      "target": {
+        "exclude": [],
+        "include": [
+          "options/**",
+          "keymaps/**",
+          "codestyles/**",
+          "templates/**",
+          "colors/**",
+          "*.key"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/JetBrains/Rider2025.1",
+        "root": "{APPDATA}\\JetBrains\\Rider2025.1"
+      },
+      "title": "rules.jetbrains.config"
+    },
+    {
+      "app": {
+        "id": "kube",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "kubectl",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Kubernetes.kubectl"
+        }
+      },
+      "category": "credentials",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "kube.config"
+          }
+        }
+      ],
+      "id": "9b4fc7c831838870",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "high",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "kind": "file",
+        "path": "{HOME}\\.kube\\config",
+        "resolved": "[root]/Users/user/.kube/config"
+      },
+      "title": "rules.kube.config"
+    },
+    {
+      "app": {
+        "id": "npm",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "npm",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "dev_environment",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "npm.config"
+          }
+        }
+      ],
+      "id": "986c4ad652d40410",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "high",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "kind": "file",
+        "path": "{HOME}\\.npmrc",
+        "resolved": "[root]/Users/user/.npmrc"
+      },
+      "title": "rules.npm.config"
+    },
+    {
+      "app": {
+        "id": "powershell",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "PowerShell",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "dev_environment",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "powershell.profile"
+          }
+        }
+      ],
+      "id": "39ce24e876003348",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [
+          "*profile*.ps1",
+          "Modules/**"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/Documents/PowerShell",
+        "root": "{DOCUMENTS}\\PowerShell"
+      },
+      "title": "rules.powershell.profile — rules.powershell.label_core"
+    },
+    {
+      "app": {
+        "id": "putty",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "PuTTY",
+        "process_names": [],
+        "source_ids": {
+          "winget": "PuTTY.PuTTY"
+        }
+      },
+      "category": "dev_environment",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "putty.sessions"
+          }
+        }
+      ],
+      "id": "050c4681d3ca2c8d",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "hive": "hkcu",
+        "key": "Software\\SimonTatham\\PuTTY",
+        "kind": "registry",
+        "recursive": true
+      },
+      "title": "rules.putty.sessions — rules.putty.label_registry"
+    },
+    {
+      "app": {
+        "id": "ssh",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "OpenSSH",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "credentials",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "ssh.keys"
+          }
+        }
+      ],
+      "id": "6dd66f49b1b8c4af",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "high",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/.ssh",
+        "root": "{HOME}\\.ssh"
+      },
+      "title": "rules.ssh.keys"
+    },
+    {
+      "app": {
+        "id": "unityhub",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "Unity Hub",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Unity.UnityHub"
+        }
+      },
+      "category": "user_files",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {
+            "file": "{APPDATA}\\UnityHub\\projects-v1.json",
+            "name": "Space Game",
+            "select": "/data/*/path"
+          },
+          "message_key": "evidence.rule_from_json",
+          "source": {
+            "kind": "rule",
+            "rule_id": "unityhub.projects"
+          }
+        }
+      ],
+      "id": "275dd1c8c7e8caf7",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [
+        "project"
+      ],
+      "target": {
+        "exclude": [
+          "Library/**",
+          "Temp/**",
+          "Logs/**",
+          "obj/**"
+        ],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/Unity/Space Game",
+        "root": "{HOME}\\Unity\\Space Game"
+      },
+      "title": "rules.unityhub.projects"
+    },
+    {
+      "app": {
+        "id": "visualstudio",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "Visual Studio",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "dev_environment",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "visualstudio.settings"
+          }
+        }
+      ],
+      "id": "6e6bfd6fb7faefd9",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [
+        "ide"
+      ],
+      "target": {
+        "exclude": [],
+        "include": [
+          "Settings/**",
+          "*.vssettings"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Local/Microsoft/VisualStudio/17.0_1a2b3c4d",
+        "root": "{LOCALAPPDATA}\\Microsoft\\VisualStudio\\17.0_1a2b3c4d"
+      },
+      "title": "rules.visualstudio.settings"
+    },
+    {
+      "app": {
+        "id": "vscode",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "Visual Studio Code",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Microsoft.VisualStudioCode"
+        }
+      },
+      "category": "dev_environment",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "vscode.extensions-list"
+          }
+        }
+      ],
+      "id": "fec220eb3bf23ae0",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [
+        "ide"
+      ],
+      "target": {
+        "kind": "file",
+        "path": "{HOME}\\.vscode\\extensions\\extensions.json",
+        "resolved": "[root]/Users/user/.vscode/extensions/extensions.json"
+      },
+      "title": "rules.vscode.extensions_list"
+    },
+    {
+      "app": {
+        "id": "vscode",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "Visual Studio Code",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Microsoft.VisualStudioCode"
+        }
+      },
+      "category": "dev_environment",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.949999988079071,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "vscode.user-settings"
+          }
+        }
+      ],
+      "id": "70cc5018ff2f7df3",
+      "notes_key": "rules.vscode.notes",
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [
+        "ide"
+      ],
+      "target": {
+        "exclude": [
+          "workspaceStorage/**",
+          "History/**",
+          "globalStorage/**/*.vsix"
+        ],
+        "include": [
+          "settings.json",
+          "keybindings.json",
+          "snippets/**",
+          "profiles/**",
+          "tasks.json"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/Code/User",
+        "root": "{APPDATA}\\Code\\User"
+      },
+      "title": "rules.vscode.user_settings — rules.vscode.label_settings"
+    },
+    {
+      "app": {
+        "id": "vscode",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "Visual Studio Code",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Microsoft.VisualStudioCode"
+        }
+      },
+      "category": "dev_environment",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.949999988079071,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "vscode.user-settings"
+          }
+        }
+      ],
+      "id": "164646077ab6aaa4",
+      "notes_key": "rules.vscode.notes",
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [
+        "ide"
+      ],
+      "target": {
+        "hive": "hkcu",
+        "key": "Software\\Classes\\vscode",
+        "kind": "registry",
+        "recursive": true
+      },
+      "title": "rules.vscode.user_settings — rules.vscode.label_protocol"
+    },
+    {
+      "app": {
+        "id": "windows-terminal",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "Windows Terminal",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Microsoft.WindowsTerminal"
+        }
+      },
+      "category": "dev_environment",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "windows-terminal.settings"
+          }
+        }
+      ],
+      "id": "a46ef823ea2de0a5",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [
+          "settings.json",
+          "state.json"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState",
+        "root": "{PACKAGE:Microsoft.WindowsTerminal}\\LocalState"
+      },
+      "title": "rules.windows_terminal.settings — rules.windows_terminal.label_release"
+    },
+    {
+      "app": {
+        "id": "winscp",
+        "installed": null,
+        "kind": "dev_tool",
+        "name": "WinSCP",
+        "process_names": [],
+        "source_ids": {
+          "winget": "WinSCP.WinSCP"
+        }
+      },
+      "category": "dev_environment",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "winscp.config"
+          }
+        }
+      ],
+      "id": "86a763f9144cfa0e",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "high",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "kind": "file",
+        "path": "{APPDATA}\\WinSCP.ini",
+        "resolved": "[root]/Users/user/AppData/Roaming/WinSCP.ini"
+      },
+      "title": "rules.winscp.config — rules.winscp.label_ini"
+    }
+  ],
+  "issues": [
+    {
+      "message_args": {
+        "path": "{HOME}\\Unity\\Deleted Project",
+        "reason": "missing",
+        "rule_id": "unityhub.projects"
+      },
+      "message_key": "issue.rules.from_json_skipped",
+      "path": "{HOME}\\Unity\\Deleted Project",
+      "severity": "info",
+      "source": "rules"
+    }
+  ]
+}

@@ -2,8 +2,9 @@
 //! (SPEC-04 §6, T-04-05, T-04-06): VS Code, Chrome with two profiles, Firefox, SSH,
 //! OBS Studio and Telegram, through conditions and target expansion.
 //!
-//! The rules mirror the starting base (SPEC-04 §4.7) and live here until the
-//! built-in YAML files exist (T-04-07, T-04-08).
+//! The rules are a fixed sketch of the starting base (SPEC-04 §4.7), so this
+//! engine snapshot does not change with the built-in files; those are tested
+//! in `builtin_rules.rs` and `builtin_rules_dev.rs`.
 
 use std::path::PathBuf;
 use std::sync::Arc;

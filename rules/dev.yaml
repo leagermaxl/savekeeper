@@ -1,0 +1,251 @@
+# Developer environment (SPEC-04 §4.7.2): keys and tokens, git, editors and
+# IDEs, terminals and shells, package managers, cloud CLIs, SSH/SFTP clients,
+# database tools and Unity Hub projects. Files with keys or tokens are
+# sensitive; private keys and cloud credentials are `credentials`.
+schema_version: 1
+rules:
+  - id: ssh.keys
+    app: { id: ssh, name: OpenSSH, kind: dev_tool }
+    category: credentials
+    sensitivity: high
+    title_key: rules.ssh.keys
+    targets:
+      - path: "{HOME}\\.ssh"
+
+  - id: git.config
+    app: { id: git, name: Git, kind: dev_tool, winget: Git.Git }
+    category: dev_environment
+    title_key: rules.git.config
+    targets:
+      - path: "{HOME}\\.gitconfig"
+        label_key: rules.git.label_gitconfig
+      - path: "{HOME}\\.config\\git"
+        label_key: rules.git.label_xdg_config
+
+  # Settings Sync may already keep these settings in the cloud (notes).
+  - id: vscode.user-settings
+    app: { id: vscode, name: Visual Studio Code, kind: dev_tool, winget: Microsoft.VisualStudioCode }
+    category: dev_environment
+    title_key: rules.vscode.user_settings
+    confidence: 0.95
+    tags: [ide]
+    conditions:
+      - exists: "{APPDATA}\\Code"
+    targets:
+      - path: "{APPDATA}\\Code\\User"
+        include: ["settings.json", "keybindings.json", "snippets/**", "profiles/**", "tasks.json"]
+        exclude: ["workspaceStorage/**", "History/**", "globalStorage/**/*.vsix"]
+        label_key: rules.vscode.label_settings
+      - registry: { hive: hkcu, key: "Software\\Classes\\vscode", recursive: true }
+        optional: true
+        label_key: rules.vscode.label_protocol
+    claims:
+      - "{APPDATA}\\Code\\Cache"
+      - "{APPDATA}\\Code\\CachedData"
+      - "{APPDATA}\\Code\\User\\workspaceStorage"
+    notes_key: rules.vscode.notes
+
+  # Only the list of installed extensions: the extensions themselves are
+  # downloaded again from the marketplace.
+  - id: vscode.extensions-list
+    app: { id: vscode, name: Visual Studio Code, kind: dev_tool, winget: Microsoft.VisualStudioCode }
+    category: dev_environment
+    title_key: rules.vscode.extensions_list
+    tags: [ide]
+    targets:
+      - path: "{HOME}\\.vscode\\extensions\\extensions.json"
+
+  - id: vscode-insiders.user-settings
+    app: { id: vscode-insiders, name: Visual Studio Code - Insiders, kind: dev_tool, winget: Microsoft.VisualStudioCode.Insiders }
+    category: dev_environment
+    title_key: rules.vscode_insiders.user_settings
+    tags: [ide]
+    conditions:
+      - exists: "{APPDATA}\\Code - Insiders"
+    targets:
+      - path: "{APPDATA}\\Code - Insiders\\User"
+        include: ["settings.json", "keybindings.json", "snippets/**", "profiles/**", "tasks.json"]
+        exclude: ["workspaceStorage/**", "History/**", "globalStorage/**/*.vsix"]
+    claims:
+      - "{APPDATA}\\Code - Insiders\\Cache"
+      - "{APPDATA}\\Code - Insiders\\CachedData"
+      - "{APPDATA}\\Code - Insiders\\User\\workspaceStorage"
+
+  - id: cursor.user-settings
+    app: { id: cursor, name: Cursor, kind: dev_tool, winget: Anysphere.Cursor }
+    category: dev_environment
+    title_key: rules.cursor.user_settings
+    tags: [ide]
+    conditions:
+      - exists: "{APPDATA}\\Cursor"
+    targets:
+      - path: "{APPDATA}\\Cursor\\User"
+        include: ["settings.json", "keybindings.json", "snippets/**", "profiles/**", "tasks.json"]
+        exclude: ["workspaceStorage/**", "History/**", "globalStorage/**/*.vsix"]
+    claims:
+      - "{APPDATA}\\Cursor\\Cache"
+      - "{APPDATA}\\Cursor\\CachedData"
+      - "{APPDATA}\\Cursor\\User\\workspaceStorage"
+
+  # One folder per IDE version (`IntelliJIdea2024.3`, `Rider2025.1` ...);
+  # `*20*` skips the service entries next to them (`consentOptions`,
+  # `PermanentUserId`). Caches, logs and indexes are in Local.
+  - id: jetbrains.config
+    app: { id: jetbrains, name: JetBrains IDEs, kind: dev_tool }
+    category: dev_environment
+    title_key: rules.jetbrains.config
+    tags: [ide]
+    conditions:
+      - any_of:
+          - exists: "{APPDATA}\\JetBrains"
+          - exists: "{LOCALAPPDATA}\\JetBrains"
+    targets:
+      - path: "{APPDATA}\\JetBrains\\*20*"
+        glob_root: true
+        include: ["options/**", "keymaps/**", "codestyles/**", "templates/**", "colors/**", "*.key"]
+    claims:
+      - "{LOCALAPPDATA}\\JetBrains"
+
+  # One folder per installed instance (`17.0_1a2b3c4d`); `*.0_*` skips the
+  # service folders next to them.
+  - id: visualstudio.settings
+    app: { id: visualstudio, name: Visual Studio, kind: dev_tool }
+    category: dev_environment
+    title_key: rules.visualstudio.settings
+    tags: [ide]
+    targets:
+      - path: "{LOCALAPPDATA}\\Microsoft\\VisualStudio\\*.0_*"
+        glob_root: true
+        include: ["Settings/**", "*.vssettings"]
+
+  # Store packages (release and Preview) and the unpackaged build (zip,
+  # Scoop), which keeps its settings outside `Packages`.
+  - id: windows-terminal.settings
+    app: { id: windows-terminal, name: Windows Terminal, kind: dev_tool, winget: Microsoft.WindowsTerminal }
+    category: dev_environment
+    title_key: rules.windows_terminal.settings
+    targets:
+      - path: "{PACKAGE:Microsoft.WindowsTerminal}\\LocalState"
+        include: ["settings.json", "state.json"]
+        label_key: rules.windows_terminal.label_release
+      - path: "{PACKAGE:Microsoft.WindowsTerminalPreview}\\LocalState"
+        include: ["settings.json", "state.json"]
+        label_key: rules.windows_terminal.label_preview
+      - path: "{LOCALAPPDATA}\\Microsoft\\Windows Terminal"
+        include: ["settings.json", "state.json"]
+        label_key: rules.windows_terminal.label_unpackaged
+
+  # Profiles of PowerShell 7 and Windows PowerShell 5.1 with the modules
+  # installed for the current user (the module list is also exported by
+  # SPEC-06).
+  - id: powershell.profile
+    app: { id: powershell, name: PowerShell, kind: dev_tool }
+    category: dev_environment
+    title_key: rules.powershell.profile
+    targets:
+      - path: "{DOCUMENTS}\\PowerShell"
+        include: ["*profile*.ps1", "Modules/**"]
+        label_key: rules.powershell.label_core
+      - path: "{DOCUMENTS}\\WindowsPowerShell"
+        include: ["*profile*.ps1", "Modules/**"]
+        label_key: rules.powershell.label_windows
+
+  # May hold registry auth tokens.
+  - id: npm.config
+    app: { id: npm, name: npm, kind: dev_tool }
+    category: dev_environment
+    sensitivity: high
+    title_key: rules.npm.config
+    targets:
+      - path: "{HOME}\\.npmrc"
+
+  # The registry tokens of `cargo login` are credentials.
+  - id: cargo.config
+    app: { id: cargo, name: Cargo, kind: dev_tool }
+    category: dev_environment
+    title_key: rules.cargo.config
+    targets:
+      - path: "{HOME}\\.cargo\\config.toml"
+        label_key: rules.cargo.label_config
+      - path: "{HOME}\\.cargo\\credentials.toml"
+        category: credentials
+        sensitivity: high
+        label_key: rules.cargo.label_credentials
+
+  # May hold registry auth tokens.
+  - id: docker.config
+    app: { id: docker, name: Docker, kind: dev_tool, winget: Docker.DockerDesktop }
+    category: dev_environment
+    sensitivity: high
+    title_key: rules.docker.config
+    targets:
+      - path: "{HOME}\\.docker\\config.json"
+
+  - id: aws.config
+    app: { id: aws, name: AWS CLI, kind: dev_tool, winget: Amazon.AWSCLI }
+    category: credentials
+    sensitivity: high
+    title_key: rules.aws.config
+    targets:
+      - path: "{HOME}\\.aws"
+
+  - id: kube.config
+    app: { id: kube, name: kubectl, kind: dev_tool, winget: Kubernetes.kubectl }
+    category: credentials
+    sensitivity: high
+    title_key: rules.kube.config
+    targets:
+      - path: "{HOME}\\.kube\\config"
+
+  # Sessions and known host keys are in the registry; `.putty` holds the
+  # file-based storage of some builds.
+  - id: putty.sessions
+    app: { id: putty, name: PuTTY, kind: dev_tool, winget: PuTTY.PuTTY }
+    category: dev_environment
+    title_key: rules.putty.sessions
+    targets:
+      - registry: { hive: hkcu, key: "Software\\SimonTatham\\PuTTY" }
+        label_key: rules.putty.label_registry
+      - path: "{HOME}\\.putty"
+        label_key: rules.putty.label_files
+
+  # Stored session passwords are only obfuscated. The settings live either
+  # in the INI file or in the registry.
+  - id: winscp.config
+    app: { id: winscp, name: WinSCP, kind: dev_tool, winget: WinSCP.WinSCP }
+    category: dev_environment
+    sensitivity: high
+    title_key: rules.winscp.config
+    targets:
+      - path: "{APPDATA}\\WinSCP.ini"
+        label_key: rules.winscp.label_ini
+      - registry: { hive: hkcu, key: "Software\\Martin Prikryl\\WinSCP 2" }
+        label_key: rules.winscp.label_registry
+
+  # Connections (`data-sources.json`) and their saved passwords
+  # (`credentials-config.json`).
+  - id: dbeaver.config
+    app: { id: dbeaver, name: DBeaver, kind: dev_tool, winget: dbeaver.dbeaver }
+    category: dev_environment
+    sensitivity: high
+    title_key: rules.dbeaver.config
+    targets:
+      - path: "{APPDATA}\\DBeaverData\\workspace6\\General\\.dbeaver"
+
+  # The project list is read from the Unity Hub config (SPEC-04 §4.2.1).
+  # Library, Temp, Logs and obj are regenerated by the editor; the project
+  # root is claimed together with them.
+  - id: unityhub.projects
+    app: { id: unityhub, name: Unity Hub, kind: dev_tool, winget: Unity.UnityHub }
+    category: user_files
+    title_key: rules.unityhub.projects
+    conditions:
+      - exists: "{APPDATA}\\UnityHub\\projects-v1.json"
+    targets:
+      - from_json:
+          file: "{APPDATA}\\UnityHub\\projects-v1.json"
+          format: json
+          select: "/data/*/path"
+          max_matches: 50
+        exclude: ["Library/**", "Temp/**", "Logs/**", "obj/**"]
+        tags: [project]

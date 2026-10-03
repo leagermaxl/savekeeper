@@ -1,0 +1,178 @@
+# Browser and mail profiles (SPEC-04 §4.7.1). A profile holds passwords,
+# cookies and history: every finding is sensitive. Browsers keep their
+# databases (History, Login Data, places.sqlite ...) open while running.
+#
+# Chromium browsers keep one folder per profile (`Default`, `Profile 1` ...)
+# in `User Data`, next to `Local State`; caches inside the profiles are only
+# claimed. Their passwords are encrypted with DPAPI and do not decrypt on a
+# new Windows installation: the notes say so.
+schema_version: 1
+rules:
+  - id: chrome.profiles
+    app: { id: chrome, name: Google Chrome, kind: application, winget: Google.Chrome }
+    category: app_data
+    sensitivity: high
+    title_key: rules.chrome.profiles
+    conditions:
+      - process_running: chrome.exe
+    targets:
+      - path: "{LOCALAPPDATA}\\Google\\Chrome\\User Data"
+        include: ["*/Bookmarks", "*/Preferences", "*/Secure Preferences", "*/Extensions/**",
+                  "*/Local Extension Settings/**", "*/Login Data*", "*/Web Data", "*/History", "Local State"]
+    claims:
+      - "{LOCALAPPDATA}\\Google\\Chrome\\User Data\\*\\Cache"
+      - "{LOCALAPPDATA}\\Google\\Chrome\\User Data\\*\\Code Cache"
+      - "{LOCALAPPDATA}\\Google\\Chrome\\User Data\\*\\GPUCache"
+      - "{LOCALAPPDATA}\\Google\\Chrome\\User Data\\*\\Service Worker\\CacheStorage"
+    notes_key: rules.chrome.notes
+
+  - id: edge.profiles
+    app: { id: edge, name: Microsoft Edge, kind: application, winget: Microsoft.Edge }
+    category: app_data
+    sensitivity: high
+    title_key: rules.edge.profiles
+    conditions:
+      - process_running: msedge.exe
+    targets:
+      - path: "{LOCALAPPDATA}\\Microsoft\\Edge\\User Data"
+        include: ["*/Bookmarks", "*/Preferences", "*/Secure Preferences", "*/Extensions/**",
+                  "*/Local Extension Settings/**", "*/Login Data*", "*/Web Data", "*/History", "Local State"]
+    claims:
+      - "{LOCALAPPDATA}\\Microsoft\\Edge\\User Data\\*\\Cache"
+      - "{LOCALAPPDATA}\\Microsoft\\Edge\\User Data\\*\\Code Cache"
+      - "{LOCALAPPDATA}\\Microsoft\\Edge\\User Data\\*\\GPUCache"
+      - "{LOCALAPPDATA}\\Microsoft\\Edge\\User Data\\*\\Service Worker\\CacheStorage"
+    notes_key: rules.edge.notes
+
+  - id: brave.profiles
+    app: { id: brave, name: Brave, kind: application, winget: Brave.Brave }
+    category: app_data
+    sensitivity: high
+    title_key: rules.brave.profiles
+    conditions:
+      - process_running: brave.exe
+    targets:
+      - path: "{LOCALAPPDATA}\\BraveSoftware\\Brave-Browser\\User Data"
+        include: ["*/Bookmarks", "*/Preferences", "*/Secure Preferences", "*/Extensions/**",
+                  "*/Local Extension Settings/**", "*/Login Data*", "*/Web Data", "*/History", "Local State"]
+    claims:
+      - "{LOCALAPPDATA}\\BraveSoftware\\Brave-Browser\\User Data\\*\\Cache"
+      - "{LOCALAPPDATA}\\BraveSoftware\\Brave-Browser\\User Data\\*\\Code Cache"
+      - "{LOCALAPPDATA}\\BraveSoftware\\Brave-Browser\\User Data\\*\\GPUCache"
+      - "{LOCALAPPDATA}\\BraveSoftware\\Brave-Browser\\User Data\\*\\Service Worker\\CacheStorage"
+    notes_key: rules.brave.notes
+
+  - id: vivaldi.profiles
+    app: { id: vivaldi, name: Vivaldi, kind: application }
+    category: app_data
+    sensitivity: high
+    title_key: rules.vivaldi.profiles
+    conditions:
+      - process_running: vivaldi.exe
+    targets:
+      - path: "{LOCALAPPDATA}\\Vivaldi\\User Data"
+        include: ["*/Bookmarks", "*/Preferences", "*/Secure Preferences", "*/Extensions/**",
+                  "*/Local Extension Settings/**", "*/Login Data*", "*/Web Data", "*/History", "Local State"]
+    claims:
+      - "{LOCALAPPDATA}\\Vivaldi\\User Data\\*\\Cache"
+      - "{LOCALAPPDATA}\\Vivaldi\\User Data\\*\\Code Cache"
+      - "{LOCALAPPDATA}\\Vivaldi\\User Data\\*\\GPUCache"
+      - "{LOCALAPPDATA}\\Vivaldi\\User Data\\*\\Service Worker\\CacheStorage"
+    notes_key: rules.vivaldi.notes
+
+  # Opera keeps the profile in Roaming: older versions directly in
+  # `Opera Stable`, Opera One in `Opera Stable\Default` and further profiles
+  # next to it; both layouts are included. The disk cache is in Local.
+  - id: opera.profiles
+    app: { id: opera, name: Opera, kind: application }
+    category: app_data
+    sensitivity: high
+    title_key: rules.opera.profiles
+    conditions:
+      - process_running: opera.exe
+      - any_of:
+          - exists: "{APPDATA}\\Opera Software\\Opera Stable"
+          - exists: "{APPDATA}\\Opera Software\\Opera GX Stable"
+          - exists: "{LOCALAPPDATA}\\Opera Software"
+    targets:
+      - path: "{APPDATA}\\Opera Software\\Opera Stable"
+        include: ["Bookmarks", "Preferences", "Secure Preferences", "Extensions/**",
+                  "Local Extension Settings/**", "Login Data*", "Web Data", "History", "Local State",
+                  "*/Bookmarks", "*/Preferences", "*/Secure Preferences", "*/Extensions/**",
+                  "*/Local Extension Settings/**", "*/Login Data*", "*/Web Data", "*/History"]
+        label_key: rules.opera.label_stable
+      - path: "{APPDATA}\\Opera Software\\Opera GX Stable"
+        include: ["Bookmarks", "Preferences", "Secure Preferences", "Extensions/**",
+                  "Local Extension Settings/**", "Login Data*", "Web Data", "History", "Local State",
+                  "*/Bookmarks", "*/Preferences", "*/Secure Preferences", "*/Extensions/**",
+                  "*/Local Extension Settings/**", "*/Login Data*", "*/Web Data", "*/History"]
+        label_key: rules.opera.label_gx
+    claims:
+      - "{APPDATA}\\Opera Software\\Opera Stable\\*\\Cache"
+      - "{APPDATA}\\Opera Software\\Opera Stable\\*\\Code Cache"
+      - "{APPDATA}\\Opera Software\\Opera Stable\\*\\GPUCache"
+      - "{APPDATA}\\Opera Software\\Opera Stable\\*\\Service Worker\\CacheStorage"
+      - "{APPDATA}\\Opera Software\\Opera GX Stable\\*\\Cache"
+      - "{APPDATA}\\Opera Software\\Opera GX Stable\\*\\Code Cache"
+      - "{APPDATA}\\Opera Software\\Opera GX Stable\\*\\GPUCache"
+      - "{APPDATA}\\Opera Software\\Opera GX Stable\\*\\Service Worker\\CacheStorage"
+      - "{LOCALAPPDATA}\\Opera Software"
+    notes_key: rules.opera.notes
+
+  # Yandex Browser keeps the passwords in `Ya Passman Data`, not `Login Data`.
+  - id: yandex.profiles
+    app: { id: yandex, name: Yandex Browser, kind: application, winget: Yandex.Browser }
+    category: app_data
+    sensitivity: high
+    title_key: rules.yandex.profiles
+    conditions:
+      - process_running: browser.exe
+    targets:
+      - path: "{LOCALAPPDATA}\\Yandex\\YandexBrowser\\User Data"
+        include: ["*/Bookmarks", "*/Preferences", "*/Secure Preferences", "*/Extensions/**",
+                  "*/Local Extension Settings/**", "*/Login Data*", "*/Ya Passman Data*", "*/Web Data",
+                  "*/History", "Local State"]
+    claims:
+      - "{LOCALAPPDATA}\\Yandex\\YandexBrowser\\User Data\\*\\Cache"
+      - "{LOCALAPPDATA}\\Yandex\\YandexBrowser\\User Data\\*\\Code Cache"
+      - "{LOCALAPPDATA}\\Yandex\\YandexBrowser\\User Data\\*\\GPUCache"
+      - "{LOCALAPPDATA}\\Yandex\\YandexBrowser\\User Data\\*\\Service Worker\\CacheStorage"
+    notes_key: rules.yandex.notes
+
+  # `profiles.ini` lists the profiles in `Profiles\<random>.<name>`; their
+  # disk cache lives in Local and is only claimed.
+  - id: firefox.profiles
+    app: { id: firefox, name: Mozilla Firefox, kind: application, winget: Mozilla.Firefox }
+    category: app_data
+    sensitivity: high
+    title_key: rules.firefox.profiles
+    conditions:
+      - process_running: firefox.exe
+      - any_of:
+          - exists: "{APPDATA}\\Mozilla\\Firefox"
+          - exists: "{LOCALAPPDATA}\\Mozilla\\Firefox\\Profiles"
+    targets:
+      - path: "{APPDATA}\\Mozilla\\Firefox"
+        include: ["profiles.ini", "Profiles/*/{places.sqlite,key4.db,logins.json,cert9.db,prefs.js,user.js,extensions/**,chrome/**,containers.json,handlers.json,sessionstore*,sessionstore-backups/**}"]
+    claims:
+      - "{LOCALAPPDATA}\\Mozilla\\Firefox\\Profiles"
+    notes_key: rules.firefox.notes
+
+  # The whole profile: mail folders, address books, accounts. The disk cache
+  # of the profiles in Local is only claimed.
+  - id: thunderbird.profiles
+    app: { id: thunderbird, name: Mozilla Thunderbird, kind: application, winget: Mozilla.Thunderbird }
+    category: app_data
+    sensitivity: high
+    title_key: rules.thunderbird.profiles
+    conditions:
+      - process_running: thunderbird.exe
+      - any_of:
+          - exists: "{APPDATA}\\Thunderbird"
+          - exists: "{LOCALAPPDATA}\\Thunderbird"
+    targets:
+      - path: "{APPDATA}\\Thunderbird"
+        exclude: ["**/cache2/**"]
+    claims:
+      - "{LOCALAPPDATA}\\Thunderbird"
+    notes_key: rules.thunderbird.notes

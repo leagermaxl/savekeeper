@@ -1,0 +1,271 @@
+# Browsers and developer tools for the built-in rules of SPEC-04 §4.7.1–§4.7.2.
+# Each application has the data worth saving next to caches, logs and
+# regenerated files the rules exclude or claim. Brave, Vivaldi and VS Code
+# Insiders are absent on purpose: their rules find nothing. Not here, added
+# by the test: the Unity Hub project list (it holds absolute paths), the
+# Store package of Windows Terminal (`Environment.store_packages`), registry
+# keys and running processes.
+# Loaded into MemFs by sk_testkit::mem_fixture.
+tree:
+  # === browsers.yaml ===
+  # --- Chrome: Default and Profile 1 ---
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Local State"
+    size: 8 KiB
+    mtime: "-1d"
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Default/Bookmarks"
+    size: 12 KiB
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Default/Preferences"
+    size: 20 KiB
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Default/Secure Preferences"
+    size: 4 KiB
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Default/Login Data"
+    size: 40 KiB
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Default/Login Data-journal"
+    size: 1 KiB
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Default/Login Data For Account"
+    size: 16 KiB
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Default/Web Data"
+    size: 64 KiB
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Default/History"
+    size: 2 MiB
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Default/Extensions/cjpalhdlnbpafiamejdnhcphjbkeiagm/1.60.0_0/manifest.json"
+    size: 2 KiB
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Default/Local Extension Settings/cjpalhdlnbpafiamejdnhcphjbkeiagm/000003.log"
+    size: 1 KiB
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Default/Network/Cookies"
+    size: 512 KiB
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Default/Cache/Cache_Data/f_000001"
+    size: 32 KiB
+    repeat: 5
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Default/Code Cache/js/index"
+    size: 4 KiB
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Default/GPUCache/data_0"
+    size: 8 KiB
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Default/Service Worker/CacheStorage/0a1b/index"
+    size: 64 KiB
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Profile 1/Bookmarks"
+    size: 3 KiB
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Profile 1/Preferences"
+    size: 18 KiB
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Profile 1/Cache/Cache_Data/f_000001"
+    size: 32 KiB
+    repeat: 3
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/GrShaderCache/data_0"
+    size: 8 KiB
+  # --- Edge ---
+  - path: "{LOCALAPPDATA}/Microsoft/Edge/User Data/Local State"
+    size: 4 KiB
+  - path: "{LOCALAPPDATA}/Microsoft/Edge/User Data/Default/Bookmarks"
+    size: 2 KiB
+  - path: "{LOCALAPPDATA}/Microsoft/Edge/User Data/Default/Cache/Cache_Data/f_000001"
+    size: 16 KiB
+  # --- Opera: the old layout (profile in the root) and Opera GX with Default ---
+  - path: "{APPDATA}/Opera Software/Opera Stable/Local State"
+    size: 4 KiB
+  - path: "{APPDATA}/Opera Software/Opera Stable/Bookmarks"
+    size: 2 KiB
+  - path: "{APPDATA}/Opera Software/Opera Stable/Preferences"
+    size: 8 KiB
+  - path: "{APPDATA}/Opera Software/Opera Stable/Login Data"
+    size: 20 KiB
+  - path: "{APPDATA}/Opera Software/Opera Stable/Crash Reports/reports/0a1b.dmp"
+    size: 256 KiB
+  - path: "{APPDATA}/Opera Software/Opera GX Stable/Local State"
+    size: 4 KiB
+  - path: "{APPDATA}/Opera Software/Opera GX Stable/Default/Bookmarks"
+    size: 3 KiB
+  - path: "{APPDATA}/Opera Software/Opera GX Stable/Default/History"
+    size: 256 KiB
+  - path: "{APPDATA}/Opera Software/Opera GX Stable/Default/Cache/Cache_Data/f_000001"
+    size: 16 KiB
+  - path: "{LOCALAPPDATA}/Opera Software/Opera Stable/Cache/Cache_Data/f_000001"
+    size: 16 KiB
+    repeat: 2
+  # --- Yandex Browser: passwords in Ya Passman Data ---
+  - path: "{LOCALAPPDATA}/Yandex/YandexBrowser/User Data/Local State"
+    size: 4 KiB
+  - path: "{LOCALAPPDATA}/Yandex/YandexBrowser/User Data/Default/Bookmarks"
+    size: 2 KiB
+  - path: "{LOCALAPPDATA}/Yandex/YandexBrowser/User Data/Default/Ya Passman Data"
+    size: 24 KiB
+  - path: "{LOCALAPPDATA}/Yandex/YandexBrowser/User Data/Default/Cache/Cache_Data/f_000001"
+    size: 16 KiB
+  # --- Firefox: a used profile and an empty one ---
+  - path: "{APPDATA}/Mozilla/Firefox/profiles.ini"
+    size: 512
+    mtime: "-90d"
+  - path: "{APPDATA}/Mozilla/Firefox/installs.ini"
+    size: 128
+  - path: "{APPDATA}/Mozilla/Firefox/Profiles/abcd1234.default-release/places.sqlite"
+    size: 5 MiB
+    mtime: "-1d"
+  - path: "{APPDATA}/Mozilla/Firefox/Profiles/abcd1234.default-release/key4.db"
+    size: 288 KiB
+  - path: "{APPDATA}/Mozilla/Firefox/Profiles/abcd1234.default-release/logins.json"
+    size: 2 KiB
+  - path: "{APPDATA}/Mozilla/Firefox/Profiles/abcd1234.default-release/cert9.db"
+    size: 224 KiB
+  - path: "{APPDATA}/Mozilla/Firefox/Profiles/abcd1234.default-release/prefs.js"
+    size: 12 KiB
+  - path: "{APPDATA}/Mozilla/Firefox/Profiles/abcd1234.default-release/extensions/uBlock0@raymondhill.net.xpi"
+    size: 3 MiB
+  - path: "{APPDATA}/Mozilla/Firefox/Profiles/abcd1234.default-release/sessionstore-backups/recovery.jsonlz4"
+    size: 64 KiB
+  - path: "{APPDATA}/Mozilla/Firefox/Profiles/abcd1234.default-release/cookies.sqlite"
+    size: 512 KiB
+  - path: "{APPDATA}/Mozilla/Firefox/Profiles/abcd1234.default-release/storage/default/https+++example.com/ls/data.sqlite"
+    size: 8 KiB
+  - path: "{APPDATA}/Mozilla/Firefox/Profiles/efgh5678.default/times.json"
+    size: 64
+  - path: "{LOCALAPPDATA}/Mozilla/Firefox/Profiles/abcd1234.default-release/cache2/entries/0A1B"
+    size: 64 KiB
+    repeat: 3
+  # --- Thunderbird: the whole profile without its cache ---
+  - path: "{APPDATA}/Thunderbird/profiles.ini"
+    size: 256
+  - path: "{APPDATA}/Thunderbird/Profiles/q1w2e3r4.default-release/prefs.js"
+    size: 16 KiB
+  - path: "{APPDATA}/Thunderbird/Profiles/q1w2e3r4.default-release/ImapMail/imap.example.com/INBOX"
+    size: 10 MiB
+  - path: "{APPDATA}/Thunderbird/Profiles/q1w2e3r4.default-release/Mail/Local Folders/Trash"
+    size: 1 KiB
+  - path: "{APPDATA}/Thunderbird/Profiles/q1w2e3r4.default-release/cache2/entries/AB12"
+    size: 32 KiB
+    repeat: 2
+  - path: "{LOCALAPPDATA}/Thunderbird/Profiles/q1w2e3r4.default-release/cache2/entries/CD34"
+    size: 32 KiB
+
+  # === dev.yaml ===
+  # --- SSH and git ---
+  - path: "{HOME}/.ssh/id_ed25519"
+    size: 411
+    mtime: "-200d"
+  - path: "{HOME}/.ssh/id_ed25519.pub"
+    size: 98
+    mtime: "-200d"
+  - path: "{HOME}/.ssh/known_hosts"
+    size: 2 KiB
+  - path: "{HOME}/.ssh/config"
+    size: 300
+  - path: "{HOME}/.gitconfig"
+    content: "[user]\n\tname = User\n"
+  - path: "{HOME}/.config/git/ignore"
+    size: 64
+  # --- VS Code ---
+  - path: "{APPDATA}/Code/User/settings.json"
+    size: 3 KiB
+    mtime: "-1d"
+  - path: "{APPDATA}/Code/User/keybindings.json"
+    size: 1 KiB
+  - path: "{APPDATA}/Code/User/snippets/rust.json"
+    size: 2 KiB
+  - path: "{APPDATA}/Code/User/globalStorage/state.vscdb"
+    size: 256 KiB
+  - path: "{APPDATA}/Code/User/workspaceStorage/0a1b2c/state.vscdb"
+    size: 64 KiB
+  - path: "{APPDATA}/Code/User/History/-1a2b3c/entries.json"
+    size: 1 KiB
+  - path: "{APPDATA}/Code/Cache/Cache_Data/f_000001"
+    size: 8 KiB
+    repeat: 5
+  - path: "{APPDATA}/Code/CachedData/1a2b3c4d/chrome/js/index-01.code"
+    size: 16 KiB
+  - path: "{HOME}/.vscode/extensions/extensions.json"
+    size: 4 KiB
+  - path: "{HOME}/.vscode/extensions/rust-lang.rust-analyzer-0.3.2000-win32-x64/package.json"
+    size: 40 KiB
+  # --- Cursor ---
+  - path: "{APPDATA}/Cursor/User/settings.json"
+    size: 1 KiB
+  - path: "{APPDATA}/Cursor/User/workspaceStorage/9f8e7d/state.vscdb"
+    size: 32 KiB
+  - path: "{APPDATA}/Cursor/CachedData/5e6f7a8b/chrome/js/index-01.code"
+    size: 8 KiB
+  # --- JetBrains: three IDE versions next to service entries ---
+  - path: "{APPDATA}/JetBrains/IntelliJIdea2024.3/options/editor.xml"
+    size: 4 KiB
+  - path: "{APPDATA}/JetBrains/IntelliJIdea2024.3/idea.key"
+    size: 1 KiB
+  - path: "{APPDATA}/JetBrains/IntelliJIdea2024.3/plugins/rust/lib/rust.jar"
+    size: 2 MiB
+  - path: "{APPDATA}/JetBrains/PyCharm2024.2/options/ide.general.xml"
+    size: 2 KiB
+  - path: "{APPDATA}/JetBrains/PyCharm2024.2/codestyles/Custom.xml"
+    size: 1 KiB
+  - path: "{APPDATA}/JetBrains/Rider2025.1/keymaps/My Keymap.xml"
+    size: 1 KiB
+  - path: "{APPDATA}/JetBrains/Rider2025.1/colors/Dark.icls"
+    size: 3 KiB
+  - path: "{APPDATA}/JetBrains/Rider2025.1/rider64.exe.vmoptions"
+    size: 200
+  - path: "{APPDATA}/JetBrains/consentOptions/accepted"
+    size: 128
+  - path: "{APPDATA}/JetBrains/PermanentUserId"
+    size: 36
+  - path: "{LOCALAPPDATA}/JetBrains/IntelliJIdea2024.3/caches/content.dat"
+    size: 1 MiB
+  # --- Visual Studio 2022 ---
+  - path: "{LOCALAPPDATA}/Microsoft/VisualStudio/17.0_1a2b3c4d/Settings/CurrentSettings.vssettings"
+    size: 120 KiB
+  - path: "{LOCALAPPDATA}/Microsoft/VisualStudio/17.0_1a2b3c4d/privateregistry.bin"
+    size: 2 MiB
+  - path: "{LOCALAPPDATA}/Microsoft/VisualStudio/17.0_1a2b3c4d/ComponentModelCache/Microsoft.VisualStudio.Default.cache"
+    size: 1 MiB
+  - path: "{LOCALAPPDATA}/Microsoft/VisualStudio/SettingsLogs/log.txt"
+    size: 4 KiB
+  # --- Windows Terminal (Store package) ---
+  - path: "{LOCALAPPDATA}/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json"
+    size: 8 KiB
+  - path: "{LOCALAPPDATA}/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/state.json"
+    size: 1 KiB
+  - path: "{LOCALAPPDATA}/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json.bak"
+    size: 8 KiB
+  # --- PowerShell 7 ---
+  - path: "{DOCUMENTS}/PowerShell/Microsoft.PowerShell_profile.ps1"
+    size: 2 KiB
+  - path: "{DOCUMENTS}/PowerShell/Modules/posh-git/1.1.0/posh-git.psd1"
+    size: 4 KiB
+  - path: "{DOCUMENTS}/PowerShell/Scripts/InstalledScriptInfos/Install-Tool_InstalledScriptInfo.xml"
+    size: 1 KiB
+  # --- Package managers, containers and cloud CLIs ---
+  - path: "{HOME}/.npmrc"
+    size: 100
+  - path: "{HOME}/.cargo/config.toml"
+    size: 256
+  - path: "{HOME}/.cargo/credentials.toml"
+    size: 128
+  - path: "{HOME}/.cargo/registry/cache/index.crates.io-6f17d22bba15001f/serde-1.0.210.crate"
+    size: 80 KiB
+  - path: "{HOME}/.docker/config.json"
+    size: 512
+  - path: "{HOME}/.aws/config"
+    size: 128
+  - path: "{HOME}/.aws/credentials"
+    size: 256
+  - path: "{HOME}/.kube/config"
+    size: 4 KiB
+  # --- WinSCP (INI storage) ---
+  - path: "{APPDATA}/WinSCP.ini"
+    size: 8 KiB
+  # --- DBeaver ---
+  - path: "{APPDATA}/DBeaverData/workspace6/General/.dbeaver/data-sources.json"
+    size: 4 KiB
+  - path: "{APPDATA}/DBeaverData/workspace6/General/.dbeaver/credentials-config.json"
+    size: 1 KiB
+  - path: "{APPDATA}/DBeaverData/workspace6/.metadata/.log"
+    size: 16 KiB
+  # --- A Unity project with the folders the editor regenerates ---
+  - path: "{HOME}/Unity/Space Game/Assets/Scenes/Main.unity"
+    size: 64 KiB
+  - path: "{HOME}/Unity/Space Game/ProjectSettings/ProjectSettings.asset"
+    size: 32 KiB
+  - path: "{HOME}/Unity/Space Game/Packages/manifest.json"
+    size: 2 KiB
+  - path: "{HOME}/Unity/Space Game/Library/ArtifactDB"
+    size: 50 MiB
+  - path: "{HOME}/Unity/Space Game/Temp/UnityLockfile"
+    size: 0
+  - path: "{HOME}/Unity/Space Game/Logs/AssetImportWorker0.log"
+    size: 16 KiB
+  - path: "{HOME}/Unity/Space Game/obj/Debug/Assembly-CSharp.dll"
+    size: 1 MiB

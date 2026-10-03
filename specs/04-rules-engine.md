@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-rules`, каталог `rules/` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-07 (claimed_paths), SPEC-09, SPEC-11 (редактор правил, P4) |
-| Последнее изменение | 2026-10-03 (T-04-10: аргументы, вывод и коды выхода `rules validate`; T-04-08: соглашения §4.7 для claims-only правил, process_running, ключей i18n; уточнены пути WhatsApp/Skype/Razer/Outlook/Sticky Notes/PowerToys; T-04-06: API RulesCollector, прогресс, слияние, отмена, T-04-13; T-04-12: from_json issues/args, нормализация, claims конфига; T-04-05: условие срабатывания правила (FR-04-03), reparse-корни targets, специализация мульти-значных токенов, заголовок с `label_key`, семантика `claims` и `glob_root`, API `expand` в §4.1, поля находки, issues `glob_root_truncated` и доступ к реестру для targets в §5); 2026-10-03 (T-04-03/T-04-04: API `RuleSource`/`conditions`/`registry`, семантика условий, `installed.winget` зарезервирован, regex проверяется при компиляции, ключи issue в §5, детали слияния; T-04-02: `RuleDiagnostic.severity`, API `compile`/`diagnostic` в §4.1, `hklm` в §4.2 согласован с §4.4; уточнения по T-04-01: `tags` у target, `registry.recursive` по умолчанию `true`, `file_contains.pattern` — regex, обязательные поля §4.4; 2026-10-02: T-04-07: ручные проверки критериев SPEC-03 §8; T-04-07: ручная проверка Ctrl+C из SPEC-01 §8; 2026-10-01: YAML: `serde-saphyr` вместо `serde_yaml`; `from_json` в схеме v1) |
+| Последнее изменение | 2026-10-03 (T-04-07: пути и include браузеров и dev-правил по реальным раскладкам — Opera One, Ya Passman Data, sessionstore-backups, JetBrains `*20*`, VS `*.0_*`, Windows Terminal без пакета, `vscode.extensions-list` отдельным правилом; чек-лист ручной проверки `specs/checklists/T-04-07.md`; T-04-10: аргументы, вывод и коды выхода `rules validate`; T-04-08: соглашения §4.7 для claims-only правил, process_running, ключей i18n; уточнены пути WhatsApp/Skype/Razer/Outlook/Sticky Notes/PowerToys; T-04-06: API RulesCollector, прогресс, слияние, отмена, T-04-13; T-04-12: from_json issues/args, нормализация, claims конфига; T-04-05: условие срабатывания правила (FR-04-03), reparse-корни targets, специализация мульти-значных токенов, заголовок с `label_key`, семантика `claims` и `glob_root`, API `expand` в §4.1, поля находки, issues `glob_root_truncated` и доступ к реестру для targets в §5); 2026-10-03 (T-04-03/T-04-04: API `RuleSource`/`conditions`/`registry`, семантика условий, `installed.winget` зарезервирован, regex проверяется при компиляции, ключи issue в §5, детали слияния; T-04-02: `RuleDiagnostic.severity`, API `compile`/`diagnostic` в §4.1, `hklm` в §4.2 согласован с §4.4; уточнения по T-04-01: `tags` у target, `registry.recursive` по умолчанию `true`, `file_contains.pattern` — regex, обязательные поля §4.4; 2026-10-02: T-04-07: ручные проверки критериев SPEC-03 §8; T-04-07: ручная проверка Ctrl+C из SPEC-01 §8; 2026-10-01: YAML: `serde-saphyr` вместо `serde_yaml`; `from_json` в схеме v1) |
 
 ## 1. Цель
 
@@ -294,10 +294,10 @@ include/exclude пишутся в YAML при реализации T-04-07..T-04
 | `edge.profiles` | `{LOCALAPPDATA}\Microsoft\Edge\User Data` | как Chrome |
 | `brave.profiles` | `{LOCALAPPDATA}\BraveSoftware\Brave-Browser\User Data` | как Chrome |
 | `vivaldi.profiles` | `{LOCALAPPDATA}\Vivaldi\User Data` | как Chrome |
-| `opera.profiles` | `{APPDATA}\Opera Software\Opera Stable` | + `{APPDATA}\Opera Software\Opera GX Stable` |
-| `yandex.profiles` | `{LOCALAPPDATA}\Yandex\YandexBrowser\User Data` | как Chrome |
-| `firefox.profiles` | `{APPDATA}\Mozilla\Firefox` | include: `profiles.ini, Profiles/*/{places.sqlite,key4.db,logins.json,cert9.db,prefs.js,user.js,extensions/**,chrome/**,containers.json,handlers.json,sessionstore*}`; claims: `{LOCALAPPDATA}\Mozilla\Firefox\Profiles` (кэш) |
-| `thunderbird.profiles` | `{APPDATA}\Thunderbird` | весь профиль, exclude `**/cache2/**`, category `app_data` |
+| `opera.profiles` | `{APPDATA}\Opera Software\Opera Stable`, `{APPDATA}\Opera Software\Opera GX Stable` | два target'а (`label_key` `stable`, `gx`); include как у Chrome — без префикса `*/` (старая раскладка: профиль в корне) и с `*/` (Opera One: `Default`, `Profile N`), плюс `Local State`; claims — кэши как у Chrome внутри обоих корней и `{LOCALAPPDATA}\Opera Software` (дисковый кэш); `conditions` — `any_of` из `exists` трёх папок |
+| `yandex.profiles` | `{LOCALAPPDATA}\Yandex\YandexBrowser\User Data` | как Chrome + `*/Ya Passman Data*` (пароли Яндекс Браузера хранятся не в `Login Data`) |
+| `firefox.profiles` | `{APPDATA}\Mozilla\Firefox` | include: `profiles.ini, Profiles/*/{places.sqlite,key4.db,logins.json,cert9.db,prefs.js,user.js,extensions/**,chrome/**,containers.json,handlers.json,sessionstore*,sessionstore-backups/**}` (сессия работающего Firefox — `sessionstore-backups/recovery.jsonlz4`); claims: `{LOCALAPPDATA}\Mozilla\Firefox\Profiles` (кэш) |
+| `thunderbird.profiles` | `{APPDATA}\Thunderbird` | весь профиль, exclude `**/cache2/**`, category `app_data`; claims `{LOCALAPPDATA}\Thunderbird` (дисковый кэш профилей) |
 
 > Пароли Chromium зашифрованы DPAPI и **не расшифруются** на новой установке Windows (другой мастер-ключ пользователя). Это указывается в `notes_key` и в отчёте. Правило полезно для закладок, расширений и истории.
 
@@ -306,15 +306,15 @@ include/exclude пишутся в YAML при реализации T-04-07..T-04
 |---|---|---|
 | `ssh.keys` | `{HOME}\.ssh` | category `credentials`, sensitivity high |
 | `git.config` | `{HOME}\.gitconfig`, `{HOME}\.config\git` | |
-| `vscode.user-settings` | `{APPDATA}\Code\User` | см. §4.2; + `vscode.extensions-list` target `{HOME}\.vscode\extensions\extensions.json` (только список) |
-| `vscode-insiders.user-settings` | `{APPDATA}\Code - Insiders\User` | |
-| `cursor.user-settings` | `{APPDATA}\Cursor\User` | |
-| `jetbrains.config` | `{APPDATA}\JetBrains\*` (glob_root) | include: `options/**, keymaps/**, codestyles/**, templates/**, colors/**, *.key`; claims `{LOCALAPPDATA}\JetBrains` |
-| `visualstudio.settings` | `{LOCALAPPDATA}\Microsoft\VisualStudio\*` | include `Settings/**, *.vssettings` |
-| `windows-terminal.settings` | `{LOCALAPPDATA}\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState` | include `settings.json, state.json`; + Preview-пакет |
+| `vscode.user-settings` | `{APPDATA}\Code\User` | см. §4.2, но category `dev_environment`; target'ы с `label_key` `settings` и `protocol`; список расширений — отдельное правило `vscode.extensions-list` с target'ом `{HOME}\.vscode\extensions\extensions.json` (только список) |
+| `vscode-insiders.user-settings` | `{APPDATA}\Code - Insiders\User` | include/exclude/claims как у `vscode.user-settings` |
+| `cursor.user-settings` | `{APPDATA}\Cursor\User` | include/exclude/claims как у `vscode.user-settings` |
+| `jetbrains.config` | `{APPDATA}\JetBrains\*20*` (glob_root: папки версий IDE `IntelliJIdea2024.3`, `Rider2025.1` …; служебные `consentOptions`, `PermanentUserId` не совпадают) | include: `options/**, keymaps/**, codestyles/**, templates/**, colors/**, *.key`; claims `{LOCALAPPDATA}\JetBrains` |
+| `visualstudio.settings` | `{LOCALAPPDATA}\Microsoft\VisualStudio\*.0_*` (glob_root: папки экземпляров `17.0_1a2b3c4d`; служебные папки рядом не совпадают) | include `Settings/**, *.vssettings` |
+| `windows-terminal.settings` | `{PACKAGE:Microsoft.WindowsTerminal}\LocalState`, `{PACKAGE:Microsoft.WindowsTerminalPreview}\LocalState` и `{LOCALAPPDATA}\Microsoft\Windows Terminal` (сборка без пакета: zip, Scoop) | include `settings.json, state.json` |
 | `powershell.profile` | `{DOCUMENTS}\PowerShell`, `{DOCUMENTS}\WindowsPowerShell` | include `*profile*.ps1, Modules/**` (модули также в SPEC-06) |
 | `npm.config` | `{HOME}\.npmrc` | sensitivity high (токены) |
-| `cargo.config` | `{HOME}\.cargo\config.toml`, `{HOME}\.cargo\credentials.toml` | credentials → high |
+| `cargo.config` | `{HOME}\.cargo\config.toml`, `{HOME}\.cargo\credentials.toml` | `config.toml` — `dev_environment`; `credentials.toml` — target с `category: credentials`, sensitivity high |
 | `docker.config` | `{HOME}\.docker\config.json` | high |
 | `aws.config` | `{HOME}\.aws` | credentials |
 | `kube.config` | `{HOME}\.kube\config` | credentials |
@@ -364,7 +364,7 @@ include/exclude пишутся в YAML при реализации T-04-07..T-04
 
 | id | Target | Примечание |
 |---|---|---|
-| `unityhub.projects` | `from_json`: `{APPDATA}\UnityHub\projects-v1.json`, `/data/*/path` | `user_files`, tag `project`; exclude `Library/**, Temp/**, Logs/**, obj/**` (переустанавливаемое), claims эти подпапки |
+| `unityhub.projects` | `from_json`: `{APPDATA}\UnityHub\projects-v1.json`, `/data/*/path` | `user_files`, tag `project`; exclude `Library/**, Temp/**, Logs/**, obj/**` (переустанавливаемое), отдельные claims не нужны: корень проекта целиком попадает в `claimed_paths` (§4.5 п. 4) и покрывает `Library`, `Temp`, `Logs`, `obj`; claims от путей `from_json` в схеме v1 невыразимы |
 
 #### 4.7.6 `rules/hardware-tuning.yaml`
 | id | Путь | Категория |
@@ -447,7 +447,7 @@ OneDrive, Dropbox, Google Drive, iCloud, Yandex.Disk: локальные кэш�
 - [x] **T-04-06** — `RulesCollector: Collector`, прогресс, конфликты FindingId. *Зависит:* T-04-05, T-01-03.
 - [x] **T-04-12** — Target `from_json` (§4.2.1): JSONC-препроцессор, вычисление `select` с `*`, нормализация и фильтры путей, создание находок и `claimed_paths`. *Зависит:* T-04-05, T-03-06. *Готово, когда:* тесты из §6 по `from_json` проходят.
 - [x] **T-04-13** — Подключение `RulesCollector` в `sk-engine`: `ScanPipeline::new` регистрирует его, правила загружаются `RuleSet::load(true, rules_dir)` в начале каждого `run` (пользовательские правила подхватываются без перезапуска), issues загрузки (`source: "rules"`) идут в отчёт и `Event::Issue`; `sk-cli scan` передаёт `DataDir::rules()`. *Зависит:* T-04-06, T-01-06, T-01-07. *Готово, когда:* интеграционный тест `sk-engine` с `MemFs` + `rules.d` во временной папке даёт находки правил и issue битого файла.
-- [ ] **T-04-07** — YAML-правила §4.7.1–§4.7.2 (браузеры, dev, включая `unityhub.projects`). *Зависит:* T-04-02, T-04-12, T-04-13. *Готово, когда:* проверены вручную на Windows-машине разработчика (чек-лист в PR); ручная проверка критерия SPEC-01 §8: Ctrl+C во время `savekeeper-cli scan` по реальному профилю завершает процесс за ≤ 1 с с кодом 2 (перенесено из SPEC-03 T-03-04: первый скан, который идёт по реальным файлам); ручная проверка критериев SPEC-03 §8 на том же скане: OneDrive-папка «только онлайн» после скана остаётся с облачным значком (файлы не гидрированы), junction'ы профиля (`Application Data` и т.д.) не дают двойного счёта размеров.
+- [ ] **T-04-07** — YAML-правила §4.7.1–§4.7.2 (браузеры, dev, включая `unityhub.projects`). *Зависит:* T-04-02, T-04-12, T-04-13. *Готово, когда:* проверены вручную на Windows-машине разработчика (чек-лист — `specs/checklists/T-04-07.md`, протокол — в PR); ручная проверка критерия SPEC-01 §8: Ctrl+C во время `savekeeper-cli scan` по реальному профилю завершает процесс за ≤ 1 с с кодом 2 (перенесено из SPEC-03 T-03-04: первый скан, который идёт по реальным файлам); ручная проверка критериев SPEC-03 §8 на том же скане: OneDrive-папка «только онлайн» после скана остаётся с облачным значком (файлы не гидрированы), junction'ы профиля (`Application Data` и т.д.) не дают двойного счёта размеров.
 - [x] **T-04-08** — YAML-правила §4.7.3–§4.7.7 (включая `obsidian.vaults`). *Зависит:* T-04-02, T-04-12.
 - [ ] **T-04-09** — YAML-правила §4.7.8–§4.7.9. *Зависит:* T-04-02, T-05-03 (токены Steam).
 - [x] **T-04-10** — CLI `rules validate` + вывод диагностики. *Зависит:* T-04-02, T-01-07.
