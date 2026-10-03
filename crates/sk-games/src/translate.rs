@@ -2,8 +2,8 @@
 //!
 //! A manifest path such as `<winDocuments>/My Games/Skyrim/Saves/*.ess` becomes
 //! a [`PathTemplate`] for the static part (`{DOCUMENTS}\My Games\Skyrim\Saves`)
-//! and an include glob for the rest (`*.ess`). Placeholders become tokens of
-//! SPEC-02 §3.1 wherever possible, so the template (and the `FindingId` built
+//! and include globs for the rest (`*.ess`, and `*.ess/**` for a folder).
+//! Placeholders become tokens of SPEC-02 §3.1 wherever possible, so the template (and the `FindingId` built
 //! from it) does not depend on the machine; context values come from
 //! [`GameCtx::resolve_context`] when the template is resolved.
 
@@ -116,8 +116,10 @@ const HOME_FOLDERS: [(&[&str], &str); 4] = [
 /// - Placeholders map to tokens; `<root>` and `<osUserName>` are substituted
 ///   as text; `<storeUserId>` is `{STEAM_USERID}` for a Steam game, else `*`.
 /// - The static part ends before the first segment with a glob (`*`, `?`,
-///   `[…]`); the rest, joined with `/`, is the only include glob. Without a
-///   glob the include list is empty (the path is a file or a folder).
+///   `[…]`); the rest, joined with `/`, is the include glob, plus the same
+///   glob with `/**` for the contents of a matching folder (unless it ends
+///   in `**`). Without a glob the include list is empty (the path is a file
+///   or a folder).
 /// - In the include glob, value placeholders are substituted as escaped text
 ///   (`<storeUserId>` as `*`) and `{`, `}` are escaped: Ludusavi globs have
 ///   no alternation.
@@ -172,12 +174,24 @@ pub(crate) fn translate(path: &str, ctx: &GameCtx) -> Option<(PathTemplate, Vec<
     if template.tokens().count() != tokens {
         return None;
     }
-    let include = if include.is_empty() {
-        Vec::new()
-    } else {
-        vec![include.join("/")]
-    };
-    Some((template, include))
+    Some((template, include_globs(&include)))
+}
+
+/// The include globs of the segments after the static part: the glob, and
+/// the glob followed by `/**`, because a Ludusavi glob may match a folder
+/// (`*/saves`, `**/Saved`), which is taken with all its contents, while
+/// `include` selects files only (SPEC-03 §4.1). A glob ending in `**`
+/// already matches everything below.
+fn include_globs(segments: &[String]) -> Vec<String> {
+    if segments.is_empty() {
+        return Vec::new();
+    }
+    let glob = segments.join("/");
+    if segments.last().is_some_and(|last| last == "**") {
+        return vec![glob];
+    }
+    let contents = format!("{glob}/**");
+    vec![glob, contents]
 }
 
 /// Splits a segment into text and placeholders; `None` for an unsupported

@@ -67,12 +67,12 @@ Reinstallable dir {PROGRAMFILES}\Epic Games\SatisfactoryEarlyAccess []
   app: satisfactory installed=Some(true)
   tags: epic
   evidence: evidence.games.install_dir 1.00
-GameSave dir {LOCALLOW}\Team Cherry\Hollow Knight [*.dat]
+GameSave dir {LOCALLOW}\Team Cherry\Hollow Knight [*.dat,*.dat/**]
   title: Hollow Knight — games.title.save
   app: hollow-knight installed=Some(false)
   tags: not-installed
   evidence: evidence.ludusavi_match 1.00
-GameConfig dir {DOCUMENTS}\My Games\Skyrim Special Edition [*.ini]
+GameConfig dir {DOCUMENTS}\My Games\Skyrim Special Edition [*.ini,*.ini/**]
   title: The Elder Scrolls V: Skyrim Special Edition — games.title.config
   app: the-elder-scrolls-v-skyrim-special-edition installed=Some(false)
   tags: not-installed

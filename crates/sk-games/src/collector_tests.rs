@@ -260,7 +260,7 @@ Game:
 
     let roaming = by_template(&out, r"{APPDATA}\Game");
     assert_eq!(roaming.category, Category::GameSave);
-    assert_eq!(include(roaming), ["*.ini", "*.sav"]);
+    assert_eq!(include(roaming), ["*.ini", "*.ini/**", "*.sav", "*.sav/**"]);
     let file = by_template(&out, r"{APPDATA}\Game\settings.json");
     assert!(matches!(file.target, Target::File { .. }));
     assert_eq!(file.category, Category::GameConfig);
@@ -431,3 +431,6 @@ Portal 2:
 
 #[path = "collector_leftover_tests.rs"]
 mod leftover;
+
+#[path = "collector_glob_tests.rs"]
+mod globs;

@@ -52,8 +52,13 @@ fn no_include(template: &str) -> (String, Vec<String>) {
     (template.to_owned(), Vec::new())
 }
 
+/// The glob and, unless it ends in `**`, the contents of a matching folder.
 fn with_include(template: &str, include: &str) -> (String, Vec<String>) {
-    (template.to_owned(), vec![include.to_owned()])
+    let mut globs = vec![include.to_owned()];
+    if include != "**" && !include.ends_with("/**") {
+        globs.push(format!("{include}/**"));
+    }
+    (template.to_owned(), globs)
 }
 
 #[test]

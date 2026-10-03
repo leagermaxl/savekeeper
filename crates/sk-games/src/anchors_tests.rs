@@ -128,7 +128,7 @@ fn mini_manifest_anchors() {
         hk.template.as_str(),
         r"{LOCALLOW}\Team Cherry\Hollow Knight"
     );
-    assert_eq!(hk.include, ["*.dat"]);
+    assert_eq!(hk.include, ["*.dat", "*.dat/**"]);
 }
 
 /// A machine where several games of the mini manifest were removed but left

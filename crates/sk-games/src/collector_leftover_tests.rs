@@ -39,7 +39,7 @@ Terraria:
     );
     let save = &out.findings[0];
     assert_eq!(save.tags, ["not-installed"]);
-    assert_eq!(include(save), ["*.dat"]);
+    assert_eq!(include(save), ["*.dat", "*.dat/**"]);
     assert_eq!(save.evidence.len(), 1);
     let app = save.app.as_ref().unwrap_or_else(|| panic!("no app"));
     assert_eq!(app.installed, Some(false));

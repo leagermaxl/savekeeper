@@ -12,15 +12,18 @@
 //! 4. adds the launcher findings (`xbox.wgs`, `ubisoft.savegames`, §4.4).
 //!
 //! Entries of one game with the same root are one finding with the union of
-//! their include globs (§4.7 step 5). In the template of a finding,
-//! `{GAME_DIR}` is replaced by the template of the install folder, so that
-//! `<base>/…` entries of different games have different `FindingId`s. A path found for several games is one
-//! finding with the evidence of each and the tag `multi-game` (§5).
+//! their include globs (§4.7 step 5). In the template of a finding of an
+//! installed game, `{STORE_GAME_ID}` and `{GAME_DIR_NAME}` become text and
+//! `{GAME_DIR}` the template of the install folder, so that the same entry of
+//! different games has different `FindingId`s. A path found for several
+//! games is one finding with the evidence of each and the tag `multi-game`
+//! (§5).
 
 mod group;
 mod install;
 mod probe;
 mod registry;
+mod template;
 
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -258,7 +261,9 @@ fn installed_files(
         let Some((template, include)) = translate(path, &ctx) else {
             continue;
         };
-        let template = in_install_dir(template, &install_dir);
+        let Some(template) = template::finding_template(template, &base, &install_dir) else {
+            continue;
+        };
         if !template.tokens().any(|t| t == Token::SteamUserId) {
             for specialized in template.specialize(scan.env, &base) {
                 for (resolved, dir) in probe::existing(scan, &specialized, &include, &base) {
@@ -294,20 +299,6 @@ fn installed_files(
             }
         }
     }
-}
-
-/// `template` with a leading `{GAME_DIR}` replaced by the template of the
-/// install folder (`{STEAM}\steamapps\common\Celeste`): `<base>/Saves` of
-/// two games must not give one `FindingId`, and the finding must resolve
-/// without the game context.
-fn in_install_dir(template: PathTemplate, install_dir: &PathTemplate) -> PathTemplate {
-    let Some(rest) = template.as_str().strip_prefix("{GAME_DIR}") else {
-        return template;
-    };
-    if !(rest.is_empty() || rest.starts_with('\\')) {
-        return template;
-    }
-    PathTemplate::parse(&format!("{}{rest}", install_dir.as_str())).unwrap_or(template)
 }
 
 /// Findings of the anchor hits of games that are not installed (§4.7 step 3),
