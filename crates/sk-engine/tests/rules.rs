@@ -15,9 +15,9 @@ use sk_core::events::Event;
 use sk_core::model::{
     CollectorToggles, EvidenceSource, Finding, IssueSeverity, ScanIssue, ScanReport, Target,
 };
+use sk_core::registry::MemRegistry;
 use sk_core::CancellationToken;
 use sk_engine::{ScanOptions, ScanPipeline};
-use sk_rules::MemRegistry;
 use sk_scan::MemFs;
 use tokio::sync::mpsc::unbounded_channel;
 

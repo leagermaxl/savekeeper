@@ -6,7 +6,7 @@ use sk_core::fs::ReparseKind;
 use sk_core::model::{IssueSeverity, Target};
 use sk_core::template::PathTemplate;
 
-use super::paths::{self, wildcard_match};
+use super::paths::wildcard_match;
 use super::tests::{appdata, root, rule, s, templates, Setup};
 use super::{ISSUE_GLOB_ROOT_TRUNCATED, MAX_GLOB_ROOT_MATCHES};
 
@@ -180,26 +180,20 @@ fn every_steam_user_gets_its_own_finding() {
 fn all_drives_become_drive_letters() {
     let setup = Setup::new();
     let template = PathTemplate::parse(r"{DRIVE:*}\RetroArch").unwrap_or_else(|e| panic!("{e}"));
-    let specialized = paths::specialize(&template, &setup.env, &setup.resolve);
+    let specialized = template.specialize(&setup.env, &setup.resolve);
     let texts: Vec<&str> = specialized.iter().map(PathTemplate::as_str).collect();
     // `Environment::fake` has one fixed drive, C.
     assert_eq!(texts, [r"{DRIVE:C}\RetroArch"]);
 
     let plain = PathTemplate::parse(r"{APPDATA}\X").unwrap_or_else(|e| panic!("{e}"));
-    assert_eq!(
-        paths::specialize(&plain, &setup.env, &setup.resolve),
-        [plain]
-    );
+    assert_eq!(plain.specialize(&setup.env, &setup.resolve), [plain]);
     let steam =
         PathTemplate::parse(r"{STEAM}\userdata\{STEAM_USERID}").unwrap_or_else(|e| panic!("{e}"));
-    assert!(paths::specialize(&steam, &setup.env, &setup.resolve).is_empty());
+    assert!(steam.specialize(&setup.env, &setup.resolve).is_empty());
     // `{PACKAGE:name}` is not specialized (SPEC-02 §3.2).
     let package = PathTemplate::parse(r"{PACKAGE:Microsoft.WindowsTerminal}\LocalState")
         .unwrap_or_else(|e| panic!("{e}"));
-    assert_eq!(
-        paths::specialize(&package, &setup.env, &setup.resolve),
-        [package]
-    );
+    assert_eq!(package.specialize(&setup.env, &setup.resolve), [package]);
 }
 
 #[test]

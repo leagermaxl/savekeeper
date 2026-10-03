@@ -9,7 +9,8 @@ use std::sync::Arc;
 
 use sk_core::collector::Collector;
 use sk_core::model::ScanIssue;
-use sk_rules::{RegistryProbe, RuleSet, RulesCollector};
+use sk_core::registry::RegistryReader;
+use sk_rules::{RuleSet, RulesCollector};
 use tokio::task::JoinError;
 
 /// `Collector::id` of the rules collector.
@@ -22,7 +23,7 @@ pub(crate) struct BuiltinRules {
     /// The user rule folder (`DataDir::rules`); `None`: built-in rules only.
     pub(crate) dir: Option<PathBuf>,
     /// `None`: the registry of this machine (`SystemRegistry`).
-    pub(crate) registry: Option<Arc<dyn RegistryProbe>>,
+    pub(crate) registry: Option<Arc<dyn RegistryReader>>,
 }
 
 impl Default for BuiltinRules {

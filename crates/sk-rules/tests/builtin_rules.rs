@@ -14,7 +14,8 @@ use common::{finding_rules, findings_of, load_file, measure_finding, root, s, sn
 use sk_core::collector::CollectOutput;
 use sk_core::env::{Environment, KnownFolder};
 use sk_core::model::{RegHive, Target};
-use sk_rules::{MemRegistry, RuleSet, RuleSource};
+use sk_core::registry::MemRegistry;
+use sk_rules::{RuleSet, RuleSource};
 use sk_scan::MemFs;
 
 /// The rule files of this task with the ids of their rules (SPEC-04 §4.7.3–§4.7.7).

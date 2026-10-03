@@ -3,11 +3,11 @@ use std::sync::Arc;
 
 use sk_core::env::{Environment, LauncherInfo};
 use sk_core::model::{IssueSeverity, RegHive, ScanIssue};
+use sk_core::registry::MemRegistry;
 use sk_core::template::{PathTemplate, ResolveContext};
 use sk_scan::MemFs;
 
 use super::*;
-use crate::registry::MemRegistry;
 
 fn root() -> PathBuf {
     PathBuf::from(if cfg!(windows) { r"C:\fake" } else { "/fake" })

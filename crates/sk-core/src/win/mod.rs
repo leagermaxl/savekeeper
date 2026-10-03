@@ -11,7 +11,7 @@ pub(crate) mod env;
 #[cfg(windows)]
 pub(crate) mod known_folders;
 #[cfg(windows)]
-mod registry;
+pub(crate) mod registry;
 pub mod single_instance;
 #[cfg(windows)]
 pub(crate) mod system;

@@ -3,13 +3,13 @@ use std::path::{Path, PathBuf};
 use sk_core::config::Config;
 use sk_core::env::{LauncherInfo, StoreUser};
 use sk_core::model::{EvidenceSource, Finding, IssueSeverity, RegHive, ScanIssue, Target};
+use sk_core::registry::MemRegistry;
 use sk_scan::MemFs;
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
 
 use super::*;
 use crate::compile::compile_yaml;
 use crate::conditions::ISSUE_REGISTRY_ACCESS_DENIED;
-use crate::registry::MemRegistry;
 
 fn root() -> PathBuf {
     PathBuf::from(if cfg!(windows) { r"C:\fake" } else { "/fake" })

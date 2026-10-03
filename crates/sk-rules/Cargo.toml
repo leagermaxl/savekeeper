@@ -21,9 +21,6 @@ sk-core.workspace = true
 thiserror.workspace = true
 tokio = { workspace = true, features = ["rt"] }
 
-[target.'cfg(windows)'.dependencies]
-winreg.workspace = true
-
 [dev-dependencies]
 insta.workspace = true
 sk-scan.workspace = true

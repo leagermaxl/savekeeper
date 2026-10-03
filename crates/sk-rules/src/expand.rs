@@ -25,12 +25,12 @@ use sk_core::fs::{EntryKind, EntryMeta, FsScanner};
 use sk_core::model::{
     AppRef, Evidence, EvidenceSource, Finding, FindingId, IssueSeverity, ScanIssue, Target,
 };
+use sk_core::registry::{normalize_key, KeyState, RegistryReader};
 use sk_core::template::{PathTemplate, ResolveContext};
 
 use crate::compile::{CompiledRule, CompiledTarget, TargetRoot};
 use crate::conditions::{ConditionEvaluator, ConditionOutcome, APP_RUNNING_TAG};
 use crate::once::OnceIssues;
-use crate::registry::{normalize_key, KeyState, RegistryProbe};
 use crate::schema::{Condition, RegistryTarget, Rule};
 use crate::set::issue;
 
@@ -73,7 +73,7 @@ pub struct RuleOutput {
 pub struct TargetExpander<'a> {
     env: &'a Environment,
     fs: &'a dyn FsScanner,
-    registry: &'a dyn RegistryProbe,
+    registry: &'a dyn RegistryReader,
     resolve: &'a ResolveContext,
     /// Once-per-scan issues (unreadable registry keys).
     once: OnceIssues,
@@ -89,7 +89,7 @@ impl<'a> TargetExpander<'a> {
     pub fn new(
         env: &'a Environment,
         fs: &'a dyn FsScanner,
-        registry: &'a dyn RegistryProbe,
+        registry: &'a dyn RegistryReader,
         resolve: &'a ResolveContext,
     ) -> Self {
         Self {
@@ -211,7 +211,7 @@ impl<'a> TargetExpander<'a> {
         glob_root: bool,
     ) -> Expanded {
         let mut matches = Vec::new();
-        for specialized in paths::specialize(template, self.env, self.resolve) {
+        for specialized in template.specialize(self.env, self.resolve) {
             for globbed in paths::glob_paths(&specialized, self.env, self.resolve, self.fs) {
                 let meta = match globbed.meta {
                     Some(meta) => meta,
@@ -294,7 +294,8 @@ impl<'a> TargetExpander<'a> {
         if !paths::has_wildcard(claim) {
             return claim.resolve(self.env, self.resolve);
         }
-        let mut found: Vec<PathBuf> = paths::specialize(claim, self.env, self.resolve)
+        let mut found: Vec<PathBuf> = claim
+            .specialize(self.env, self.resolve)
             .iter()
             .flat_map(|t| paths::glob_paths(t, self.env, self.resolve, self.fs))
             .filter(|g| g.meta.is_some() || self.fs.exists(&g.path))

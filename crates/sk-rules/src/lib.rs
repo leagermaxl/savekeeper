@@ -5,7 +5,8 @@
 //! [`diagnostic`] reports problems with line numbers for the CLI;
 //! [`RuleSet`] loads the built-in and user rules and merges them (§4.4, §4.6);
 //! [`conditions`] evaluates rule conditions with a per-scan cache (§4.3);
-//! [`registry`] probes registry keys for `registry_exists`;
+//! registry keys of `registry_exists` and registry targets are read through
+//! `sk_core::registry::RegistryReader` (SPEC-02 §3.4);
 //! [`expand`] turns targets of matched rules into findings and claimed paths (§4.5);
 //! [`RulesCollector`] runs all rules as the `rules` scan collector (§4.5);
 //! [`RuleError`] reports problems in rule files.
@@ -17,10 +18,8 @@ pub mod diagnostic;
 mod error;
 pub mod expand;
 mod once;
-pub mod registry;
 pub mod schema;
 mod set;
-mod win;
 
 pub use collector::RulesCollector;
 pub use compile::{CompiledRule, CompiledTarget};
@@ -28,5 +27,4 @@ pub use conditions::{ConditionEvaluator, ConditionOutcome, APP_RUNNING_TAG};
 pub use diagnostic::{DiagnosticSeverity, RuleDiagnostic};
 pub use error::RuleError;
 pub use expand::{RuleOutput, TargetExpander};
-pub use registry::{KeyState, MemRegistry, RegistryProbe, SystemRegistry};
 pub use set::{RuleSet, RuleSource};

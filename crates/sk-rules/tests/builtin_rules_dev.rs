@@ -16,7 +16,8 @@ use serde_json::{json, Map, Value};
 use sk_core::collector::CollectOutput;
 use sk_core::env::{Environment, KnownFolder};
 use sk_core::model::{Category, IssueSeverity, RegHive, Sensitivity};
-use sk_rules::{MemRegistry, RuleSet, RuleSource};
+use sk_core::registry::MemRegistry;
+use sk_rules::{RuleSet, RuleSource};
 use sk_scan::MemFs;
 
 const KIB: u64 = 1024;

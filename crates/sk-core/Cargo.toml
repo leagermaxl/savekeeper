@@ -48,6 +48,8 @@ windows = { workspace = true, features = [
 
 [dev-dependencies]
 insta.workspace = true
+# Only in tests/ (SPEC-12 §4.2): unit tests would see a second copy of sk-core.
+sk-testkit.workspace = true
 tempfile.workspace = true
 tokio = { workspace = true, features = ["macros", "rt"] }
 time = { workspace = true, features = ["macros"] }

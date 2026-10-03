@@ -6,9 +6,10 @@ use std::path::Path;
 
 use sk_core::env::Environment;
 use sk_core::model::RegHive;
+use sk_core::registry::{KeyState, RegistryReader, SystemRegistry};
 use sk_core::template::ResolveContext;
 use sk_rules::schema::RuleFile;
-use sk_rules::{ConditionEvaluator, KeyState, RegistryProbe, SystemRegistry};
+use sk_rules::ConditionEvaluator;
 use sk_scan::MemFs;
 
 #[test]

@@ -2,12 +2,12 @@ use std::path::{Path, PathBuf};
 
 use sk_core::fs::ReparseKind;
 use sk_core::model::{AppKind, Category, RegHive, Sensitivity};
+use sk_core::registry::MemRegistry;
 use sk_scan::MemFs;
 
 use super::*;
 use crate::compile::compile_yaml;
 use crate::conditions::{hive_name, ISSUE_REGISTRY_ACCESS_DENIED};
-use crate::registry::MemRegistry;
 
 pub(super) fn root() -> PathBuf {
     PathBuf::from(if cfg!(windows) { r"C:\fake" } else { "/fake" })

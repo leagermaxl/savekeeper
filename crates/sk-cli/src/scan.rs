@@ -137,7 +137,7 @@ mod tests {
     use async_trait::async_trait;
     use sk_core::collector::{CollectContext, CollectOutput, Collector};
     use sk_core::error::CollectorError;
-    use sk_rules::MemRegistry;
+    use sk_core::registry::MemRegistry;
     use sk_scan::MemFs;
 
     use super::*;

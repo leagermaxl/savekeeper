@@ -16,13 +16,9 @@ sk-core.workspace = true
 thiserror.workspace = true
 time.workspace = true
 
-[target.'cfg(windows)'.dependencies]
-winreg.workspace = true
-
 [dev-dependencies]
 criterion.workspace = true
 sk-scan.workspace = true
-sk-testkit.workspace = true
 
 # Manual benchmark (SPEC-05 §6, NFR-05-01): `cargo bench -p sk-games --bench manifest`.
 [[bench]]

@@ -5,6 +5,7 @@
 //! for the current [`Environment`], `from_path` goes the other way.
 
 mod resolve;
+mod specialize;
 mod syntax;
 
 use std::fmt;
@@ -58,6 +59,18 @@ impl PathTemplate {
             .unwrap_or_default()
     }
 
+    /// Specializes the multi-valued tokens for a finding template
+    /// (SPEC-02 §3.2): `{DRIVE:*}` becomes `{DRIVE:X}` for every fixed drive
+    /// of `env`, `{STEAM_USERID}` (every occurrence) every id of
+    /// `ctx.steam_user_ids`; drives first, in the order of `env` and `ctx`.
+    ///
+    /// A token without values gives an empty list; a template without these
+    /// tokens is returned as is. `{PACKAGE:…}`, context values and `*`
+    /// segments are left alone.
+    pub fn specialize(&self, env: &Environment, ctx: &ResolveContext) -> Vec<PathTemplate> {
+        specialize::specialize(self, env, ctx)
+    }
+
     /// The most specific template for an absolute path (SPEC-02 §3.2).
     pub fn from_path(path: &Path, env: &Environment) -> PathTemplate {
         Self(resolve::from_path(path, env, &|_| true).render())
@@ -107,5 +120,7 @@ impl<'de> Deserialize<'de> for PathTemplate {
     }
 }
 
+#[cfg(test)]
+mod specialize_tests;
 #[cfg(test)]
 mod tests;

@@ -27,13 +27,13 @@ use sk_core::error::CollectorError;
 use sk_core::events::{Event, EventSink, ScanPhase, ThrottledSink};
 use sk_core::fs::FsScanner;
 use sk_core::model::{FindingId, ScanIssue};
+use sk_core::registry::{RegistryReader, SystemRegistry};
 use sk_core::template::ResolveContext;
 use sk_core::CancellationToken;
 
 use crate::compile::CompiledRule;
 use crate::conditions::ConditionEvaluator;
 use crate::expand::{RuleOutput, TargetExpander};
-use crate::registry::{RegistryProbe, SystemRegistry};
 use crate::set::RuleSet;
 
 /// `Collector::id` of the rules collector.
@@ -53,7 +53,7 @@ const STEAM_LAUNCHER: &str = "steam";
 pub struct RulesCollector {
     set: Arc<RuleSet>,
     /// Registry access for `registry_exists` and `Registry` targets.
-    registry: Arc<dyn RegistryProbe>,
+    registry: Arc<dyn RegistryReader>,
 }
 
 impl RulesCollector {
@@ -67,7 +67,7 @@ impl RulesCollector {
     }
 
     /// Replaces the registry, e.g. with a `MemRegistry` in tests.
-    pub fn with_registry(mut self, registry: Arc<dyn RegistryProbe>) -> Self {
+    pub fn with_registry(mut self, registry: Arc<dyn RegistryReader>) -> Self {
         self.registry = registry;
         self
     }
@@ -116,7 +116,7 @@ pub(crate) fn run(
     set: &RuleSet,
     env: &Environment,
     fs: &dyn FsScanner,
-    registry: &dyn RegistryProbe,
+    registry: &dyn RegistryReader,
     events: &EventSink,
     cancel: &CancellationToken,
 ) -> CollectOutput {

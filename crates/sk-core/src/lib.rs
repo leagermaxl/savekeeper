@@ -1,4 +1,5 @@
-//! Domain types, path templates, environment, config, events and errors (SPEC-01, SPEC-02).
+//! Domain types, path templates, environment, registry access, config, events and errors
+//! (SPEC-01, SPEC-02).
 
 pub mod collector;
 pub mod config;
@@ -10,6 +11,7 @@ pub mod logging;
 pub mod model;
 pub mod path;
 pub mod privacy;
+pub mod registry;
 pub mod template;
 pub mod win;
 

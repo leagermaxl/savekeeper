@@ -1,24 +1,22 @@
 //! Path expansion of rule targets and claims (SPEC-04 §4.2, §4.5 step 1.2).
 //!
 //! Two steps turn a rule template into concrete paths:
-//! 1. [`specialize`] replaces the multi-valued tokens `{DRIVE:*}` and
-//!    `{STEAM_USERID}` by each of their values, so every path gets its own
-//!    template and therefore its own `FindingId` (FR-04-02);
+//! 1. `PathTemplate::specialize` (SPEC-02 §3.2) replaces the multi-valued
+//!    tokens `{DRIVE:*}` and `{STEAM_USERID}` by each of their values, so
+//!    every path gets its own template and therefore its own `FindingId`
+//!    (FR-04-02);
 //! 2. [`glob_paths`] resolves a template and matches its `*` segments against
 //!    folder listings (`glob_root`), one level per segment, without walking.
 
 use std::path::PathBuf;
 
-use sk_core::env::{DriveKind, Environment};
+use sk_core::env::Environment;
 use sk_core::fs::{EntryKind, EntryMeta, FsScanner, ReparseKind};
 use sk_core::template::{PathTemplate, ResolveContext};
 
 /// `FILE_ATTRIBUTE_DIRECTORY`: tells a folder reparse point (cloud
 /// placeholder, link, junction) from a file one.
 pub(super) const FILE_ATTRIBUTE_DIRECTORY: u32 = 0x10;
-
-const ALL_DRIVES: &str = "{DRIVE:*}";
-const STEAM_USER_ID: &str = "{STEAM_USERID}";
 
 /// A concrete path with the template it was found under.
 #[derive(Debug, Clone)]
@@ -30,54 +28,6 @@ pub(super) struct Globbed {
     /// Metadata of the path when its last segment was matched by `*`
     /// (from the listing); `None` when it was not listed.
     pub(super) meta: Option<EntryMeta>,
-}
-
-/// `template` with `{DRIVE:*}` replaced by `{DRIVE:X}` for every fixed drive
-/// and `{STEAM_USERID}` by every Steam id of `ctx`. A token without values
-/// gives no templates; a template without these tokens is returned as is.
-pub(super) fn specialize(
-    template: &PathTemplate,
-    env: &Environment,
-    ctx: &ResolveContext,
-) -> Vec<PathTemplate> {
-    let text = template.as_str();
-    if !text.starts_with(ALL_DRIVES) && !text.contains(STEAM_USER_ID) {
-        return vec![template.clone()];
-    }
-    let mut variants = vec![text.to_owned()];
-    // A root token is always the whole first segment (SPEC-02 §3.1).
-    if text.starts_with(ALL_DRIVES) {
-        let letters: Vec<char> = env
-            .drives
-            .iter()
-            .filter(|d| d.kind == DriveKind::Fixed)
-            .map(|d| d.letter)
-            .collect();
-        variants = variants
-            .iter()
-            .flat_map(|v| {
-                let rest = &v[ALL_DRIVES.len()..];
-                letters
-                    .iter()
-                    .map(move |letter| format!("{{DRIVE:{letter}}}{rest}"))
-            })
-            .collect();
-    }
-    if text.contains(STEAM_USER_ID) {
-        variants = variants
-            .iter()
-            .flat_map(|v| {
-                ctx.steam_user_ids
-                    .iter()
-                    .map(move |id| v.replace(STEAM_USER_ID, id))
-            })
-            .collect();
-    }
-    // A value that does not fit a template (never for Steam ids) is dropped.
-    variants
-        .iter()
-        .filter_map(|v| PathTemplate::parse(v).ok())
-        .collect()
 }
 
 /// Whether `template` has `*` segments other than `{DRIVE:*}`.

@@ -17,10 +17,10 @@ use regex::Regex;
 use sk_core::env::Environment;
 use sk_core::fs::FsScanner;
 use sk_core::model::{RegHive, ScanIssue};
+use sk_core::registry::{normalize_key, KeyState, RegistryReader};
 use sk_core::template::{PathTemplate, ResolveContext};
 
 use crate::once::OnceIssues;
-use crate::registry::{normalize_key, KeyState, RegistryProbe};
 use crate::schema::{Condition, FileContainsCondition, InstalledCondition, RegistryKey, Rule};
 
 /// Tag added to the findings of a rule whose `process_running` program is
@@ -51,7 +51,7 @@ pub struct ConditionOutcome {
 pub struct ConditionEvaluator<'a> {
     pub(crate) env: &'a Environment,
     pub(crate) fs: &'a dyn FsScanner,
-    pub(crate) registry: &'a dyn RegistryProbe,
+    pub(crate) registry: &'a dyn RegistryReader,
     pub(crate) resolve: &'a ResolveContext,
     /// Once-per-scan issues, shared with the target expanders made from
     /// this evaluator (`TargetExpander::from_evaluator`).
@@ -81,7 +81,7 @@ impl<'a> ConditionEvaluator<'a> {
     pub fn new(
         env: &'a Environment,
         fs: &'a dyn FsScanner,
-        registry: &'a dyn RegistryProbe,
+        registry: &'a dyn RegistryReader,
         resolve: &'a ResolveContext,
     ) -> Self {
         Self {

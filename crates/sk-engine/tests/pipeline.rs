@@ -19,10 +19,10 @@ use sk_core::model::{
     Category, CollectorToggles, Evidence, EvidenceSource, Finding, FindingId, IssueSeverity, Score,
     Sensitivity, Target,
 };
+use sk_core::registry::MemRegistry;
 use sk_core::template::PathTemplate;
 use sk_core::CancellationToken;
 use sk_engine::{EngineError, ScanOptions, ScanPipeline};
-use sk_rules::MemRegistry;
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
 
 fn env() -> Environment {

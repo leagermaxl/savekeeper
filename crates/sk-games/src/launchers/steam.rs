@@ -11,11 +11,11 @@ use sk_core::env::{Environment, InstalledGame, KnownFolder, LauncherInfo, StoreU
 use sk_core::fs::{EntryKind, EntryMeta, FsError, FsScanner, ReparseKind};
 use sk_core::model::{RegHive, ScanIssue};
 use sk_core::path::eq_ci;
+use sk_core::registry::{RegistryReader, SystemRegistry};
 use sk_core::template::PathTemplate;
 
 use super::vdf::{self, Reason, INVALID};
 use super::{info_issue, LauncherDetector};
-use crate::registry::{RegistryReader, SystemRegistry};
 
 /// Steam id64 of the account with id3 0: id3 = id64 − base.
 pub const STEAM_ID64_BASE: u64 = 76_561_197_960_265_728;

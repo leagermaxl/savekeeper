@@ -15,8 +15,9 @@ use sk_core::collector::{CollectContext, CollectOutput, Collector};
 use sk_core::config::Config;
 use sk_core::env::{Environment, KnownFolder};
 use sk_core::model::{EvidenceSource, Finding};
+use sk_core::registry::MemRegistry;
 use sk_core::CancellationToken;
-use sk_rules::{MemRegistry, RuleSet, RulesCollector};
+use sk_rules::{RuleSet, RulesCollector};
 use sk_scan::{measure, DirStatsCache, ExcludeSet, MeasureOptions, MemFs};
 use tokio::sync::mpsc::unbounded_channel;
 

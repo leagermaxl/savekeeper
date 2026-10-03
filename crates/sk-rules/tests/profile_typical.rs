@@ -15,12 +15,11 @@ use sk_core::config::Config;
 use sk_core::env::Environment;
 use sk_core::events::{Event, ScanPhase};
 use sk_core::model::{Finding, RegHive, ScanIssue};
+use sk_core::registry::MemRegistry;
 use sk_core::template::ResolveContext;
 use sk_core::CancellationToken;
 use sk_rules::compile::compile_yaml;
-use sk_rules::{
-    ConditionEvaluator, MemRegistry, RuleOutput, RuleSet, RulesCollector, TargetExpander,
-};
+use sk_rules::{ConditionEvaluator, RuleOutput, RuleSet, RulesCollector, TargetExpander};
 use sk_scan::MemFs;
 use tokio::sync::mpsc::unbounded_channel;
 

@@ -2028,6 +2028,7 @@ dependencies = [
  "insta",
  "serde",
  "serde_json",
+ "sk-testkit",
  "specta",
  "tempfile",
  "thiserror",
@@ -2066,10 +2067,8 @@ dependencies = [
  "serde-saphyr",
  "sk-core",
  "sk-scan",
- "sk-testkit",
  "thiserror",
  "time",
- "winreg",
 ]
 
 [[package]]
@@ -2103,7 +2102,6 @@ dependencies = [
  "tempfile",
  "thiserror",
  "tokio",
- "winreg",
 ]
 
 [[package]]

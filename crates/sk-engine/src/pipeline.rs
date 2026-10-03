@@ -17,9 +17,9 @@ use sk_core::model::{
     ScanOptionsSnapshot, ScanReport, Totals,
 };
 use sk_core::path::PathSet;
+use sk_core::registry::RegistryReader;
 use sk_core::template::PathTemplate;
 use sk_core::CancellationToken;
-use sk_rules::RegistryProbe;
 use sk_scan::{measure_all, ExcludeSet, MeasureOptions, RealFs};
 use time::OffsetDateTime;
 use tokio::task::{JoinError, JoinSet};
@@ -113,7 +113,7 @@ impl ScanPipeline {
     }
 
     /// Replaces the registry the rules probe (`MemRegistry` in tests).
-    pub fn with_rules_registry(mut self, registry: Arc<dyn RegistryProbe>) -> Self {
+    pub fn with_rules_registry(mut self, registry: Arc<dyn RegistryReader>) -> Self {
         self.rules.registry = Some(registry);
         self
     }
