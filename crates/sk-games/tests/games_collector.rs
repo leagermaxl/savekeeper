@@ -146,3 +146,83 @@ async fn cancelled_collection_is_empty() {
         CollectOutput::default()
     );
 }
+
+/// A data folder (on the drive of the build output) whose cache holds the
+/// manifest excerpt, and a config whose manifest update always fails before
+/// any connection: every load gives one `manifest_offline` issue.
+fn failing_store() -> (tempfile::TempDir, Config) {
+    let data = tempfile::tempdir_in(env!("CARGO_TARGET_TMPDIR")).unwrap();
+    let cache = data.path().join("cache");
+    fs::create_dir_all(&cache).unwrap();
+    fs::write(cache.join("ludusavi-manifest.yaml"), MINI).unwrap();
+    let mut config = Config::default();
+    config.games.auto_update = true;
+    config.games.update_interval_hours = 0;
+    config.games.manifest_url = "unsupported://savekeeper.invalid/manifest.yaml".to_owned();
+    (data, config)
+}
+
+fn ctx_for(config: &Config, cancel: CancellationToken) -> CollectContext {
+    let (fs, env) = profile();
+    let (events, _rx) = tokio::sync::mpsc::unbounded_channel();
+    CollectContext {
+        env: Arc::new(env),
+        config: Arc::new(config.clone()),
+        scanner: Arc::new(fs),
+        events,
+        cancel,
+    }
+}
+
+fn offline_issues(out: &CollectOutput) -> usize {
+    out.issues
+        .iter()
+        .filter(|i| i.message_key == "issue.games.manifest_offline")
+        .count()
+}
+
+/// `preload` loads the manifest once; `collect` uses that load (one
+/// `manifest_offline` issue) and finds the same as a collection without it.
+#[tokio::test]
+async fn preloaded_manifest_is_loaded_once_and_used() {
+    let (data, config) = failing_store();
+    let ctx = ctx_for(&config, CancellationToken::new());
+    let collector = GamesCollector::new(ManifestStore::new(&config, data.path()))
+        .with_registry(Arc::new(MemRegistry::new()));
+    collector.preload(&ctx.cancel);
+    // A second call while the load is pending starts nothing.
+    collector.preload(&ctx.cancel);
+    let preloaded = collector.collect(&ctx).await.unwrap();
+    assert_eq!(offline_issues(&preloaded), 1, "{:?}", preloaded.issues);
+
+    // Without a preload, `collect` loads by itself, as before.
+    let plain = collector.collect(&ctx).await.unwrap();
+    assert_eq!(offline_issues(&plain), 1, "{:?}", plain.issues);
+    assert_eq!(preloaded.findings, plain.findings);
+    assert!(!plain.findings.is_empty());
+}
+
+/// Cancellation: a preload with a cancelled token, or a collection
+/// cancelled while it waits for the preload, gives an empty output.
+#[tokio::test]
+async fn cancelled_preload_or_wait_is_empty() {
+    let (data, config) = failing_store();
+    let collector = GamesCollector::new(ManifestStore::new(&config, data.path()))
+        .with_registry(Arc::new(MemRegistry::new()));
+
+    let cancelled = CancellationToken::new();
+    cancelled.cancel();
+    collector.preload(&cancelled);
+    let ctx = ctx_for(&config, CancellationToken::new());
+    assert_eq!(
+        collector.collect(&ctx).await.unwrap(),
+        CollectOutput::default()
+    );
+
+    collector.preload(&CancellationToken::new());
+    let ctx = ctx_for(&config, cancelled);
+    assert_eq!(
+        collector.collect(&ctx).await.unwrap(),
+        CollectOutput::default()
+    );
+}

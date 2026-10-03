@@ -9,8 +9,10 @@
 #![allow(clippy::unwrap_used)]
 
 use std::collections::BTreeSet;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use async_trait::async_trait;
 use sk_core::collector::{CollectContext, CollectOutput, Collector};
@@ -19,9 +21,9 @@ use sk_core::env::Environment;
 use sk_core::error::CollectorError;
 use sk_core::events::Event;
 use sk_core::model::{
-    Category, CollectorToggles, EvidenceSource, Finding, IssueSeverity, ScanReport,
+    Category, CollectorToggles, EvidenceSource, Finding, IssueSeverity, RegHive, ScanReport,
 };
-use sk_core::registry::MemRegistry;
+use sk_core::registry::{KeyState, MemRegistry, RegistryReader};
 use sk_core::CancellationToken;
 use sk_engine::{ScanOptions, ScanPipeline};
 use sk_scan::MemFs;
@@ -258,4 +260,119 @@ async fn a_games_collector_replaces_the_built_in_one() {
         mem_pipeline(failing_config(), data.path()).with_collector(Arc::new(Replacement));
     let (report, _) = run(&pipeline, ScanOptions::default()).await;
     assert!(!has_offline_issue(&report), "{:?}", report.issues);
+}
+
+/// The registry of the launcher detectors: its first read after `arm`
+/// blocks the `Environment` phase until the manifest load of the run has
+/// written the index into the cache (at most 30 s), and records whether it
+/// did, i.e. whether the load ran before the phase finished.
+struct WaitingRegistry {
+    inner: MemRegistry,
+    index: PathBuf,
+    armed: AtomicBool,
+    index_seen: AtomicBool,
+}
+
+impl WaitingRegistry {
+    fn new(data: &Path) -> Self {
+        Self {
+            inner: MemRegistry::new(),
+            index: data.join("cache").join("ludusavi-index.bin"),
+            armed: AtomicBool::new(false),
+            index_seen: AtomicBool::new(false),
+        }
+    }
+
+    fn arm(&self) {
+        self.index_seen.store(false, Ordering::SeqCst);
+        self.armed.store(true, Ordering::SeqCst);
+    }
+
+    fn wait_for_index(&self) {
+        if !self.armed.swap(false, Ordering::SeqCst) {
+            return;
+        }
+        let deadline = Instant::now() + Duration::from_secs(30);
+        while Instant::now() < deadline {
+            if self.index.exists() {
+                self.index_seen.store(true, Ordering::SeqCst);
+                return;
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
+    }
+}
+
+impl RegistryReader for WaitingRegistry {
+    fn key_state(&self, hive: RegHive, key: &str) -> KeyState {
+        self.wait_for_index();
+        self.inner.key_state(hive, key)
+    }
+    fn string_value(&self, hive: RegHive, key: &str, name: &str) -> Option<String> {
+        self.wait_for_index();
+        self.inner.string_value(hive, key, name)
+    }
+    fn dword_value(&self, hive: RegHive, key: &str, name: &str) -> Option<u32> {
+        self.wait_for_index();
+        self.inner.dword_value(hive, key, name)
+    }
+    fn subkeys(&self, hive: RegHive, key: &str) -> Vec<String> {
+        self.wait_for_index();
+        self.inner.subkeys(hive, key)
+    }
+}
+
+/// The manifest load starts with the `Environment` phase and runs alongside
+/// it (SPEC-05 T-05-15): the detectors see the index it writes before the
+/// phase finishes. The collector awaits that load instead of loading again:
+/// every run gives exactly one `manifest_offline` issue (one failed update
+/// per load), and the manifest is used (no `collector.failed`).
+#[tokio::test]
+async fn manifest_loads_during_the_environment_phase_once_per_run() {
+    let data = data_dir();
+    let registry = Arc::new(WaitingRegistry::new(data.path()));
+    let pipeline = mem_pipeline(failing_config(), data.path())
+        .with_games_registry(Arc::clone(&registry) as Arc<dyn RegistryReader>);
+
+    for round in 0..2 {
+        registry.arm();
+        let (report, events) = run(&pipeline, ScanOptions::default()).await;
+        if round == 0 {
+            assert!(
+                registry.index_seen.load(Ordering::SeqCst),
+                "the manifest was not loaded during the Environment phase"
+            );
+        }
+        let offline = report
+            .issues
+            .iter()
+            .filter(|i| i.message_key == OFFLINE_KEY)
+            .count();
+        assert_eq!(offline, 1, "round {round}: {:?}", report.issues);
+        assert!(
+            report
+                .issues
+                .iter()
+                .all(|i| i.source != "games" || i.message_key == OFFLINE_KEY),
+            "round {round}: {:?}",
+            report.issues
+        );
+        let environment_done = events
+            .iter()
+            .position(|e| {
+                matches!(
+                    e,
+                    Event::PhaseFinished {
+                        phase: sk_core::events::ScanPhase::Environment,
+                        ..
+                    }
+                )
+            })
+            .unwrap();
+        let offline_sent = events
+            .iter()
+            .position(|e| matches!(e, Event::Issue { issue } if issue.message_key == OFFLINE_KEY))
+            .unwrap();
+        assert!(environment_done < offline_sent);
+    }
 }

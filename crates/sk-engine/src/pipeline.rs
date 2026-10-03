@@ -24,6 +24,7 @@ use sk_core::path::PathSet;
 use sk_core::registry::RegistryReader;
 use sk_core::template::PathTemplate;
 use sk_core::CancellationToken;
+use sk_games::GamesCollector;
 use sk_scan::{measure_all, ExcludeSet, MeasureOptions};
 use time::OffsetDateTime;
 use tokio::task::{JoinError, JoinSet};
@@ -153,19 +154,26 @@ impl ScanPipeline {
         };
 
         let mut acc = Accumulated::default();
-        let (env, scanner) = run
-            .phase(ScanPhase::Environment, self.environment(&mut acc, &run))
+        let collect_cancel = cancel.child_token();
+        let (env, scanner, games) = run
+            .phase(
+                ScanPhase::Environment,
+                self.environment(&opts.collectors, &collect_cancel, &mut acc, &run),
+            )
             .await??;
         let ctx = CollectContext {
             env: Arc::new(env),
             config: Arc::clone(&self.config),
             scanner,
             events: events.clone(),
-            cancel: cancel.child_token(),
+            cancel: collect_cancel,
         };
 
         let collected = run
-            .phase(ScanPhase::Collect, self.collect(&ctx, &opts.collectors))
+            .phase(
+                ScanPhase::Collect,
+                self.collect(&ctx, &opts.collectors, games),
+            )
             .await?;
         acc.extend(collected, &run);
         let post = run
@@ -197,9 +205,14 @@ impl ScanPipeline {
 
     /// Collectors in parallel tasks; dropping the future (cancellation) aborts them.
     /// The rules are loaded first; their load issues come before the outcomes.
-    async fn collect(&self, ctx: &CollectContext, toggles: &CollectorToggles) -> Vec<Outcome> {
+    async fn collect(
+        &self,
+        ctx: &CollectContext,
+        toggles: &CollectorToggles,
+        games: Option<Arc<GamesCollector>>,
+    ) -> Vec<Outcome> {
         let mut outcomes = Vec::new();
-        let mut collectors = self.builtin_collectors(toggles, &mut outcomes).await;
+        let mut collectors = self.builtin_collectors(toggles, games, &mut outcomes).await;
         collectors.extend(
             self.collectors
                 .iter()

@@ -1,16 +1,18 @@
 //! The built-in `games` collector of the pipeline (SPEC-05 T-05-12):
 //! `GamesCollector` over a `ManifestStore` built from the `Config` and the
-//! data folder (`DataDir::root`, cache in `cache/`) of each run.
+//! data folder (`DataDir::root`, cache in `cache/`) of each run. Its manifest
+//! load starts with the `Environment` phase (T-05-15, NFR-05-01).
 
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use sk_core::collector::Collector;
 use sk_core::config::Config;
+use sk_core::model::CollectorToggles;
 use sk_core::registry::RegistryReader;
+use sk_core::CancellationToken;
 use sk_games::{GamesCollector, ManifestStore};
 
-use super::ScanPipeline;
+use super::{enabled, ScanPipeline};
 
 /// `Collector::id` of the games collector; also the source of the issue of
 /// a panicking launcher detection.
@@ -44,7 +46,7 @@ impl BuiltinGames {
         &self,
         config: &Config,
         registry: Option<&Arc<dyn RegistryReader>>,
-    ) -> Option<Arc<dyn Collector>> {
+    ) -> Option<Arc<GamesCollector>> {
         if !self.enabled {
             return None;
         }
@@ -58,6 +60,25 @@ impl BuiltinGames {
 }
 
 impl ScanPipeline {
+    /// The built-in games collector of one run, switched on by `toggles`,
+    /// with its manifest load already started (`GamesCollector::preload`
+    /// with `cancel`, the token of the collectors). Called at the start of
+    /// the `Environment` phase; dropping the collector aborts the load.
+    pub(super) fn preload_games(
+        &self,
+        toggles: &CollectorToggles,
+        cancel: &CancellationToken,
+    ) -> Option<Arc<GamesCollector>> {
+        if !enabled(toggles, GAMES_ID) {
+            return None;
+        }
+        let collector = self
+            .games
+            .collector(&self.config, self.games_registry.as_ref())?;
+        collector.preload(cancel);
+        Some(collector)
+    }
+
     /// Registers the built-in `games` collector (SPEC-05) with the manifest
     /// cache in `<dir>/cache`, where `dir` is the `savekeeper-data` folder
     /// (`DataDir::root`). Without this call there is no built-in games

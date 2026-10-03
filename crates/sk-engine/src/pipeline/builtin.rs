@@ -5,18 +5,19 @@ use std::sync::Arc;
 
 use sk_core::collector::{CollectOutput, Collector};
 use sk_core::model::CollectorToggles;
+use sk_games::GamesCollector;
 
-use super::games::GAMES_ID;
 use super::{enabled, Outcome, ScanPipeline};
 use crate::rules::RULES_ID;
 
 impl ScanPipeline {
-    /// The built-in collectors switched on by `toggles`. The rules are
-    /// loaded here; their load issues (or the panic of the load) go to
-    /// `outcomes`.
+    /// The built-in collectors switched on by `toggles`: the rules, loaded
+    /// here (their load issues or the panic of the load go to `outcomes`),
+    /// and `games`, built with its manifest load by `preload_games`.
     pub(super) async fn builtin_collectors(
         &self,
         toggles: &CollectorToggles,
+        games: Option<Arc<GamesCollector>>,
         outcomes: &mut Vec<Outcome>,
     ) -> Vec<Arc<dyn Collector>> {
         let mut collectors: Vec<Arc<dyn Collector>> = Vec::new();
@@ -34,11 +35,8 @@ impl ScanPipeline {
                 Err(error) => outcomes.extend(Outcome::from_join(RULES_ID, &error)),
             }
         }
-        if enabled(toggles, GAMES_ID) {
-            collectors.extend(
-                self.games
-                    .collector(&self.config, self.games_registry.as_ref()),
-            );
+        if let Some(games) = games {
+            collectors.push(games);
         }
         collectors
     }

@@ -2,7 +2,8 @@
 //! and the launchers (SPEC-05 §4.7).
 //!
 //! One collection:
-//! 1. loads the manifest ([`ManifestStore::load`]);
+//! 1. loads the manifest ([`ManifestStore::load`]), or awaits the load
+//!    started by [`GamesCollector::preload`];
 //! 2. matches every installed game of `Environment.launchers` with the
 //!    manifest (§4.5) and checks all its `files` and `registry` entries
 //!    (FR-05-03); the install folder gives a `Reinstallable` finding, tagged
@@ -21,13 +22,14 @@
 
 mod group;
 mod install;
+mod preload;
 mod probe;
 mod registry;
 mod template;
 
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 use sk_core::collector::{CollectContext, CollectOutput, Collector};
@@ -59,11 +61,13 @@ const STEAM: &str = "steam";
 
 /// Collector of game saves and configs (SPEC-05 §4.7).
 pub struct GamesCollector {
-    store: ManifestStore,
+    store: Arc<ManifestStore>,
     /// Registry access for the `registry` entries of the manifest.
     registry: Arc<dyn RegistryReader>,
     /// Whether [`ManifestStore::load`] may download the manifest.
     allow_network: bool,
+    /// The load started by [`GamesCollector::preload`], taken by `collect`.
+    preload: Mutex<Option<preload::Preload>>,
 }
 
 impl GamesCollector {
@@ -72,9 +76,10 @@ impl GamesCollector {
     /// (as far as `games.auto_update` allows).
     pub fn new(store: ManifestStore) -> Self {
         Self {
-            store,
+            store: Arc::new(store),
             registry: Arc::new(SystemRegistry),
             allow_network: true,
+            preload: Mutex::new(None),
         }
     }
 
@@ -102,12 +107,13 @@ impl Collector for GamesCollector {
         DISPLAY_KEY
     }
 
-    /// Loads the manifest and collects the findings; problems with single
-    /// files, keys and the manifest download are issues. Fails only when no
+    /// Loads the manifest (or awaits [`GamesCollector::preload`]) and
+    /// collects the findings; problems with single files, keys and the
+    /// manifest download are issues. Fails only when no
     /// manifest can be used at all (not even the embedded snapshot). When
     /// the scan is cancelled the output is empty.
     async fn collect(&self, ctx: &CollectContext) -> Result<CollectOutput, CollectorError> {
-        let manifest = match self.store.load(self.allow_network, &ctx.cancel).await {
+        let manifest = match self.manifest(&ctx.cancel).await {
             Ok(manifest) => manifest,
             Err(GamesError::Cancelled) => return Ok(CollectOutput::default()),
             Err(e) => return Err(CollectorError::Other(e.to_string())),
