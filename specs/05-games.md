@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-games` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-04 (токены `{STEAM}`, `{STEAM_USERID}`), SPEC-07, SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-03 (T-05-06: `GameCtx`, глобы, `<home>/AppData`, `Saved Games` и причины пропуска в §4.3, соответствие store → лаунчер в FR-05-05; T-05-05: `enrich_with_registry` в §4.1; T-05-04: условие обнаружения EA, тексты ключей games в T-05-09, детекторы Epic/GOG/Ubisoft/EA/Battle.net/Xbox в §4.1 и §4.4, находки лаунчеров, issue `launcher_file_unreadable` в §5; T-05-02: FR-05-11 ресурс снапшота, варианты `GamesError`, детали `ManifestStore` в §4.1, ключи issue манифеста в §5, встроенный снапшот из `third_party/ludusavi`; T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.1: реестр из sk-core, T-05-04 и T-05-09 зависят от T-02-10; T-05-03: detect_with_issues, SteamDetector, RegistryReader, детали Steam §4.4, ключи issue §5; T-05-01: API разбора манифеста, конкретные типы, параллельный разбор, бенч; §5: манифест с 0 игр; T-04-05: специализация `{STEAM_USERID}` в шаблоне находки, §4.7, §5); 2026-10-02 (§6: пути фикстур `fixtures/samples/...` и 20 игр, как в SPEC-12 §4.3; 2026-10-01: §4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
+| Последнее изменение | 2026-10-03 (T-05-07: §4.5 — алиасы, fallback Steam/GOG на имя, нормализация без транслитерации, порядок при неоднозначности, пометка `game-unmatched` для SPEC-07, API `MatchIndex`; T-05-06: `GameCtx`, глобы, `<home>/AppData`, `Saved Games` и причины пропуска в §4.3, соответствие store → лаунчер в FR-05-05; T-05-05: `enrich_with_registry` в §4.1; T-05-04: условие обнаружения EA, тексты ключей games в T-05-09, детекторы Epic/GOG/Ubisoft/EA/Battle.net/Xbox в §4.1 и §4.4, находки лаунчеров, issue `launcher_file_unreadable` в §5; T-05-02: FR-05-11 ресурс снапшота, варианты `GamesError`, детали `ManifestStore` в §4.1, ключи issue манифеста в §5, встроенный снапшот из `third_party/ludusavi`; T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.1: реестр из sk-core, T-05-04 и T-05-09 зависят от T-02-10; T-05-03: detect_with_issues, SteamDetector, RegistryReader, детали Steam §4.4, ключи issue §5; T-05-01: API разбора манифеста, конкретные типы, параллельный разбор, бенч; §5: манифест с 0 игр; T-04-05: специализация `{STEAM_USERID}` в шаблоне находки, §4.7, §5); 2026-10-02 (§6: пути фикстур `fixtures/samples/...` и 20 игр, как в SPEC-12 §4.3; 2026-10-01: §4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
 
 ## 1. Цель
 
@@ -218,10 +218,12 @@ Steam, детали: корень — первый существующий ка
 Результат детекторов → `Environment.launchers`. Ошибки детектора → `ScanIssue::Info` с `source: "games.<launcher>"`.
 
 ### 4.5 Сопоставление установленных игр с манифестом
-1. Индекс `steam_id → key`, `gog_id → key` из манифеста (включая `id.steamExtra`, `id.gogExtra`).
-2. Steam/GOG: по id. Epic/остальные: по нормализованному имени (`AppRef` id-нормализация SPEC-02 §2.4, без `™®©`, `: - _`) и по имени каталога установки (`installDir` в манифесте).
-3. Неоднозначность (несколько совпадений по имени) → берём запись, у которой совпадает `installDir`, иначе первую + confidence 0.6.
-4. Несопоставленная установленная игра → находка `Reinstallable` каталога установки + в `CollectOutput` пометка для SPEC-07 (эвристика `Saved\SaveGames` внутри `GAME_DIR`, маркер `UnrealSaveGames`).
+1. Индекс `steam_id → key`, `gog_id → key` из манифеста (включая `id.steamExtra`, `id.gogExtra`). Записи-алиасы в индекс id и `installDir` не входят; их имя ведёт на целевую запись, если она есть и сама не алиас.
+2. Steam/GOG: по id (`steam.id`/`gog.id`, затем `id.steamExtra`/`id.gogExtra`). Если id нет в индексе или он не число, а также для Epic и остальных — по нормализованному имени, затем по имени каталога установки (`installDir` в манифесте, без учёта регистра). Нормализация для сопоставления: удалить `™®©`, lowercase, каждая серия символов кроме букв и цифр → `-`, trim `-`. Для ASCII это id `AppRef` (SPEC-02 §2.4); не-ASCII буквы сохраняются как есть (без транслитерации). Пустой результат ни с чем не совпадает.
+3. Неоднозначность (несколько записей на шаге id, имени или `installDir`) → берём запись, у которой `installDir` совпадает с именем каталога установки (без учёта регистра). Если такая одна — confidence 1.0, иначе первая из оставшихся по порядку ключей манифеста (байтовое сравнение) + confidence 0.6.
+4. Несопоставленная установленная игра → находка `Reinstallable` каталога установки с тегом `game-unmatched`; этот тег и есть пометка для SPEC-07 (`PriorResults.findings`). Каталог установки такой игры **не** добавляется в `claimed_paths`, чтобы эвристики SPEC-07 исследовали его (маркер `UnrealSaveGames` — `Saved\SaveGames` внутри `GAME_DIR`). Отдельного поля в `CollectOutput` нет.
+
+Реализация (crate-private, T-05-07): `MatchIndex::new(&Manifest)`, `match_game(launcher_id, &InstalledGame) -> Option<GameMatch { key, confidence, by: StoreId|Name|InstallDir }>`, `annotate(&mut [LauncherInfo])` заполняет `InstalledGame.manifest_key`. Находки п. 4 строит `GamesCollector` (T-05-09).
 
 ### 4.6 Индекс для неустановленных игр (FR-05-04)
 Перебор 20 000+ игр × их путей с `exists()` — это ~100 000 обращений к ФС. Так делать нельзя.
@@ -290,7 +292,7 @@ Issue Steam: reason ∈ not_found, access_denied, locked, too_large, cloud_only,
 - [x] **T-05-04** — Детекторы Epic, GOG (реестр), Ubisoft, EA, Battle.net (Uninstall), Xbox (`wgs`-находка). *Зависит:* T-05-03, T-02-10.
 - [x] **T-05-05** — `enrich(env, fs)` (возвращает issues детекторов: `pub fn enrich(env: &mut Environment, fs: &dyn FsScanner) -> Vec<ScanIssue>`, §4.1) и интеграция в фазу Environment `sk-engine`. *Зависит:* T-05-04, T-01-06.
 - [x] **T-05-06** — `translate` + фильтр `when` + `{GAME_DIR}`. *Зависит:* T-05-01, T-02-03.
-- [ ] **T-05-07** — Сопоставление установленных игр с манифестом (§4.5). *Зависит:* T-05-05, T-05-06.
+- [x] **T-05-07** — Сопоставление установленных игр с манифестом (§4.5). *Зависит:* T-05-05, T-05-06.
 - [ ] **T-05-08** — Индекс якорей для неустановленных игр (§4.6). *Зависит:* T-05-06. *Готово, когда:* тест на счётчик `exists`.
 - [ ] **T-05-09** — `GamesCollector` (§4.7): группировка, реестр, cloud-теги, claimed_paths, Reinstallable-находки каталогов, находки лаунчеров (§4.4); ru/en тексты всех ключей `issue.games.*`, `evidence.games.*`, `games.*` (формат ресурсов как в SPEC-04 T-04-11) с тестом покрытия ключей. *Зависит:* T-05-07, T-05-08, T-01-03, T-02-10.
 - [ ] **T-05-10** — CLI `manifest update` + вывод источника манифеста в `savekeeper-cli env`. *Зависит:* T-05-02, T-01-07.

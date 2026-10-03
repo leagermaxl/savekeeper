@@ -4,6 +4,7 @@ mod embedded;
 mod error;
 pub mod launchers;
 pub mod manifest;
+mod matching;
 mod store;
 mod translate;
 mod when;
