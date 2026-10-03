@@ -2919,6 +2919,13 @@ version = "0.1.0"
 [[package]]
 name = "sk-system"
 version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "serde_json",
+ "sk-core",
+ "thiserror",
+ "tokio",
+]
 
 [[package]]
 name = "sk-testkit"
