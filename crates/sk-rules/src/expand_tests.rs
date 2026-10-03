@@ -435,7 +435,7 @@ fn denied_key_report_is_shared_with_conditions() {
 }
 
 #[test]
-fn from_json_targets_are_skipped_for_now() {
+fn from_json_target_without_config_has_no_roots() {
     let mut setup = Setup::new();
     setup.file("App/config.ini");
     let out = setup.expand(&rule(
@@ -450,9 +450,12 @@ fn from_json_targets_are_skipped_for_now() {
 "#,
     ));
     assert_eq!(templates(&out), [r"file:{APPDATA}\App\config.ini"]);
+    // A missing config is not a problem (§4.2.1 step 1) and is not claimed.
+    assert!(out.issues.is_empty());
+    assert_eq!(out.claimed_paths, [appdata("App/config.ini")]);
 
-    // A required `from_json` target has no paths yet: the optional one
-    // alone does not fire the rule.
+    // A required `from_json` target without roots: the optional one alone
+    // does not fire the rule.
     let out = setup.expand(&rule(
         r#"
   - id: app.data

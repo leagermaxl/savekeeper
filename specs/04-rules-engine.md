@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-rules`, каталог `rules/` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-07 (claimed_paths), SPEC-09, SPEC-11 (редактор правил, P4) |
-| Последнее изменение | 2026-10-03 (T-04-05: условие срабатывания правила (FR-04-03), reparse-корни targets, специализация мульти-значных токенов, заголовок с `label_key`, семантика `claims` и `glob_root`, API `expand` в §4.1, поля находки, issues `glob_root_truncated` и доступ к реестру для targets в §5); 2026-10-03 (T-04-03/T-04-04: API `RuleSource`/`conditions`/`registry`, семантика условий, `installed.winget` зарезервирован, regex проверяется при компиляции, ключи issue в §5, детали слияния; T-04-02: `RuleDiagnostic.severity`, API `compile`/`diagnostic` в §4.1, `hklm` в §4.2 согласован с §4.4; уточнения по T-04-01: `tags` у target, `registry.recursive` по умолчанию `true`, `file_contains.pattern` — regex, обязательные поля §4.4; 2026-10-02: T-04-07: ручные проверки критериев SPEC-03 §8; T-04-07: ручная проверка Ctrl+C из SPEC-01 §8; 2026-10-01: YAML: `serde-saphyr` вместо `serde_yaml`; `from_json` в схеме v1) |
+| Последнее изменение | 2026-10-03 (T-04-12: from_json issues/args, нормализация, claims конфига; T-04-05: условие срабатывания правила (FR-04-03), reparse-корни targets, специализация мульти-значных токенов, заголовок с `label_key`, семантика `claims` и `glob_root`, API `expand` в §4.1, поля находки, issues `glob_root_truncated` и доступ к реестру для targets в §5); 2026-10-03 (T-04-03/T-04-04: API `RuleSource`/`conditions`/`registry`, семантика условий, `installed.winget` зарезервирован, regex проверяется при компиляции, ключи issue в §5, детали слияния; T-04-02: `RuleDiagnostic.severity`, API `compile`/`diagnostic` в §4.1, `hklm` в §4.2 согласован с §4.4; уточнения по T-04-01: `tags` у target, `registry.recursive` по умолчанию `true`, `file_contains.pattern` — regex, обязательные поля §4.4; 2026-10-02: T-04-07: ручные проверки критериев SPEC-03 §8; T-04-07: ручная проверка Ctrl+C из SPEC-01 §8; 2026-10-01: YAML: `serde-saphyr` вместо `serde_yaml`; `from_json` в схеме v1) |
 
 ## 1. Цель
 
@@ -208,24 +208,27 @@ Obsidian, проекты Unity Hub. Правило с таким target'ом ч�
 
 **Семантика:**
 1. `file` раскрывается как обычный `PathTemplate`. Если файла нет и target не `optional`, находок нет, issue не создаётся.
-2. Файл читается через `FsScanner::read_small(path, 1 MiB)` (SPEC-03 §4.1). Больше 1 MiB → `ScanIssue::Warning issue.rules.from_json_too_large`. Cloud-only файл не читается (SPEC-03 FR-03-03).
-3. Парсинг: `serde_json`. Для `jsonc` перед парсингом удаляются `//` и `/* */` комментарии и висячие запятые (свой минимальный препроцессор с учётом строк, без внешней зависимости).
-4. `select` вычисляется по дереву: обычные сегменты как в RFC 6901 (`~0`, `~1`), `*` разворачивается во все ключи объекта или элементы массива. Допускается не больше 3 сегментов `*`.
+2. Файл читается через `FsScanner::read_small(path, 1 MiB)` (SPEC-03 §4.1). Больше 1 MiB → `ScanIssue::Warning issue.rules.from_json_too_large {rule_id, file, limit}`. Файл существует, но не читается (cloud-only — SPEC-03 FR-03-03, нет доступа, заблокирован, каталог, ссылка) → `ScanIssue::Warning issue.rules.from_json_unreadable {rule_id, file, error}`. Во всех issues про конфиг `file` = шаблон `file`, `ScanIssue.path` = тот же шаблон.
+3. Парсинг: `serde_json` в собственное дерево с порядком членов как в документе (повторяющиеся ключи сохраняются: обычный сегмент берёт последний, `*` — все); BOM UTF-8 пропускается. Ошибка → `ScanIssue::Warning issue.rules.from_json_parse {rule_id, file, error, line?}`. Для `jsonc` перед парсингом `//` и `/* */` комментарии и висячие запятые заменяются пробелами, переводы строк сохраняются (`line` — строка исходного файла); свой минимальный препроцессор с учётом строк, без внешней зависимости.
+4. `select` вычисляется по дереву: обычные сегменты как в RFC 6901 (`~0`, `~1`), `*` разворачивается во все ключи объекта или элементы массива. Допускается не больше 3 сегментов `*`. Сегмент-не-индекс (не десятичные цифры или ведущий ноль) на массиве ничего не выбирает. Нет строковых значений → `ScanIssue::Info issue.rules.from_json_empty {rule_id, file, select}`.
 5. Берутся только **строковые** значения. Нормализация:
-   - `file:///C:/x` → `C:\x` (percent-decoding);
+   - `file:///C:/x` → `C:\x`, `file://host/share` → `\\host\share` (percent-decoding только для `file://`);
    - `/` → `\`;
-   - переменные `%VAR%` раскрываются через окружение процесса;
-   - относительный путь разрешается относительно папки `file`.
-6. Фильтры безопасности (значение отбрасывается с `ScanIssue::Info issue.rules.from_json_skipped`):
-   - не абсолютный путь после нормализации;
-   - UNC или сетевой диск (`DriveKind::Network`);
-   - внутри `{WINDIR}` или `{PROGRAMFILES*}`;
-   - путь не существует;
-   - дубль другого значения.
+   - префикс `\\?\X:` отбрасывается;
+   - переменные `%VAR%` раскрываются из окружения процесса, неизвестные остаются как есть;
+   - относительный путь разрешается относительно папки `file`, `.` и `..` убираются лексически.
+6. Фильтры безопасности: значение отбрасывается с `ScanIssue::Info issue.rules.from_json_skipped {rule_id, path, reason}`; `path` и `ScanIssue.path` — шаблон значения (`PathTemplate::from_path`), для не абсолютного или UNC — нормализованная строка; `reason`: `not_absolute | network | system_folder | missing | duplicate`. Проверки по порядку:
+   - пустой или не абсолютный путь после нормализации (`C:Vault`) → `not_absolute`;
+   - UNC или `DriveKind::Network` → `network`;
+   - внутри `{WINDIR}`, `{PROGRAMFILES}`, `{PROGRAMFILES_X86}` (по компонентам, без учёта регистра) → `system_folder`;
+   - дубль значения этого target'а (без учёта регистра) → `duplicate`;
+   - путь не существует → `missing`.
 7. Каждый оставшийся путь → `PathTemplate::from_path` (SPEC-02 §3.2) → `Target::FileSet` или `Target::File`. `FindingId` считается от шаблона, поэтому vault в `{DOCUMENTS}\Notes` получает одинаковый id на любой машине.
 8. Evidence: `EvidenceSource::Rule { rule_id }`, `message_key: "evidence.rule_from_json"`, `message_args: { file: <шаблон file>, select, name: <последний компонент пути> }`.
-9. Найденные корни добавляются в `claimed_paths`. Сам `file` тоже добавляется (конфиг объяснён, сохраняется отдельным target'ом `obsidian.config`).
-10. Больше `max_matches` значений → берутся первые по порядку в документе + warning.
+9. Корни находок добавляются в `claimed_paths`. Сам `file` добавляется (конфиг объяснён, сохраняется отдельным target'ом `obsidian.config`), если он существует и target был прочитан (не-`optional` — при выполненных `conditions`, `optional` — после срабатывания правила), даже если правило не сработало или файл не прочитан или не разобран. Порядок: корни, конфиги `from_json`, `claims`.
+10. Больше `max_matches` строковых значений → первые `max_matches` по порядку в документе (до фильтров шага 6) + `ScanIssue::Warning issue.rules.from_json_truncated {rule_id, file, matches, limit}`.
+
+Issues `from_json` создаются при чтении target'а независимо от срабатывания правила (в отличие от `glob_root_truncated`).
 
 **Ограничения v1:** только JSON/JSONC. INI, XML, VDF, SQLite не поддерживаются. VDF Steam читает SPEC-05 своим парсером. Остальные форматы — в будущих версиях схемы.
 
@@ -259,7 +262,7 @@ Obsidian, проекты Unity Hub. Правило с таким target'ом ч�
    3. Для каждого существующего пути создать `Finding { target, category, app, title, evidence, sensitivity, tags, default_selected: false /*SPEC-09*/, stats: None }`.
       - Перед созданием находки мульти-значные токены специализируются: `{DRIVE:*}` → `{DRIVE:X}`, `{STEAM_USERID}` → конкретный id3 (стабилен для аккаунта), сегменты `*` `glob_root` → имя совпадения; `FindingId` считается от специализированного шаблона. `{PACKAGE:name}` не специализируется: если он раскрылся в несколько путей, получается одна находка (один `FindingId`), берётся первый путь. (SPEC-02 §3.2.)
       - Поля: `app` из `rule.app`: `source_ids.winget` из `app.winget`, `installed: None`, `process_names` — lowercase имена из `process_running` (включая `any_of`); `evidence.message_args` пусты; `tags` = теги правила + target'а (+`app-running`); `requires_elevation: false`; `notes_key` из правила.
-   4. Добавить корни targets и `claims` (раскрытые) в `claimed_paths`. `claims` добавляются, если выполнены `conditions` (независимо от существования targets); `claims` без `*` не проверяются на существование; `*` раскрывается как в `glob_root` (только существующие пути).
+   4. Добавить корни targets, конфиги `from_json` (§4.2.1 п. 9) и `claims` (раскрытые) в `claimed_paths`. `claims` добавляются, если выполнены `conditions` (независимо от существования targets); `claims` без `*` не проверяются на существование; `*` раскрывается как в `glob_root` (только существующие пути).
    5. Проверить `process_running` по `Environment.running_processes` (SPEC-02 §3.3, снимок делается один раз в фазе Environment).
 2. Конфликты: если два правила дают одинаковый `FindingId`, остаётся находка от правила с большим `priority`, evidence второго дописывается. Вложенность (правило A — `{APPDATA}\Foo`, правило B — `{APPDATA}\Foo\Bar`) не решается здесь, это задача SPEC-09 §merge.
 3. `Event::Progress { phase: Collect, current: rule_id }` каждые N правил.
@@ -404,8 +407,8 @@ OneDrive, Dropbox, Google Drive, iCloud, Yandex.Disk: локальные кэш�
 | Каталог `rules.d` существует, но не читается | Пользовательские правила пропущены, `ScanIssue::Warning issue.rules.user_dir_unreadable {error}`. |
 | Правило ссылается на `{STEAM}`, а Steam не установлен | resolve пустой → находки нет, без issue. |
 | `glob_root` дал > 50 совпадений | Берём 50 новейших по mtime (без mtime — в конце, при равенстве — по пути), результат сортируется по пути (§4.2, защита от патологий) + `ScanIssue::Warning issue.rules.glob_root_truncated {rule_id, path (шаблон), matches, limit}`, `path` = шаблон. |
-| `from_json`: файл битый, не тот формат или схема программы изменилась (`select` ничего не нашёл) | `ScanIssue::Warning issue.rules.from_json_parse` (с номером строки, если есть) / `Info issue.rules.from_json_empty`. Остальные targets правила работают. |
-| `from_json`: значение указывает на отключённый внешний диск | Путь не существует → пропуск + Info с шаблоном пути («vault на диске E:, диск не подключён»). |
+| `from_json`: файл битый, не тот формат или схема программы изменилась (`select` ничего не нашёл) | `ScanIssue::Warning issue.rules.from_json_parse {rule_id, file, error, line?}` / `Info issue.rules.from_json_empty {rule_id, file, select}`. Остальные targets правила работают. |
+| `from_json`: значение указывает на отключённый внешний диск | Путь не существует → пропуск + `ScanIssue::Info issue.rules.from_json_skipped {rule_id, path (шаблон, напр. `{DRIVE:E}\Vault`), reason: missing}` («vault на диске E:, диск не подключён»). |
 | Target — файл, а include задан | include игнорируется, warning при валидации. |
 | HKLM/HKCU-ветка без прав на чтение | `registry_exists` = false, `ScanIssue::Info issue.rules.registry_access_denied {rule_id, hive, key}`, один раз на ключ за скан. То же для `Target::Registry`: target считается отсутствующим + тот же Info; «один раз на ключ за скан» — общий для условий и targets. |
 | Некорректный regex в `display_name_regex`/`file_contains.pattern` (правило не прошло через компиляцию §4.4) | Условие ложно, `ScanIssue::Warning issue.rules.invalid_regex {rule_id, pattern, error}`, один раз на шаблон за скан. |
@@ -432,7 +435,7 @@ OneDrive, Dropbox, Google Drive, iCloud, Yandex.Disk: локальные кэш�
 - [x] **T-04-04** — Оценщик условий с кэшем на скан; `process_running` по `Environment.running_processes`. *Зависит:* T-04-02, T-03-01, T-02-05.
 - [x] **T-04-05** — Раскрытие targets, `glob_root`, создание `Finding` и `claimed_paths`. *Зависит:* T-04-04. *Готово, когда:* snapshot-тест profile-typical.
 - [ ] **T-04-06** — `RulesCollector: Collector`, прогресс, конфликты FindingId. *Зависит:* T-04-05, T-01-03.
-- [ ] **T-04-12** — Target `from_json` (§4.2.1): JSONC-препроцессор, вычисление `select` с `*`, нормализация и фильтры путей, создание находок и `claimed_paths`. *Зависит:* T-04-05, T-03-06. *Готово, когда:* тесты из §6 по `from_json` проходят.
+- [x] **T-04-12** — Target `from_json` (§4.2.1): JSONC-препроцессор, вычисление `select` с `*`, нормализация и фильтры путей, создание находок и `claimed_paths`. *Зависит:* T-04-05, T-03-06. *Готово, когда:* тесты из §6 по `from_json` проходят.
 - [ ] **T-04-07** — YAML-правила §4.7.1–§4.7.2 (браузеры, dev, включая `unityhub.projects`). *Зависит:* T-04-02, T-04-12. *Готово, когда:* проверены вручную на Windows-машине разработчика (чек-лист в PR); ручная проверка критерия SPEC-01 §8: Ctrl+C во время `savekeeper-cli scan` по реальному профилю завершает процесс за ≤ 1 с с кодом 2 (перенесено из SPEC-03 T-03-04: первый скан, который идёт по реальным файлам); ручная проверка критериев SPEC-03 §8 на том же скане: OneDrive-папка «только онлайн» после скана остаётся с облачным значком (файлы не гидрированы), junction'ы профиля (`Application Data` и т.д.) не дают двойного счёта размеров.
 - [ ] **T-04-08** — YAML-правила §4.7.3–§4.7.7 (включая `obsidian.vaults`). *Зависит:* T-04-02, T-04-12.
 - [ ] **T-04-09** — YAML-правила §4.7.8–§4.7.9. *Зависит:* T-04-02, T-05-03 (токены Steam).

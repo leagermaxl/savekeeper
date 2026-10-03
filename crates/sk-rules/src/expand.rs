@@ -11,8 +11,8 @@
 //! non-`optional` target exists, or, when every target is optional, of any
 //! target (FR-04-03). Optional targets are probed only once the rule fired.
 //! `claims` are added whenever the conditions matched, whether or not the
-//! rule fired. `from_json` targets (§4.2.1) are not expanded here yet: they
-//! count as targets without paths.
+//! rule fired. A `from_json` target (§4.2.1) reads its roots from a config
+//! file of the program; the config is claimed too.
 //!
 //! Conflicts between rules with the same `FindingId` are resolved by the
 //! collector (§4.5 step 2); within one rule a repeated id is dropped.
@@ -36,6 +36,12 @@ use crate::set::issue;
 #[path = "expand_paths.rs"]
 mod paths;
 
+#[path = "expand_json.rs"]
+mod json;
+
+#[path = "expand_jsonc.rs"]
+mod jsonc;
+
 /// Most findings one `glob_root` target gives; the newest matches by mtime
 /// are kept (SPEC-04 §5).
 pub const MAX_GLOB_ROOT_MATCHES: usize = 50;
@@ -54,11 +60,11 @@ pub struct RuleOutput {
     /// One finding per existing path or registry key of the targets, in
     /// target order, without repeated ids.
     pub findings: Vec<Finding>,
-    /// Resolved roots of the findings, then the resolved `claims`, without
-    /// repeats (FR-04-04, FR-04-05).
+    /// Resolved roots of the findings, then `from_json` config files, then
+    /// the resolved `claims`, without repeats (FR-04-04, FR-04-05).
     pub claimed_paths: Vec<PathBuf>,
     /// Problems met while expanding (truncated `glob_root`, unreadable
-    /// registry key of a target).
+    /// registry key of a target, `from_json` issues).
     pub issues: Vec<ScanIssue>,
 }
 
@@ -129,6 +135,9 @@ impl<'a> TargetExpander<'a> {
             }
         }
 
+        // Config files of `from_json` targets that were read: claimed after
+        // the roots, whether or not the rule fired (§4.2.1 step 9).
+        let mut configs = Vec::new();
         if fired {
             let several = rule.targets.len() > 1;
             let mut ids = HashSet::new();
@@ -138,8 +147,10 @@ impl<'a> TargetExpander<'a> {
                     None => self.expand_target(rule.id(), target, &mut out),
                 };
                 out.issues.extend(paths.truncated);
-                for t in paths.targets {
-                    let finding = make_finding(&rule.rule, target, t, outcome.app_running, several);
+                configs.extend(paths.claimed);
+                for found in paths.targets {
+                    let finding =
+                        make_finding(&rule.rule, target, found, outcome.app_running, several);
                     if !ids.insert(finding.id.clone()) {
                         continue;
                     }
@@ -149,7 +160,10 @@ impl<'a> TargetExpander<'a> {
                     out.findings.push(finding);
                 }
             }
+        } else {
+            configs.extend(expanded.into_iter().flatten().flat_map(|p| p.claimed));
         }
+        out.claimed_paths.extend(configs);
         // Claims depend on the conditions only (§4.5 step 1.4).
         for claim in &rule.rule.claims {
             out.claimed_paths.extend(self.claim_paths(claim));
@@ -172,11 +186,14 @@ impl<'a> TargetExpander<'a> {
                 glob_root,
             } => self.path_targets(rule_id, target, template, *glob_root),
             TargetRoot::Registry(registry) => Expanded {
-                targets: self.registry_target(rule_id, registry, out),
-                truncated: None,
+                targets: self
+                    .registry_target(rule_id, registry, out)
+                    .into_iter()
+                    .map(Found::plain)
+                    .collect(),
+                ..Expanded::default()
             },
-            // Expanded by T-04-12; until then a target without paths.
-            TargetRoot::FromJson(_) => Expanded::default(),
+            TargetRoot::FromJson(spec) => self.json_targets(rule_id, target, spec, out),
         }
     }
 
@@ -231,22 +248,14 @@ impl<'a> TargetExpander<'a> {
         let targets = matches
             .into_iter()
             .map(|(template, resolved, meta)| {
-                if root_is_dir(&meta) {
-                    Target::FileSet {
-                        root: template,
-                        resolved,
-                        include: target.include_globs.clone(),
-                        exclude: target.exclude_globs.clone(),
-                    }
-                } else {
-                    Target::File {
-                        path: template,
-                        resolved,
-                    }
-                }
+                Found::plain(root_target(target, template, resolved, &meta))
             })
             .collect();
-        Expanded { targets, truncated }
+        Expanded {
+            targets,
+            truncated,
+            ..Expanded::default()
+        }
     }
 
     /// A `Registry` target when the key exists and can be read; an
@@ -296,9 +305,51 @@ impl<'a> TargetExpander<'a> {
 /// Paths of one target, before findings are made.
 #[derive(Debug, Clone, Default)]
 struct Expanded {
-    targets: Vec<Target>,
+    targets: Vec<Found>,
     /// The `glob_root_truncated` warning, raised only if the rule fires.
     truncated: Option<ScanIssue>,
+    /// Config files read by a `from_json` target (§4.2.1 step 9).
+    claimed: Vec<PathBuf>,
+}
+
+/// One existing path or key of a target.
+#[derive(Debug, Clone)]
+struct Found {
+    target: Target,
+    /// Evidence args of a root read by a `from_json` target; `None` for
+    /// other targets (empty args, the rule's `message_key`).
+    from_json: Option<BTreeMap<String, String>>,
+}
+
+impl Found {
+    fn plain(target: Target) -> Self {
+        Self {
+            target,
+            from_json: None,
+        }
+    }
+}
+
+/// `FileSet` for a folder root, `File` for a file root.
+fn root_target(
+    target: &CompiledTarget,
+    template: PathTemplate,
+    resolved: PathBuf,
+    meta: &EntryMeta,
+) -> Target {
+    if root_is_dir(meta) {
+        Target::FileSet {
+            root: template,
+            resolved,
+            include: target.include_globs.clone(),
+            exclude: target.exclude_globs.clone(),
+        }
+    } else {
+        Target::File {
+            path: template,
+            resolved,
+        }
+    }
 }
 
 /// Whether a target root is a folder: a directory, or a reparse point
@@ -311,11 +362,12 @@ fn root_is_dir(meta: &EntryMeta) -> bool {
     }
 }
 
-/// The finding of one target path (SPEC-04 §4.5 step 1.3).
+/// The finding of one target path (SPEC-04 §4.5 step 1.3). A root read by
+/// `from_json` has the evidence message of §4.2.1 step 8.
 fn make_finding(
     rule: &Rule,
     target: &CompiledTarget,
-    t: Target,
+    found: Found,
     app_running: bool,
     several_targets: bool,
 ) -> Finding {
@@ -323,6 +375,11 @@ fn make_finding(
     if app_running && !tags.iter().any(|tag| tag == APP_RUNNING_TAG) {
         tags.push(APP_RUNNING_TAG.to_owned());
     }
+    let t = found.target;
+    let (message_key, message_args) = match found.from_json {
+        Some(args) => (json::FROM_JSON_MESSAGE_KEY, args),
+        None => (rule.message_key(), BTreeMap::new()),
+    };
     Finding {
         id: FindingId::for_target(&t),
         target: t,
@@ -344,8 +401,8 @@ fn make_finding(
             source: EvidenceSource::Rule {
                 rule_id: rule.id.clone(),
             },
-            message_key: rule.message_key().to_owned(),
-            message_args: BTreeMap::new(),
+            message_key: message_key.to_owned(),
+            message_args,
             confidence: rule.confidence,
             importance: None,
         }],
