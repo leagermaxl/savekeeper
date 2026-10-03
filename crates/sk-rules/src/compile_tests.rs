@@ -362,6 +362,114 @@ fn all_errors_are_reported() {
     assert!(reasons.iter().any(|r| r.contains("outside 0..=1")));
 }
 
+/// A valid rule with the given YAML flow list of conditions.
+fn with_conditions(conditions: &str) -> String {
+    valid_rule(&format!(
+        "    conditions: {conditions}\n    targets: [ {{ path: \"{{HOME}}\\\\x\" }} ]\n"
+    ))
+}
+
+#[test]
+fn installed_regex_is_compiled() {
+    let file = compile_ok(&with_conditions(
+        r#"[ { installed: { display_name_regex: "(?i)^obs studio" } } ]"#,
+    ));
+    assert!(file.warnings.is_empty());
+    assert_error(
+        &with_conditions(r#"[ { installed: { display_name_regex: "(obs" } } ]"#),
+        "conditions[0].installed.display_name_regex: invalid regex `(obs`",
+    );
+    // Nested in `any_of`, also when `winget` is set.
+    assert_error(
+        &with_conditions(
+            r#"[ { exists: "{HOME}\\x" }, { any_of: [ { exists: "{HOME}\\y" }, { installed: { display_name_regex: "[", winget: A.B } } ] } ]"#,
+        ),
+        "conditions[1].any_of[1].installed.display_name_regex",
+    );
+}
+
+#[test]
+fn installed_without_criteria_is_an_error() {
+    assert_error(
+        &with_conditions("[ { installed: {} } ]"),
+        "conditions[0].installed: `display_name_regex` or `winget` is required",
+    );
+    assert_error(
+        &with_conditions("[ { any_of: [ { any_of: [ { installed: {} } ] } ] } ]"),
+        "conditions[0].any_of[0].any_of[0].installed",
+    );
+}
+
+#[test]
+fn installed_with_only_winget_warns() {
+    let file = compile_ok(&with_conditions(
+        r#"[ { any_of: [ { installed: { winget: OBSProject.OBSStudio } } ] } ]"#,
+    ));
+    assert_eq!(file.rules.len(), 1);
+    let [warning] = file.warnings.as_slice() else {
+        panic!("one warning expected: {:?}", file.warnings);
+    };
+    assert_eq!(warning.rule_id, "app.rule");
+    assert!(
+        warning
+            .message
+            .starts_with("conditions[0].any_of[0].installed: `winget`"),
+        "{}",
+        warning.message
+    );
+    // With a regex the rule can match: no warning.
+    let file = compile_ok(&with_conditions(
+        r#"[ { installed: { winget: OBSProject.OBSStudio, display_name_regex: "(?i)obs" } } ]"#,
+    ));
+    assert!(file.warnings.is_empty());
+}
+
+#[test]
+fn file_contains_pattern_is_compiled() {
+    compile_ok(&with_conditions(
+        r#"[ { file_contains: { path: "{HOME}\\a.json", pattern: "\"telemetry\"" } } ]"#,
+    ));
+    assert_error(
+        &with_conditions(r#"[ { file_contains: { path: "{HOME}\\a.json", pattern: "a{2" } } ]"#),
+        "conditions[0].file_contains.pattern: invalid regex `a{2`",
+    );
+    assert_error(
+        &with_conditions(
+            r#"[ { any_of: [ { file_contains: { path: "{HOME}\\a.json", pattern: "(" } } ] } ]"#,
+        ),
+        "conditions[0].any_of[0].file_contains.pattern",
+    );
+}
+
+#[test]
+fn file_contains_max_bytes_is_at_most_1_mib() {
+    let condition = |max: u64| {
+        with_conditions(&format!(
+            r#"[ {{ file_contains: {{ path: "{{HOME}}\\a.json", pattern: x, max_bytes: {max} }} }} ]"#
+        ))
+    };
+    compile_ok(&condition(MAX_FILE_CONTAINS_BYTES));
+    assert_error(
+        &condition(MAX_FILE_CONTAINS_BYTES + 1),
+        "conditions[0].file_contains.max_bytes: 1048577 exceeds 1048576",
+    );
+}
+
+#[test]
+fn condition_errors_reject_the_file_with_every_error() {
+    let reasons = reasons(&with_conditions(
+        r#"[ { installed: {} }, { file_contains: { path: "{HOME}\\a", pattern: "(", max_bytes: 2000000 } } ]"#,
+    ));
+    assert_eq!(reasons.len(), 3, "{reasons:?}");
+}
+
+#[test]
+fn disabled_rule_conditions_are_not_checked() {
+    compile_ok(
+        "schema_version: 1\nrules: [ { id: app.rule, disabled: true, conditions: [ { installed: {} } ] } ]\n",
+    );
+}
+
 #[test]
 fn compile_takes_parsed_file() {
     let file = RuleFile::from_yaml(SPEC_EXAMPLE).unwrap();

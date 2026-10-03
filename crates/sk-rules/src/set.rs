@@ -348,7 +348,7 @@ fn first_error(errors: Vec<RuleError>) -> RuleError {
         })
 }
 
-fn issue(
+pub(crate) fn issue(
     severity: IssueSeverity,
     message_key: &str,
     args: impl IntoIterator<Item = (&'static str, String)>,

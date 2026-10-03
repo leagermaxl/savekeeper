@@ -15,6 +15,11 @@ use sk_core::template::PathTemplate;
 use crate::error::RuleError;
 use crate::schema::{FromJson, RegistryTarget, Rule, RuleFile, RuleTarget, SCHEMA_VERSION};
 
+#[path = "compile_conditions.rs"]
+mod cond_checks;
+
+pub use cond_checks::MAX_FILE_CONTAINS_BYTES;
+
 /// Most `*` segments in a `glob_root` path (SPEC-04 §4.2).
 pub const MAX_GLOB_ROOT_SEGMENTS: usize = 2;
 
@@ -86,11 +91,13 @@ pub enum TargetRoot {
 pub struct CompiledFile {
     /// Rules in file order, `disabled` ones included (with no targets).
     pub rules: Vec<CompiledRule>,
-    /// Problems that were fixed automatically.
+    /// Problems that do not reject the file: automatic fixes and notices
+    /// such as an `installed` condition with only `winget`.
     pub warnings: Vec<RuleWarning>,
 }
 
-/// A problem that does not reject the rule (it was fixed automatically).
+/// A problem that does not reject the rule: it was fixed automatically or
+/// only makes a condition useless (SPEC-04 §4.4).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RuleWarning {
     /// Id of the rule.
@@ -229,6 +236,7 @@ fn compile_rule(mut rule: Rule, ctx: &mut RuleCtx) -> Option<CompiledRule> {
         ctx.warn("category `credentials` requires sensitivity `high`; raised");
         rule.sensitivity = Sensitivity::High;
     }
+    cond_checks::check_conditions(&rule.conditions, "conditions", ctx);
 
     let targets: Vec<CompiledTarget> = rule
         .targets

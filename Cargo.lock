@@ -2057,11 +2057,14 @@ version = "0.1.0"
 dependencies = [
  "globset",
  "include_dir",
+ "regex",
  "serde",
  "serde-saphyr",
  "sk-core",
+ "sk-scan",
  "tempfile",
  "thiserror",
+ "winreg",
 ]
 
 [[package]]

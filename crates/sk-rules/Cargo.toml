@@ -11,12 +11,17 @@ publish.workspace = true
 [dependencies]
 globset.workspace = true
 include_dir.workspace = true
+regex.workspace = true
 serde.workspace = true
 serde-saphyr.workspace = true
 sk-core.workspace = true
 thiserror.workspace = true
 
+[target.'cfg(windows)'.dependencies]
+winreg.workspace = true
+
 [dev-dependencies]
+sk-scan.workspace = true
 tempfile.workspace = true
 
 [lints]

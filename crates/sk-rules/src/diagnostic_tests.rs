@@ -105,6 +105,55 @@ fn warnings_are_reported_after_errors() {
 }
 
 #[test]
+fn condition_errors_and_warnings_point_at_the_rule() {
+    // app.two (line 8): invalid regex nested in `any_of`, `max_bytes` too big;
+    // app.three (line 14): `installed` with only `winget`.
+    let text = format!(
+        r#"{VALID}  - id: app.two
+    app: {{ id: app, name: App, kind: application }}
+    category: app_config
+    title: Two
+    conditions: [ {{ any_of: [ {{ installed: {{ display_name_regex: "(obs" }} }} ] }}, {{ file_contains: {{ path: "{{HOME}}\\x", pattern: x, max_bytes: 2000000 }} }} ]
+    targets: [ {{ path: "{{HOME}}\\x" }} ]
+  - id: app.three
+    app: {{ id: app, name: App, kind: application }}
+    category: app_config
+    title: Three
+    conditions: [ {{ installed: {{ winget: A.B }} }} ]
+    targets: [ {{ path: "{{HOME}}\\y" }} ]
+"#
+    );
+    let diagnostics = check(&text);
+    assert_eq!(diagnostics.len(), 3, "{diagnostics:?}");
+    let [regex, max_bytes, winget] = diagnostics.as_slice() else {
+        unreachable!();
+    };
+    for d in [regex, max_bytes] {
+        assert_eq!(d.severity, DiagnosticSeverity::Error);
+        assert_eq!(d.line, Some(8));
+        assert_eq!(d.rule_id.as_deref(), Some("app.two"));
+    }
+    assert!(
+        regex
+            .message
+            .starts_with("conditions[0].any_of[0].installed.display_name_regex: invalid regex"),
+        "{}",
+        regex.message
+    );
+    assert!(
+        max_bytes
+            .message
+            .starts_with("conditions[1].file_contains.max_bytes"),
+        "{}",
+        max_bytes.message
+    );
+    assert_eq!(winget.severity, DiagnosticSeverity::Warning);
+    assert_eq!(winget.line, Some(14));
+    assert_eq!(winget.rule_id.as_deref(), Some("app.three"));
+    assert!(winget.message.contains("`winget`"), "{}", winget.message);
+}
+
+#[test]
 fn rule_with_empty_id_points_at_its_own_line() {
     // The second rule (line 8) has `id: ""` and no `app`.
     let text = format!("{VALID}  - id: \"\"\n    category: app_config\n    title: Empty\n");

@@ -34,8 +34,9 @@ pub struct RuleDiagnostic {
 pub enum DiagnosticSeverity {
     /// The file is invalid and is not loaded.
     Error,
-    /// An automatic fix (SPEC-04 §4.4, e.g. `credentials` raised to
-    /// sensitivity `high`); the file stays valid.
+    /// A warning of SPEC-04 §4.4 (an automatic fix such as `credentials`
+    /// raised to sensitivity `high`, or `installed` with only `winget`); the
+    /// file stays valid.
     Warning,
 }
 
@@ -55,8 +56,8 @@ pub fn validate_file(path: &Path) -> Vec<RuleDiagnostic> {
 
 /// Checks rule file `text`; `file` is only copied into the diagnostics.
 ///
-/// Errors come first, then warnings about automatic fixes (for example
-/// `credentials` raised to sensitivity `high`).
+/// Errors come first, then warnings (automatic fixes such as `credentials`
+/// raised to sensitivity `high`, `installed` with only `winget`).
 pub fn validate_str(file: &Path, text: &str) -> Vec<RuleDiagnostic> {
     let starts = RuleStarts::parse(text);
     let error = |line: Option<usize>, rule_id: Option<String>, message: String| RuleDiagnostic {
