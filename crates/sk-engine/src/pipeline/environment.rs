@@ -11,14 +11,13 @@ use sk_core::model::ScanIssue;
 use sk_core::registry::{RegistryReader, SystemRegistry};
 use sk_scan::RealFs;
 
+use super::games::GAMES_ID;
 use super::{issue, Accumulated, Run, ScanPipeline};
-
-/// Source of the issue of a panicking launcher detection.
-const GAMES_ID: &str = "games";
 
 impl ScanPipeline {
     /// Replaces the registry the launcher detectors of the `Environment`
-    /// phase read (`MemRegistry` in tests); without it, `SystemRegistry`.
+    /// phase and the built-in `games` collector read (`MemRegistry` in
+    /// tests); without it, `SystemRegistry`.
     pub fn with_games_registry(mut self, registry: Arc<dyn RegistryReader>) -> Self {
         self.games_registry = Some(registry);
         self

@@ -12,6 +12,7 @@ use sk_core::model::{
 use sk_core::template::PathTemplate;
 
 use super::STEAM;
+pub(crate) use crate::launchers::findings::TITLE_SEPARATOR;
 use crate::launchers::findings::{slug, TITLE_SAVE};
 use crate::manifest::GameEntry;
 use crate::matching::name_key;
@@ -21,9 +22,6 @@ use crate::translate::GameCtx;
 pub(crate) const TITLE_CONFIG: &str = "games.title.config";
 /// Title key of the install folder of a game (FR-05-09).
 pub(crate) const TITLE_INSTALL_DIR: &str = "games.title.install_dir";
-/// Separator of the parts of a title; the UI translates each part that is
-/// an i18n key (SPEC-11 §4.7).
-pub(crate) const TITLE_SEPARATOR: &str = " — ";
 /// Evidence of a manifest entry; argument `game`.
 pub(crate) const EVIDENCE_LUDUSAVI: &str = "evidence.ludusavi_match";
 /// Evidence of an installed game; arguments `launcher`, `name`.

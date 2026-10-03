@@ -120,7 +120,11 @@ fn xbox_wgs_finding() {
     assert!(include.is_empty() && exclude.is_empty());
     assert_eq!(finding.id, FindingId::for_target(&finding.target));
     assert_eq!(finding.category, Category::GameSave);
-    assert_eq!(finding.title, TITLE_SAVE);
+    assert_eq!(
+        finding.title,
+        "CoffeeStainStudios.DeepRockGalactic — games.title.save"
+    );
+    assert!(finding.title.ends_with(TITLE_SAVE));
     assert_eq!(finding.notes_key.as_deref(), Some(NOTE_XBOX_WGS));
     assert_eq!(finding.tags, ["xbox", "cloud-xbox"]);
     assert_eq!(finding.sensitivity, Sensitivity::None);
@@ -194,6 +198,7 @@ fn ubisoft_savegames_finding() {
     assert_eq!(root, &PathTemplate::from_path(resolved, &setup.env));
     assert_eq!(finding.category, Category::GameSave);
     assert_eq!(finding.tags, ["ubisoft"]);
+    assert_eq!(finding.title, "Ubisoft Connect — games.title.save");
     assert_eq!(finding.notes_key, None);
     assert_eq!(
         finding.app.as_ref().map(|a| a.id.as_str()),

@@ -33,7 +33,8 @@ pub(crate) async fn run(args: ScanArgs) -> anyhow::Result<Status> {
     let pipeline = ScanPipeline::new(Arc::new(config))
         .with_environment(env)
         .with_scans_dir(data.scans())
-        .with_rules_dir(data.rules());
+        .with_rules_dir(data.rules())
+        .with_data_dir(data.root.clone());
 
     let progress = Progress::new();
     let result = execute(&pipeline, opts, &progress, ctrl_c()).await;

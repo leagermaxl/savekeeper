@@ -105,7 +105,12 @@ fn scan_out_writes_a_valid_report() {
 fn scan_prints_the_report_without_out() {
     let cli = Cli::new();
     cli.disable_builtin_rules();
-    let output = cli.cmd(&["scan", "--pretty"]).assert().code(0);
+    // Without `--no-games` the games of this machine would be found, and the
+    // manifest downloaded.
+    let output = cli
+        .cmd(&["scan", "--pretty", "--no-games"])
+        .assert()
+        .code(0);
     let stdout = String::from_utf8(output.get_output().stdout.clone()).unwrap();
     assert!(stdout.starts_with("{\n"));
     let report = ScanReport::from_json(&stdout).unwrap();

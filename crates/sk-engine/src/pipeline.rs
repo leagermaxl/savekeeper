@@ -1,6 +1,8 @@
 //! The scan pipeline (SPEC-01 §4.4).
 
+mod builtin;
 mod environment;
+mod games;
 
 use std::collections::{BTreeMap, HashMap};
 use std::future::Future;
@@ -29,6 +31,7 @@ use uuid::Uuid;
 
 use crate::reports;
 use crate::rules::{BuiltinRules, RULES_ID};
+use games::{BuiltinGames, GAMES_ID};
 
 /// What to scan.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -54,14 +57,18 @@ pub struct ScanPipeline {
     scans_dir: Option<PathBuf>,
     /// The `rules` collector, loaded anew for each run.
     rules: BuiltinRules,
-    /// Registry of the launcher detectors; `None`: `SystemRegistry`.
+    /// The `games` collector, built for each run (`with_data_dir`).
+    games: BuiltinGames,
+    /// Registry of the launcher detectors and of the games collector;
+    /// `None`: `SystemRegistry`.
     games_registry: Option<Arc<dyn RegistryReader>>,
     app_version: String,
 }
 
 impl ScanPipeline {
     /// A pipeline with the built-in collectors for `config`: `rules`
-    /// (SPEC-04), with the built-in rules only until [`Self::with_rules_dir`].
+    /// (SPEC-04), with the built-in rules only until [`Self::with_rules_dir`],
+    /// and `games` (SPEC-05) once [`Self::with_data_dir`] is called.
     pub fn new(config: Arc<Config>) -> Self {
         Self {
             config,
@@ -71,16 +78,19 @@ impl ScanPipeline {
             environment: None,
             scans_dir: None,
             rules: BuiltinRules::default(),
+            games: BuiltinGames::default(),
             games_registry: None,
             app_version: env!("CARGO_PKG_VERSION").to_owned(),
         }
     }
 
-    /// Adds a collector. A collector with the id `rules` replaces the
-    /// built-in rules collector.
+    /// Adds a collector. A collector with the id `rules` or `games`
+    /// replaces the built-in collector with that id.
     pub fn with_collector(mut self, collector: Arc<dyn Collector>) -> Self {
-        if collector.id() == RULES_ID {
-            self.rules.enabled = false;
+        match collector.id() {
+            RULES_ID => self.rules.enabled = false,
+            GAMES_ID => self.games.enabled = false,
+            _ => {}
         }
         self.collectors.push(collector);
         self
@@ -189,21 +199,7 @@ impl ScanPipeline {
     /// The rules are loaded first; their load issues come before the outcomes.
     async fn collect(&self, ctx: &CollectContext, toggles: &CollectorToggles) -> Vec<Outcome> {
         let mut outcomes = Vec::new();
-        let mut collectors: Vec<Arc<dyn Collector>> = Vec::new();
-        if self.rules.enabled && enabled(toggles, RULES_ID) {
-            match self.rules.load().await {
-                Ok((collector, issues)) => {
-                    collectors.push(collector);
-                    if !issues.is_empty() {
-                        outcomes.push(Outcome::Output(CollectOutput {
-                            issues,
-                            ..CollectOutput::default()
-                        }));
-                    }
-                }
-                Err(error) => outcomes.extend(Outcome::from_join(RULES_ID, &error)),
-            }
-        }
+        let mut collectors = self.builtin_collectors(toggles, &mut outcomes).await;
         collectors.extend(
             self.collectors
                 .iter()

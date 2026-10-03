@@ -20,6 +20,9 @@ use super::xbox::{wgs_folders, WgsFolder, XBOX};
 
 /// Title key of a game save finding (SPEC-05 §4.7, step 9).
 pub(crate) const TITLE_SAVE: &str = "games.title.save";
+/// Separator of the parts of a title; the UI translates each part that is
+/// an i18n key (SPEC-11 §4.7).
+pub(crate) const TITLE_SEPARATOR: &str = " — ";
 /// Evidence message of an `xbox.wgs` finding; argument `package`.
 pub(crate) const EVIDENCE_XBOX_WGS: &str = "evidence.games.xbox_wgs";
 /// Note of an `xbox.wgs` finding: usually synced through Xbox Cloud.
@@ -107,7 +110,8 @@ fn ubisoft_savegames(dir: &Path, env: &Environment) -> Finding {
     folder_finding(dir, env, app, evidence, &[UBISOFT])
 }
 
-/// A `game_save` finding of the whole folder `dir`.
+/// A `game_save` finding of the whole folder `dir`, titled
+/// `{app.name} — games.title.save` (SPEC-05 T-05-12).
 fn folder_finding(
     dir: &Path,
     env: &Environment,
@@ -121,12 +125,13 @@ fn folder_finding(
         include: Vec::new(),
         exclude: Vec::new(),
     };
+    let title = format!("{}{TITLE_SEPARATOR}{TITLE_SAVE}", app.name);
     Finding {
         id: FindingId::for_target(&target),
         target,
         category: Category::GameSave,
         app: Some(app),
-        title: TITLE_SAVE.to_owned(),
+        title,
         evidence: vec![evidence],
         stats: None,
         sensitivity: Sensitivity::None,

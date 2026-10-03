@@ -2829,6 +2829,7 @@ dependencies = [
  "sk-games",
  "sk-rules",
  "sk-scan",
+ "sk-testkit",
  "tempfile",
  "time",
  "tokio",
