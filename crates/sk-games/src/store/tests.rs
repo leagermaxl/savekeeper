@@ -21,6 +21,18 @@ impl Match for Unconditional {
     }
 }
 
+impl ManifestStore {
+    fn with_timeout(mut self, timeout: Duration) -> Self {
+        self.timeout = timeout;
+        self
+    }
+
+    fn with_embedded(mut self, embedded: Option<Embedded>) -> Self {
+        self.embedded = embedded;
+        self
+    }
+}
+
 fn ok<T, E: std::fmt::Display>(r: Result<T, E>) -> T {
     r.unwrap_or_else(|e| panic!("{e}"))
 }
@@ -50,7 +62,7 @@ fn store_with(server: &str, data: &Path, interval_hours: u32, auto_update: bool)
     cfg.games.auto_update = auto_update;
     ManifestStore::new(&cfg, data)
         .with_timeout(Duration::from_millis(500))
-        .with_embedded(tiny_snapshot())
+        .with_embedded(Some(tiny_snapshot()))
 }
 
 fn store(server: &str, data: &Path, interval_hours: u32) -> ManifestStore {
@@ -220,7 +232,7 @@ async fn update_reports_each_outcome() {
         .await;
     let failed = UpdateOutcome::Failed {
         reason: "HTTP 500".into(),
-        fallback: embedded_source(),
+        fallback: Some(embedded_source()),
     };
     assert_eq!(ok(store.update(false).await), failed);
     drop(failing);
@@ -246,7 +258,7 @@ async fn update_reports_each_outcome() {
     assert_eq!(ok(store.update(false).await), UpdateOutcome::NotModified);
     let failed = UpdateOutcome::Failed {
         reason: "HTTP 404".into(),
-        fallback: ManifestSource::Cache,
+        fallback: Some(ManifestSource::Cache),
     };
     // Forced, the request has no If-None-Match: no mock matches (404).
     assert_eq!(ok(store.update(true).await), failed);
@@ -425,4 +437,43 @@ async fn unsaved_index_is_a_cache_warning() {
     };
     assert_eq!(ok(store.update(false).await), expected);
     cache_failed(&store);
+}
+
+/// A build without the feature `embedded-manifest` (FR-05-11): only the
+/// download and the cache exist; without both there is no manifest.
+#[tokio::test]
+async fn without_a_snapshot_only_the_download_and_the_cache_are_used() {
+    let server = MockServer::start().await;
+    let _failing = Mock::given(method("GET"))
+        .respond_with(ResponseTemplate::new(500))
+        .mount_as_scoped(&server)
+        .await;
+    let tmp = ok(tempfile::tempdir());
+    let store = store(&server.uri(), tmp.path(), 0).with_embedded(None);
+    let cancel = CancellationToken::new();
+
+    let err = store.load(true, &cancel).await.err();
+    let Some(GamesError::Io(e)) = err else {
+        panic!("{err:?}");
+    };
+    assert_eq!(e.kind(), io::ErrorKind::NotFound, "{e}");
+    let issues = issue_keys(&store);
+    assert_eq!(issues.len(), 1, "{issues:?}");
+    assert_eq!(issues[0].1, "issue.games.manifest_offline");
+    let failed = UpdateOutcome::Failed {
+        reason: "HTTP 500".into(),
+        fallback: None,
+    };
+    assert_eq!(ok(store.update(false).await), failed);
+    assert!(!tmp.path().join("cache").join(INDEX).exists());
+
+    seed_cache(tmp.path(), MINI, "\"v1\"");
+    let m = load(&store, true).await;
+    assert_eq!(m.meta.source, ManifestSource::Cache);
+    assert_eq!(m.games, games(MINI));
+    let failed = UpdateOutcome::Failed {
+        reason: "HTTP 500".into(),
+        fallback: Some(ManifestSource::Cache),
+    };
+    assert_eq!(ok(store.update(false).await), failed);
 }

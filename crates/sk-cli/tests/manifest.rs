@@ -107,6 +107,7 @@ fn read(path: &Path) -> String {
     std::fs::read_to_string(path).unwrap()
 }
 
+#[cfg(feature = "embedded-manifest")]
 #[test]
 fn env_prints_the_environment_and_the_embedded_snapshot() {
     let cli = Cli::new();
@@ -192,7 +193,13 @@ fn failed_update_exits_with_1_and_keeps_the_cache() {
         .assert()
         .code(1)
         .stdout("")
-        .stderr(contains("HTTP 500").and(contains("the embedded snapshot of")));
+        .stderr(
+            contains("HTTP 500").and(contains(if cfg!(feature = "embedded-manifest") {
+                "the embedded snapshot of"
+            } else {
+                "scans have no manifest"
+            })),
+        );
     assert!(!cli.cache().join("ludusavi-manifest.yaml").exists());
 
     // With a cache, the cache is named as the fallback and stays as it was.

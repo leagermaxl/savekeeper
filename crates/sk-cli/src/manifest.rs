@@ -59,9 +59,19 @@ fn finish_update(
             println!("manifest is up to date");
             Ok(done)
         }
-        Ok(UpdateOutcome::Failed { reason, fallback }) => anyhow::bail!(
+        Ok(UpdateOutcome::Failed {
+            reason,
+            fallback: Some(fallback),
+        }) => anyhow::bail!(
             "manifest not updated: {reason}; scans use {}",
             describe(&fallback)
+        ),
+        // Only a build without the embedded snapshot (SPEC-05 FR-05-11).
+        Ok(UpdateOutcome::Failed {
+            reason,
+            fallback: None,
+        }) => anyhow::bail!(
+            "manifest not updated: {reason}; scans have no manifest (no cache, no embedded snapshot)"
         ),
         Err(GamesError::Cancelled) => {
             eprintln!("cancelled");
@@ -195,7 +205,7 @@ mod tests {
         let failed = finish_update(
             Ok(UpdateOutcome::Failed {
                 reason: "connect".to_owned(),
-                fallback: ManifestSource::Cache,
+                fallback: Some(ManifestSource::Cache),
             }),
             true,
         );
@@ -226,7 +236,7 @@ mod tests {
         let error = finish_update(
             Ok(UpdateOutcome::Failed {
                 reason: "HTTP 500".to_owned(),
-                fallback: embedded(),
+                fallback: Some(embedded()),
             }),
             false,
         )
@@ -238,12 +248,26 @@ mod tests {
         let error = finish_update(
             Ok(UpdateOutcome::Failed {
                 reason: "timeout".to_owned(),
-                fallback: ManifestSource::Cache,
+                fallback: Some(ManifestSource::Cache),
             }),
             false,
         )
         .unwrap_err();
         assert!(error.to_string().ends_with("scans use the cached manifest"));
+        let error = finish_update(
+            Ok(UpdateOutcome::Failed {
+                reason: "connect".to_owned(),
+                fallback: None,
+            }),
+            false,
+        )
+        .unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .ends_with("scans have no manifest (no cache, no embedded snapshot)"),
+            "{error}"
+        );
     }
 
     #[test]

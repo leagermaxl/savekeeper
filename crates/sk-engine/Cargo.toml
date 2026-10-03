@@ -8,6 +8,11 @@ license.workspace = true
 authors.workspace = true
 publish.workspace = true
 
+[features]
+default = ["embedded-manifest"]
+# The Ludusavi manifest snapshot in the binary (SPEC-05 FR-05-11).
+embedded-manifest = ["sk-games/embedded-manifest"]
+
 [dependencies]
 serde_json.workspace = true
 sk-core.workspace = true

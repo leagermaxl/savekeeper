@@ -15,14 +15,15 @@ publish = false
 sk-core = { path = "crates/sk-core" }
 sk-scan = { path = "crates/sk-scan" }
 sk-rules = { path = "crates/sk-rules" }
-sk-games = { path = "crates/sk-games" }
+# Without default features: the binaries forward `embedded-manifest` (SPEC-05 FR-05-11).
+sk-games = { path = "crates/sk-games", default-features = false }
 sk-system = { path = "crates/sk-system" }
 sk-heuristics = { path = "crates/sk-heuristics" }
 sk-llm = { path = "crates/sk-llm" }
 sk-score = { path = "crates/sk-score" }
 sk-backup = { path = "crates/sk-backup" }
 sk-restore = { path = "crates/sk-restore" }
-sk-engine = { path = "crates/sk-engine" }
+sk-engine = { path = "crates/sk-engine", default-features = false }
 sk-testkit = { path = "crates/sk-testkit" }
 
 # External crates used in P0 (SPEC-01 §4.2, SPEC-12 §4.2).

@@ -1,0 +1,9 @@
+{
+  "ludusavi": {
+    "heading": "Данные о сохранениях игр",
+    "credit": "Данные о сохранениях игр: Ludusavi Manifest (MIT, github.com/mtkennerly/ludusavi-manifest) / PCGamingWiki (CC BY-NC-SA 3.0)",
+    "licenses": "Тексты лицензий: Ludusavi Manifest, MIT: https://github.com/mtkennerly/ludusavi-manifest/blob/master/LICENSE; данные PCGamingWiki, CC BY-NC-SA 3.0: https://creativecommons.org/licenses/by-nc-sa/3.0/deed.ru",
+    "snapshot": "Встроенный в программу снапшот манифеста не изменялся: он только сжат (zstd), чтобы храниться в файле программы.",
+    "terms": "SaveKeeper распространяется бесплатно и некоммерчески. Данные манифеста сохраняют свою лицензию (CC BY-NC-SA 3.0); она не распространяется на код SaveKeeper (MIT)."
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "ludusavi": {
+    "heading": "Game save data",
+    "credit": "Game save data: Ludusavi Manifest (MIT, github.com/mtkennerly/ludusavi-manifest) / PCGamingWiki (CC BY-NC-SA 3.0)",
+    "licenses": "License texts: Ludusavi Manifest, MIT: https://github.com/mtkennerly/ludusavi-manifest/blob/master/LICENSE; PCGamingWiki data, CC BY-NC-SA 3.0: https://creativecommons.org/licenses/by-nc-sa/3.0/",
+    "snapshot": "The manifest snapshot built into the program is not modified: it is only compressed (zstd) to be stored in the program file.",
+    "terms": "SaveKeeper is distributed free of charge and non-commercially. The manifest data keep their own license (CC BY-NC-SA 3.0); it does not apply to the SaveKeeper code (MIT)."
+  }
+}

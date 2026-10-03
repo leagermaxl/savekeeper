@@ -9,6 +9,9 @@
 //! Only when the repository file is missing and `SK_LUDUSAVI_DOWNLOAD=1` is set,
 //! the manifest is downloaded with the system `curl` into `$OUT_DIR` (the
 //! repository is never written to); otherwise the build fails with a hint.
+//!
+//! Without the cargo feature `embedded-manifest` nothing is embedded and the
+//! YAML is not needed (FR-05-11).
 
 use std::error::Error;
 use std::path::{Path, PathBuf};
@@ -25,6 +28,10 @@ const OUT_NAME: &str = "ludusavi-manifest.yaml.zst";
 type Res<T> = Result<T, Box<dyn Error>>;
 
 fn main() -> Res<()> {
+    println!("cargo:rerun-if-changed=build.rs");
+    if env::var_os("CARGO_FEATURE_EMBEDDED_MANIFEST").is_none() {
+        return Ok(());
+    }
     let crate_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR")?);
     let out_dir = PathBuf::from(env::var("OUT_DIR")?);
     let src_dir = crate_dir
@@ -35,7 +42,6 @@ fn main() -> Res<()> {
     let yaml_path = src_dir.join("manifest.yaml");
     let date_path = src_dir.join("manifest.date");
 
-    println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed={}", yaml_path.display());
     println!("cargo:rerun-if-env-changed=SK_LUDUSAVI_DOWNLOAD");
     if date_path.is_file() {

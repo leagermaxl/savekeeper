@@ -8,6 +8,12 @@ license.workspace = true
 authors.workspace = true
 publish.workspace = true
 
+[features]
+default = ["embedded-manifest"]
+# Embeds the Ludusavi manifest snapshot (CC BY-NC-SA 3.0 data, SPEC-05 FR-05-11,
+# THIRD_PARTY_NOTICES.md). Without it the manifest is only downloaded and cached.
+embedded-manifest = []
+
 [dependencies]
 # `Collector` of `GamesCollector` (SPEC-01 §4.3).
 async-trait.workspace = true
@@ -28,7 +34,8 @@ tokio = { workspace = true, features = ["macros", "rt"] }
 tracing.workspace = true
 zstd.workspace = true
 
-# build.rs compresses third_party/ludusavi/manifest.yaml into the embedded snapshot (FR-05-02).
+# build.rs compresses third_party/ludusavi/manifest.yaml into the embedded snapshot
+# (FR-05-02); used only with the feature `embedded-manifest`.
 [build-dependencies]
 zstd.workspace = true
 

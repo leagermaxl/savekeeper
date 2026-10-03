@@ -15,6 +15,12 @@ workspace = true
 name = "savekeeper-cli"
 path = "src/main.rs"
 
+[features]
+default = ["embedded-manifest"]
+# The Ludusavi manifest snapshot in the binary (SPEC-05 FR-05-11); a commercial
+# build uses `--no-default-features` and only downloads the manifest.
+embedded-manifest = ["sk-engine/embedded-manifest", "sk-games/embedded-manifest"]
+
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true

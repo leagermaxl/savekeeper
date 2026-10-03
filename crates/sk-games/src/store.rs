@@ -43,7 +43,8 @@ pub struct ManifestStore {
     auto_update: bool,
     update_interval: Duration,
     timeout: Duration,
-    embedded: Embedded,
+    /// `None` in a build without the feature `embedded-manifest` (FR-05-11).
+    embedded: Option<Embedded>,
     /// Problems of the last [`ManifestStore::load`] calls, for the collector's report.
     issues: Mutex<Vec<ScanIssue>>,
 }
@@ -62,8 +63,10 @@ pub enum UpdateOutcome {
     Failed {
         /// Short reason: `timeout`, `connect`, `HTTP 500`, parse error, ...
         reason: String,
-        /// What [`ManifestStore::load`] uses instead: the cache or the snapshot.
-        fallback: ManifestSource,
+        /// What [`ManifestStore::load`] uses instead: the cache or the
+        /// snapshot. `None` when there is neither (only in a build without
+        /// the feature `embedded-manifest`, FR-05-11): scans have no manifest.
+        fallback: Option<ManifestSource>,
     },
 }
 
@@ -118,7 +121,8 @@ impl ManifestStore {
     /// manifest is requested with `If-None-Match`. A new valid file replaces the
     /// cache and is returned as [`ManifestSource::Downloaded`]. Otherwise the
     /// cache is used ([`ManifestSource::Cache`]), and without a usable cache the
-    /// embedded snapshot ([`ManifestSource::Embedded`]). Network and cache
+    /// embedded snapshot ([`ManifestSource::Embedded`]); a build without the
+    /// feature `embedded-manifest` has no snapshot (FR-05-11). Network and cache
     /// problems never fail the call; they are kept as scan issues
     /// (`issue.games.manifest_offline`, `issue.games.manifest_invalid`,
     /// `issue.games.manifest_cache_failed`).
@@ -126,7 +130,9 @@ impl ManifestStore {
     /// # Errors
     /// [`GamesError::Cancelled`] when `cancel` fires (the cache stays
     /// consistent); [`GamesError::Io`] or [`GamesError::ManifestParse`] only
-    /// when the embedded snapshot itself cannot be used.
+    /// when the embedded snapshot itself cannot be used; [`GamesError::Io`]
+    /// with [`io::ErrorKind::NotFound`] when no manifest is available at all
+    /// (no download, no usable cache and a build without the snapshot).
     pub async fn load(
         &self,
         allow_network: bool,
@@ -161,7 +167,10 @@ impl ManifestStore {
             Ok(None) => {}
             Err(reason) => self.cache_failed(reason),
         }
-        let (dir, embedded) = (self.cache_dir.clone(), self.embedded);
+        let Some(embedded) = self.embedded else {
+            return Err(no_manifest());
+        };
+        let dir = self.cache_dir.clone();
         let (m, index_error) = blocking(move || read_embedded(&dir, embedded)).await??;
         index_error.into_iter().for_each(|r| self.cache_failed(r));
         cancelled_or(cancel, m)
@@ -245,14 +254,13 @@ impl ManifestStore {
         })
     }
 
-    fn fallback_source(&self) -> ManifestSource {
+    fn fallback_source(&self) -> Option<ManifestSource> {
         if self.path(YAML).is_file() {
-            ManifestSource::Cache
-        } else {
-            ManifestSource::Embedded {
-                snapshot_date: self.embedded.date.to_owned(),
-            }
+            return Some(ManifestSource::Cache);
         }
+        self.embedded.map(|e| ManifestSource::Embedded {
+            snapshot_date: e.date.to_owned(),
+        })
     }
 
     async fn refresh(
@@ -394,6 +402,15 @@ fn read_embedded(dir: &Path, embedded: Embedded) -> Result<(Manifest, Option<Str
     Ok((m, index_error))
 }
 
+/// No download, no usable cache and no embedded snapshot (a build without
+/// the feature `embedded-manifest`, FR-05-11).
+fn no_manifest() -> GamesError {
+    GamesError::Io(io::Error::new(
+        io::ErrorKind::NotFound,
+        "no Ludusavi manifest: no download, no usable cache, no embedded snapshot",
+    ))
+}
+
 /// Saves the index; returns the reason when it fails (a missing index only
 /// costs a parse next time, the caller reports it).
 fn write_index(dir: &Path, key: &IndexKey, m: &Manifest) -> Option<String> {
@@ -472,19 +489,6 @@ fn issue(severity: IssueSeverity, key: &str, reason: String) -> ScanIssue {
         path: None,
         message_key: key.to_owned(),
         message_args: BTreeMap::from([("reason".to_owned(), reason)]),
-    }
-}
-
-#[cfg(test)]
-impl ManifestStore {
-    fn with_timeout(mut self, timeout: Duration) -> Self {
-        self.timeout = timeout;
-        self
-    }
-
-    fn with_embedded(mut self, embedded: Embedded) -> Self {
-        self.embedded = embedded;
-        self
     }
 }
 
