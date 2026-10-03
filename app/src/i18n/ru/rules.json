@@ -1,0 +1,291 @@
+{
+  "chrome": {
+    "profiles": "Профили Google Chrome",
+    "notes": "Сохранённые пароли зашифрованы средствами Windows (DPAPI) и не расшифруются после переустановки: на новой системе у пользователя будет другой ключ. Закладки, расширения и история перенесутся. Пароли и закладки надёжнее синхронизировать через аккаунт Google."
+  },
+  "edge": {
+    "profiles": "Профили Microsoft Edge",
+    "notes": "Сохранённые пароли зашифрованы средствами Windows (DPAPI) и не расшифруются после переустановки: на новой системе у пользователя будет другой ключ. Закладки, расширения и история перенесутся. Пароли и закладки надёжнее синхронизировать через аккаунт Microsoft."
+  },
+  "brave": {
+    "profiles": "Профили Brave",
+    "notes": "Сохранённые пароли зашифрованы средствами Windows (DPAPI) и не расшифруются после переустановки: на новой системе у пользователя будет другой ключ. Закладки, расширения и история перенесутся. Пароли и закладки надёжнее синхронизировать через Brave Sync."
+  },
+  "vivaldi": {
+    "profiles": "Профили Vivaldi",
+    "notes": "Сохранённые пароли зашифрованы средствами Windows (DPAPI) и не расшифруются после переустановки: на новой системе у пользователя будет другой ключ. Закладки, расширения и история перенесутся. Пароли и закладки надёжнее синхронизировать через аккаунт Vivaldi."
+  },
+  "opera": {
+    "profiles": "Профили Opera",
+    "label_stable": "основная версия",
+    "label_gx": "Opera GX",
+    "notes": "Сохранённые пароли зашифрованы средствами Windows (DPAPI) и не расшифруются после переустановки: на новой системе у пользователя будет другой ключ. Закладки, расширения и история перенесутся. Пароли и закладки надёжнее синхронизировать через аккаунт Opera."
+  },
+  "yandex": {
+    "profiles": "Профили Яндекс Браузера",
+    "notes": "Сохранённые пароли (Ya Passman Data) защищены ключом, который зашифрован средствами Windows (DPAPI), и не расшифруются после переустановки: на новой системе у пользователя будет другой ключ. Закладки, расширения и история перенесутся. Пароли и закладки надёжнее синхронизировать через аккаунт Яндекса."
+  },
+  "firefox": {
+    "profiles": "Профили Mozilla Firefox",
+    "notes": "Пароли (logins.json и key4.db) переносятся вместе с профилем; если задан основной пароль, он понадобится на новой системе. Для надёжности включите синхронизацию через аккаунт Mozilla."
+  },
+  "thunderbird": {
+    "profiles": "Профили Mozilla Thunderbird",
+    "notes": "В профиле хранятся письма, адресные книги и настройки учётных записей. Почта IMAP останется на сервере, а локальные папки и почта POP3 есть только здесь. Сохранённые пароли переносятся вместе с профилем."
+  },
+  "onedrive": {
+    "none": "OneDrive: служебные папки клиента"
+  },
+  "dropbox": {
+    "none": "Dropbox: служебные папки и кэш клиента"
+  },
+  "google_drive": {
+    "none": "Google Диск: кэш и служебные папки клиента"
+  },
+  "icloud": {
+    "none": "iCloud: служебные папки клиента"
+  },
+  "yandex_disk": {
+    "none": "Яндекс Диск: служебные папки клиента"
+  },
+  "ssh": {
+    "keys": "Ключи и настройки SSH"
+  },
+  "git": {
+    "config": "Настройки Git",
+    "label_gitconfig": ".gitconfig",
+    "label_xdg_config": "папка .config\\git"
+  },
+  "vscode": {
+    "user_settings": "Настройки Visual Studio Code",
+    "label_settings": "пользовательские настройки",
+    "label_protocol": "обработчик ссылок vscode://",
+    "extensions_list": "Список расширений Visual Studio Code",
+    "notes": "Если включена синхронизация настроек (Settings Sync), они уже хранятся в облаке и вернутся после входа в аккаунт GitHub или Microsoft. Сами расширения не сохраняются: их можно установить заново по списку расширений."
+  },
+  "vscode_insiders": {
+    "user_settings": "Настройки Visual Studio Code Insiders"
+  },
+  "cursor": {
+    "user_settings": "Настройки Cursor"
+  },
+  "jetbrains": {
+    "config": "Настройки IDE JetBrains"
+  },
+  "visualstudio": {
+    "settings": "Настройки Visual Studio"
+  },
+  "windows_terminal": {
+    "settings": "Настройки Windows Terminal",
+    "label_release": "стабильная версия",
+    "label_preview": "Preview",
+    "label_unpackaged": "сборка без пакета (zip, Scoop)"
+  },
+  "powershell": {
+    "profile": "Профиль и модули PowerShell",
+    "label_core": "PowerShell 7",
+    "label_windows": "Windows PowerShell 5.1"
+  },
+  "npm": {
+    "config": "Настройки npm (.npmrc)"
+  },
+  "cargo": {
+    "config": "Настройки Cargo",
+    "label_config": "config.toml",
+    "label_credentials": "токены реестров (credentials.toml)"
+  },
+  "docker": {
+    "config": "Настройки Docker (config.json)"
+  },
+  "aws": {
+    "config": "Настройки и ключи доступа AWS CLI"
+  },
+  "kube": {
+    "config": "Конфигурация kubectl (kubeconfig)"
+  },
+  "putty": {
+    "sessions": "Сеансы PuTTY",
+    "label_registry": "реестр",
+    "label_files": "папка .putty"
+  },
+  "winscp": {
+    "config": "Настройки и сеансы WinSCP",
+    "label_ini": "WinSCP.ini",
+    "label_registry": "реестр"
+  },
+  "dbeaver": {
+    "config": "Подключения DBeaver"
+  },
+  "unityhub": {
+    "projects": "Проект Unity"
+  },
+  "retroarch": {
+    "saves": "Сохранения и настройки RetroArch",
+    "label_appdata": "AppData",
+    "label_install": "папка программы",
+    "notes": "Образы BIOS из папки system не сохраняются: если они нужны, скопируйте их вручную (снимать их следует со своей консоли). Ядра RetroArch скачает заново через «Онлайн-обновление»."
+  },
+  "dolphin": {
+    "user": "Сохранения и настройки Dolphin",
+    "label_documents": "Документы",
+    "label_appdata": "AppData"
+  },
+  "pcsx2": {
+    "user": "Карты памяти, сохранения и настройки PCSX2"
+  },
+  "ppsspp": {
+    "user": "Данные PPSSPP",
+    "label_savedata": "сохранения",
+    "label_states": "сохранённые состояния",
+    "label_system": "настройки"
+  },
+  "yuzu_ryujinx": {
+    "user": "Сохранения эмуляторов Switch (yuzu, Ryujinx)",
+    "label_yuzu_saves": "сохранения yuzu",
+    "label_yuzu_keys": "ключи yuzu",
+    "label_ryujinx_saves": "сохранения Ryujinx",
+    "label_ryujinx_keys": "ключи Ryujinx",
+    "notes": "Ключи (prod.keys, title.keys) — дамп с вашей собственной консоли Nintendo Switch. Они помечены как секретные данные: не передавайте бэкап с ними другим людям. Прошивка не сохраняется, её нужно установить заново."
+  },
+  "duckstation": {
+    "user": "Карты памяти, сохранения и настройки DuckStation",
+    "label_documents": "Документы",
+    "label_local": "AppData"
+  },
+  "rpcs3": {
+    "user": "Сохранения RPCS3"
+  },
+  "cemu": {
+    "user": "Сохранения Cemu"
+  },
+  "steam": {
+    "userdata_config": "Настройки аккаунта Steam",
+    "screenshots": "Скриншоты Steam"
+  },
+  "minecraft": {
+    "java": "Миры и настройки Minecraft: Java Edition"
+  },
+  "prismlauncher": {
+    "instances": "Сборки Prism Launcher"
+  },
+  "msi_afterburner": {
+    "profiles": "Профили MSI Afterburner"
+  },
+  "rivatuner": {
+    "profiles": "Профили RivaTuner Statistics Server"
+  },
+  "rainmeter": {
+    "skins": "Скины и настройки Rainmeter",
+    "label_skins": "скины",
+    "label_settings": "настройки"
+  },
+  "wallpaper_engine": {
+    "config": "Настройки Wallpaper Engine"
+  },
+  "logitech_ghub": {
+    "settings": "Настройки Logitech G HUB"
+  },
+  "razer_synapse": {
+    "none": "Razer Synapse: служебные папки (профили хранятся в облаке)"
+  },
+  "obs": {
+    "config": "Сцены, профили и настройки OBS Studio"
+  },
+  "sharex": {
+    "config": "Настройки ShareX",
+    "screenshots": "Скриншоты ShareX"
+  },
+  "vlc": {
+    "config": "Настройки VLC"
+  },
+  "mpc_hc": {
+    "settings": "Настройки MPC-HC"
+  },
+  "foobar2000": {
+    "config": "Настройки и библиотека foobar2000",
+    "label_v2": "версия 2",
+    "label_v1": "версия 1"
+  },
+  "spotify": {
+    "none": "Spotify: служебные папки (музыка и плейлисты хранятся в облаке)"
+  },
+  "telegram": {
+    "tdata": "Сессия и настройки Telegram Desktop",
+    "notes": "В tdata хранится активная сессия: с копией этой папки можно войти в аккаунт без кода и без пароля двухэтапной аутентификации. Храните бэкап в надёжном месте или не сохраняйте эту папку — после переустановки проще войти заново. Обычные чаты хранятся в облаке Telegram."
+  },
+  "discord": {
+    "settings": "Настройки Discord"
+  },
+  "slack": {
+    "none": "Slack: служебные папки (переписка хранится в облаке)"
+  },
+  "whatsapp": {
+    "none": "WhatsApp: служебные папки (история хранится в облаке и на телефоне)"
+  },
+  "skype": {
+    "none": "Skype: служебные папки (история хранится в облаке)"
+  },
+  "obsidian": {
+    "config": "Настройки Obsidian (список хранилищ)",
+    "vault": "Хранилище Obsidian"
+  },
+  "keepass": {
+    "config": "Настройки KeePass"
+  },
+  "keepassxc": {
+    "config": "Настройки KeePassXC"
+  },
+  "notepadpp": {
+    "config": "Настройки и несохранённые вкладки Notepad++"
+  },
+  "sublime": {
+    "config": "Настройки Sublime Text",
+    "label_user_packages": "пакет User",
+    "label_session": "сеанс"
+  },
+  "office": {
+    "templates": "Шаблоны и словари Microsoft Office",
+    "label_templates": "шаблоны",
+    "label_dictionary": "пользовательский словарь"
+  },
+  "outlook": {
+    "pst": "Почтовые архивы Outlook (PST)",
+    "label_documents": "Документы",
+    "label_local": "AppData"
+  },
+  "autohotkey": {
+    "scripts": "Скрипты AutoHotkey"
+  },
+  "sevenzip": {
+    "settings": "Настройки 7-Zip"
+  },
+  "total_commander": {
+    "config": "Настройки Total Commander"
+  },
+  "everything": {
+    "config": "Настройки Everything"
+  },
+  "qbittorrent": {
+    "config": "Настройки и раздачи qBittorrent",
+    "label_settings": "настройки",
+    "label_torrents": "активные торренты"
+  },
+  "figma": {
+    "settings": "Настройки Figma"
+  },
+  "adobe": {
+    "settings": "Настройки и пресеты Adobe",
+    "label_photoshop": "Photoshop",
+    "label_lightroom_presets": "пресеты Lightroom",
+    "label_camera_raw": "Camera Raw"
+  },
+  "windows": {
+    "start_taskbar_pins": "Закреплённые значки панели задач",
+    "start_taskbar_pins_notes": "Только для справки: Windows не восстанавливает закреплённые значки из скопированной папки, но по сохранённым ярлыкам удобно закрепить программы заново.",
+    "sendto": "Меню «Отправить»",
+    "explorer_quickaccess": "Быстрый доступ Проводника",
+    "sticky_notes": "Записки (Sticky Notes)",
+    "snipping_screenshots": "Скриншоты (папка «Снимки экрана»)",
+    "powertoys": "Настройки PowerToys"
+  }
+}

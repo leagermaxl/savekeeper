@@ -1,0 +1,24 @@
+{
+  "rules": {
+    "invalid_file": "Файл пользовательских правил «{{file}}» пропущен: {{error}}",
+    "duplicate_id": "Правило «{{rule_id}}» задано и в «{{previous_file}}», и в «{{file}}»; используется версия из «{{file}}»",
+    "user_dir_unreadable": "Не удалось прочитать папку пользовательских правил rules.d, они пропущены: {{error}}",
+    "builtin_invalid": "Встроенные правила не загрузились, используются только пользовательские: {{error}}",
+    "registry_access_denied": "Нет доступа к разделу реестра {{hive}}\\{{key}} (правило «{{rule_id}}»)",
+    "invalid_regex": "Ошибка в регулярном выражении «{{pattern}}» (правило «{{rule_id}}»), условие считается невыполненным: {{error}}",
+    "glob_root_truncated": "По шаблону {{path}} (правило «{{rule_id}}») найдено слишком много совпадений: {{matches}}. Учтено самых новых: {{limit}}",
+    "from_json_too_large": "Конфиг {{file}} (правило «{{rule_id}}») больше {{limit}} байт и не прочитан",
+    "from_json_unreadable": "Не удалось прочитать конфиг {{file}} (правило «{{rule_id}}»): {{error}}",
+    "from_json_parse": "Не удалось разобрать конфиг {{file}} (правило «{{rule_id}}»): {{error}}",
+    "from_json_empty": "В конфиге {{file}} не найдено путей по {{select}} (правило «{{rule_id}}»): возможно, формат файла изменился в новой версии программы",
+    "from_json_truncated": "В конфиге {{file}} (правило «{{rule_id}}») слишком много путей: {{matches}}. Учтено первых путей: {{limit}}",
+    "from_json_skipped": "Путь {{path}} из конфига пропущен (правило «{{rule_id}}»): $t(issue.rules.from_json_skip_reason.{{reason}})",
+    "from_json_skip_reason": {
+      "not_absolute": "путь не абсолютный",
+      "network": "сетевой путь",
+      "system_folder": "системная папка",
+      "duplicate": "путь уже встречался в конфиге",
+      "missing": "путь не найден (возможно, диск не подключён)"
+    }
+  }
+}

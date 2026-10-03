@@ -1,0 +1,24 @@
+{
+  "rules": {
+    "invalid_file": "User rule file “{{file}}” was skipped: {{error}}",
+    "duplicate_id": "Rule “{{rule_id}}” is defined in both “{{previous_file}}” and “{{file}}”; the one from “{{file}}” is used",
+    "user_dir_unreadable": "Could not read the user rules folder rules.d, user rules were skipped: {{error}}",
+    "builtin_invalid": "Built-in rules failed to load, only user rules are used: {{error}}",
+    "registry_access_denied": "Access denied to registry key {{hive}}\\{{key}} (rule “{{rule_id}}”)",
+    "invalid_regex": "Invalid regular expression “{{pattern}}” (rule “{{rule_id}}”), the condition is treated as not met: {{error}}",
+    "glob_root_truncated": "Too many matches for {{path}} (rule “{{rule_id}}”): {{matches}}. Only the newest are used, up to {{limit}}",
+    "from_json_too_large": "Config {{file}} (rule “{{rule_id}}”) is larger than {{limit}} bytes and was not read",
+    "from_json_unreadable": "Could not read config {{file}} (rule “{{rule_id}}”): {{error}}",
+    "from_json_parse": "Could not parse config {{file}} (rule “{{rule_id}}”): {{error}}",
+    "from_json_empty": "No paths found at {{select}} in config {{file}} (rule “{{rule_id}}”): the file format may have changed in a newer version of the program",
+    "from_json_truncated": "Too many paths in config {{file}} (rule “{{rule_id}}”): {{matches}}. Only the first ones are used, up to {{limit}}",
+    "from_json_skipped": "Path {{path}} from the config was skipped (rule “{{rule_id}}”): $t(issue.rules.from_json_skip_reason.{{reason}})",
+    "from_json_skip_reason": {
+      "not_absolute": "the path is not absolute",
+      "network": "network path",
+      "system_folder": "system folder",
+      "duplicate": "the path is listed twice in the config",
+      "missing": "the path does not exist (the drive may be disconnected)"
+    }
+  }
+}

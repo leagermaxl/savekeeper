@@ -8,7 +8,7 @@
 | Крейт(ы) | все, `fixtures/`, `xtask/`, `.github/workflows/` |
 | Зависит от | SPEC-00, SPEC-01, SPEC-02 |
 | Используется в | все спеки (§6 «Тестирование» каждой спеки опирается на эту) |
-| Последнее изменение | 2026-10-03 (T-05-01: API разбора манифеста, конкретные типы, параллельный разбор, бенч; §4.3: фикстура `samples/ludusavi/manifest-sample.yaml`); 2026-10-02 (§4.2: `mem_fixture`; §4.3: фикстуры `fixtures/fs/` для `MemFs` и их ключи; §4.2: `materialize_profile`; §4.3: ключи `git.unpushed`, `attrs: system`, правила `size`/`sample`/`launchers`, повторяемый `--profile`, ключ кэша, `samples/dev/node.gitignore`; §4.6: исключение `xtask` для `sk-testkit`; §4.2: `UnboundedReceiver` в `collect_ctx`/`drain_events`, API `RegTestKey` и `REG_TEST_PARENT`; §7: граница T-12-05/T-12-06 по ключам формата фикстур и кэшу; 2026-10-01: §4.4: снапшот TS-деклараций вместо JSON Schema для SPEC-02; §4.8: Node 24 LTS; §4.2: состав `sk-testkit`, `collect_ctx` со сканером, правило unit-тестов; §4.5: `MockClassifier` в `sk-llm`; §4.6: транзитивные рёбра, `xtask`; зависимости T-12-02/04/05/06; §4.8: MSRV 1.93) |
+| Последнее изменение | 2026-10-03 (T-04-11: проверки xtask i18n-check; T-05-01: API разбора манифеста, конкретные типы, параллельный разбор, бенч; §4.3: фикстура `samples/ludusavi/manifest-sample.yaml`); 2026-10-02 (§4.2: `mem_fixture`; §4.3: фикстуры `fixtures/fs/` для `MemFs` и их ключи; §4.2: `materialize_profile`; §4.3: ключи `git.unpushed`, `attrs: system`, правила `size`/`sample`/`launchers`, повторяемый `--profile`, ключ кэша, `samples/dev/node.gitignore`; §4.6: исключение `xtask` для `sk-testkit`; §4.2: `UnboundedReceiver` в `collect_ctx`/`drain_events`, API `RegTestKey` и `REG_TEST_PARENT`; §7: граница T-12-05/T-12-06 по ключам формата фикстур и кэшу; 2026-10-01: §4.4: снапшот TS-деклараций вместо JSON Schema для SPEC-02; §4.8: Node 24 LTS; §4.2: состав `sk-testkit`, `collect_ctx` со сканером, правило unit-тестов; §4.5: `MockClassifier` в `sk-llm`; §4.6: транзитивные рёбра, `xtask`; зависимости T-12-02/04/05/06; §4.8: MSRV 1.93) |
 
 ## 1. Цель
 
@@ -219,7 +219,7 @@ jobs:
             "pnpm -C app install --frozen-lockfile",
             "pnpm -C app lint", "pnpm -C app typecheck", "pnpm -C app test -- --run",
             "cargo xtask bindings && git diff --exit-code app/src/bindings.ts",
-            "cargo xtask i18n-check"]     # ключи ru/en совпадают, все message_key из Rust присутствуют
+            "cargo xtask i18n-check"]     # ключи ru/en и аргументы {{…}} совпадают, все message_key из Rust присутствуют, ссылки $t(…) разрешаются (SPEC-11 §4.7)
   build-windows:   # windows-latest, needs: [test, frontend]
     steps: ["pnpm -C app tauri build --no-bundle", upload-artifact(savekeeper.exe, retention 7d)]
 ```

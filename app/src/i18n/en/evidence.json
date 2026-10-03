@@ -1,0 +1,4 @@
+{
+  "rule_match": "Known program data location from the rule base",
+  "rule_from_json": "“{{name}}” is listed in the program's config {{file}}"
+}

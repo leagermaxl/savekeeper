@@ -1,0 +1,291 @@
+{
+  "chrome": {
+    "profiles": "Google Chrome profiles",
+    "notes": "Saved passwords are encrypted by Windows (DPAPI) and cannot be decrypted after a reinstall: the user gets a different key on the new system. Bookmarks, extensions and history do carry over. Syncing passwords and bookmarks with your Google account is more reliable."
+  },
+  "edge": {
+    "profiles": "Microsoft Edge profiles",
+    "notes": "Saved passwords are encrypted by Windows (DPAPI) and cannot be decrypted after a reinstall: the user gets a different key on the new system. Bookmarks, extensions and history do carry over. Syncing passwords and bookmarks with your Microsoft account is more reliable."
+  },
+  "brave": {
+    "profiles": "Brave profiles",
+    "notes": "Saved passwords are encrypted by Windows (DPAPI) and cannot be decrypted after a reinstall: the user gets a different key on the new system. Bookmarks, extensions and history do carry over. Syncing passwords and bookmarks with Brave Sync is more reliable."
+  },
+  "vivaldi": {
+    "profiles": "Vivaldi profiles",
+    "notes": "Saved passwords are encrypted by Windows (DPAPI) and cannot be decrypted after a reinstall: the user gets a different key on the new system. Bookmarks, extensions and history do carry over. Syncing passwords and bookmarks with your Vivaldi account is more reliable."
+  },
+  "opera": {
+    "profiles": "Opera profiles",
+    "label_stable": "standard edition",
+    "label_gx": "Opera GX",
+    "notes": "Saved passwords are encrypted by Windows (DPAPI) and cannot be decrypted after a reinstall: the user gets a different key on the new system. Bookmarks, extensions and history do carry over. Syncing passwords and bookmarks with your Opera account is more reliable."
+  },
+  "yandex": {
+    "profiles": "Yandex Browser profiles",
+    "notes": "Saved passwords (Ya Passman Data) are protected by a key that Windows encrypts (DPAPI) and cannot be decrypted after a reinstall: the user gets a different key on the new system. Bookmarks, extensions and history do carry over. Syncing passwords and bookmarks with your Yandex account is more reliable."
+  },
+  "firefox": {
+    "profiles": "Mozilla Firefox profiles",
+    "notes": "Passwords (logins.json and key4.db) move with the profile; if a primary password is set, you will need it on the new system. For extra safety, turn on sync with your Mozilla account."
+  },
+  "thunderbird": {
+    "profiles": "Mozilla Thunderbird profiles",
+    "notes": "The profile holds your mail, address books and account settings. IMAP mail stays on the server, but local folders and POP3 mail exist only here. Saved passwords move with the profile."
+  },
+  "onedrive": {
+    "none": "OneDrive: client service folders"
+  },
+  "dropbox": {
+    "none": "Dropbox: client service folders and cache"
+  },
+  "google_drive": {
+    "none": "Google Drive: client cache and service folders"
+  },
+  "icloud": {
+    "none": "iCloud: client service folders"
+  },
+  "yandex_disk": {
+    "none": "Yandex Disk: client service folders"
+  },
+  "ssh": {
+    "keys": "SSH keys and config"
+  },
+  "git": {
+    "config": "Git settings",
+    "label_gitconfig": ".gitconfig",
+    "label_xdg_config": ".config\\git folder"
+  },
+  "vscode": {
+    "user_settings": "Visual Studio Code settings",
+    "label_settings": "user settings",
+    "label_protocol": "vscode:// link handler",
+    "extensions_list": "Visual Studio Code extension list",
+    "notes": "If Settings Sync is on, these settings are already in the cloud and come back when you sign in with GitHub or Microsoft. The extensions themselves are not saved: reinstall them from the extension list."
+  },
+  "vscode_insiders": {
+    "user_settings": "Visual Studio Code Insiders settings"
+  },
+  "cursor": {
+    "user_settings": "Cursor settings"
+  },
+  "jetbrains": {
+    "config": "JetBrains IDE settings"
+  },
+  "visualstudio": {
+    "settings": "Visual Studio settings"
+  },
+  "windows_terminal": {
+    "settings": "Windows Terminal settings",
+    "label_release": "stable",
+    "label_preview": "Preview",
+    "label_unpackaged": "unpackaged build (zip, Scoop)"
+  },
+  "powershell": {
+    "profile": "PowerShell profile and modules",
+    "label_core": "PowerShell 7",
+    "label_windows": "Windows PowerShell 5.1"
+  },
+  "npm": {
+    "config": "npm settings (.npmrc)"
+  },
+  "cargo": {
+    "config": "Cargo settings",
+    "label_config": "config.toml",
+    "label_credentials": "registry tokens (credentials.toml)"
+  },
+  "docker": {
+    "config": "Docker settings (config.json)"
+  },
+  "aws": {
+    "config": "AWS CLI settings and access keys"
+  },
+  "kube": {
+    "config": "kubectl configuration (kubeconfig)"
+  },
+  "putty": {
+    "sessions": "PuTTY sessions",
+    "label_registry": "registry",
+    "label_files": ".putty folder"
+  },
+  "winscp": {
+    "config": "WinSCP settings and sessions",
+    "label_ini": "WinSCP.ini",
+    "label_registry": "registry"
+  },
+  "dbeaver": {
+    "config": "DBeaver connections"
+  },
+  "unityhub": {
+    "projects": "Unity project"
+  },
+  "retroarch": {
+    "saves": "RetroArch saves and settings",
+    "label_appdata": "AppData",
+    "label_install": "program folder",
+    "notes": "BIOS images in the system folder are not saved: if you need them, copy them yourself (they should be dumped from your own console). RetroArch downloads the cores again through the Online Updater."
+  },
+  "dolphin": {
+    "user": "Dolphin saves and settings",
+    "label_documents": "Documents",
+    "label_appdata": "AppData"
+  },
+  "pcsx2": {
+    "user": "PCSX2 memory cards, save states and settings"
+  },
+  "ppsspp": {
+    "user": "PPSSPP data",
+    "label_savedata": "saves",
+    "label_states": "save states",
+    "label_system": "settings"
+  },
+  "yuzu_ryujinx": {
+    "user": "Switch emulator saves (yuzu, Ryujinx)",
+    "label_yuzu_saves": "yuzu saves",
+    "label_yuzu_keys": "yuzu keys",
+    "label_ryujinx_saves": "Ryujinx saves",
+    "label_ryujinx_keys": "Ryujinx keys",
+    "notes": "The keys (prod.keys, title.keys) are a dump from your own Nintendo Switch. They are marked as sensitive: do not share a backup that contains them. The firmware is not saved and has to be installed again."
+  },
+  "duckstation": {
+    "user": "DuckStation memory cards, save states and settings",
+    "label_documents": "Documents",
+    "label_local": "AppData"
+  },
+  "rpcs3": {
+    "user": "RPCS3 saves"
+  },
+  "cemu": {
+    "user": "Cemu saves"
+  },
+  "steam": {
+    "userdata_config": "Steam account settings",
+    "screenshots": "Steam screenshots"
+  },
+  "minecraft": {
+    "java": "Minecraft: Java Edition worlds and settings"
+  },
+  "prismlauncher": {
+    "instances": "Prism Launcher instances"
+  },
+  "msi_afterburner": {
+    "profiles": "MSI Afterburner profiles"
+  },
+  "rivatuner": {
+    "profiles": "RivaTuner Statistics Server profiles"
+  },
+  "rainmeter": {
+    "skins": "Rainmeter skins and settings",
+    "label_skins": "skins",
+    "label_settings": "settings"
+  },
+  "wallpaper_engine": {
+    "config": "Wallpaper Engine settings"
+  },
+  "logitech_ghub": {
+    "settings": "Logitech G HUB settings"
+  },
+  "razer_synapse": {
+    "none": "Razer Synapse: service folders (profiles are in the cloud)"
+  },
+  "obs": {
+    "config": "OBS Studio scenes, profiles and settings"
+  },
+  "sharex": {
+    "config": "ShareX settings",
+    "screenshots": "ShareX screenshots"
+  },
+  "vlc": {
+    "config": "VLC settings"
+  },
+  "mpc_hc": {
+    "settings": "MPC-HC settings"
+  },
+  "foobar2000": {
+    "config": "foobar2000 settings and library",
+    "label_v2": "version 2",
+    "label_v1": "version 1"
+  },
+  "spotify": {
+    "none": "Spotify: service folders (music and playlists are in the cloud)"
+  },
+  "telegram": {
+    "tdata": "Telegram Desktop session and settings",
+    "notes": "tdata holds the active session: a copy of this folder signs in to the account without the login code or the two-step verification password. Keep the backup in a safe place, or skip this folder and simply sign in again after reinstalling. Chats are stored in the Telegram cloud."
+  },
+  "discord": {
+    "settings": "Discord settings"
+  },
+  "slack": {
+    "none": "Slack: service folders (messages are in the cloud)"
+  },
+  "whatsapp": {
+    "none": "WhatsApp: service folders (history is in the cloud and on the phone)"
+  },
+  "skype": {
+    "none": "Skype: service folders (history is in the cloud)"
+  },
+  "obsidian": {
+    "config": "Obsidian settings (vault list)",
+    "vault": "Obsidian vault"
+  },
+  "keepass": {
+    "config": "KeePass settings"
+  },
+  "keepassxc": {
+    "config": "KeePassXC settings"
+  },
+  "notepadpp": {
+    "config": "Notepad++ settings and unsaved tabs"
+  },
+  "sublime": {
+    "config": "Sublime Text settings",
+    "label_user_packages": "User package",
+    "label_session": "session"
+  },
+  "office": {
+    "templates": "Microsoft Office templates and dictionaries",
+    "label_templates": "templates",
+    "label_dictionary": "custom dictionary"
+  },
+  "outlook": {
+    "pst": "Outlook mail archives (PST)",
+    "label_documents": "Documents",
+    "label_local": "AppData"
+  },
+  "autohotkey": {
+    "scripts": "AutoHotkey scripts"
+  },
+  "sevenzip": {
+    "settings": "7-Zip settings"
+  },
+  "total_commander": {
+    "config": "Total Commander settings"
+  },
+  "everything": {
+    "config": "Everything settings"
+  },
+  "qbittorrent": {
+    "config": "qBittorrent settings and torrents",
+    "label_settings": "settings",
+    "label_torrents": "active torrents"
+  },
+  "figma": {
+    "settings": "Figma settings"
+  },
+  "adobe": {
+    "settings": "Adobe settings and presets",
+    "label_photoshop": "Photoshop",
+    "label_lightroom_presets": "Lightroom presets",
+    "label_camera_raw": "Camera Raw"
+  },
+  "windows": {
+    "start_taskbar_pins": "Pinned taskbar icons",
+    "start_taskbar_pins_notes": "For reference only: Windows does not restore pins from a copied folder, but the saved shortcuts make it easy to pin the programs again.",
+    "sendto": "“Send to” menu",
+    "explorer_quickaccess": "File Explorer Quick access",
+    "sticky_notes": "Sticky Notes",
+    "snipping_screenshots": "Screenshots folder",
+    "powertoys": "PowerToys settings"
+  }
+}
