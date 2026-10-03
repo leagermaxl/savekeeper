@@ -455,7 +455,7 @@ fn steam_tokens_resolve_from_the_detected_launcher() {
 
 #[test]
 fn native_paths_and_drive_letters() {
-    let sep = MAIN_SEPARATOR_STR;
+    let sep = std::path::MAIN_SEPARATOR_STR;
     assert_eq!(
         native_path(" c:/program files (x86)/steam/ "),
         PathBuf::from(format!("c:{sep}program files (x86){sep}steam"))

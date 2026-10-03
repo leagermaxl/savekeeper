@@ -15,6 +15,8 @@ reqwest.workspace = true
 rustls.workspace = true
 serde.workspace = true
 serde-saphyr.workspace = true
+# Epic `.item` and EA `InstallData` JSON files (SPEC-05 §4.4).
+serde_json.workspace = true
 sk-core.workspace = true
 thiserror.workspace = true
 time.workspace = true

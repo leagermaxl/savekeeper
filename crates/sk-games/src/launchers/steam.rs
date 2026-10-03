@@ -3,19 +3,19 @@
 //! `userdata\<id3>` with names from `config\loginusers.vdf`.
 
 use std::fmt;
-use std::path::{Path, PathBuf, MAIN_SEPARATOR_STR};
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use keyvalues_parser::Value;
 use sk_core::env::{Environment, InstalledGame, KnownFolder, LauncherInfo, StoreUser};
-use sk_core::fs::{EntryKind, EntryMeta, FsError, FsScanner, ReparseKind};
+use sk_core::fs::{EntryKind, FsError, FsScanner};
 use sk_core::model::{RegHive, ScanIssue};
 use sk_core::path::eq_ci;
 use sk_core::registry::{RegistryReader, SystemRegistry};
 use sk_core::template::PathTemplate;
 
 use super::vdf::{self, Reason, INVALID};
-use super::{info_issue, LauncherDetector};
+use super::{info_issue, is_folder, native_path, LauncherDetector};
 
 /// Steam id64 of the account with id3 0: id3 = id64 − base.
 pub const STEAM_ID64_BASE: u64 = 76_561_197_960_265_728;
@@ -26,8 +26,6 @@ const REGISTRY_VALUE: &str = "SteamPath";
 /// Size limits of the files read; real ones are a few KiB.
 const MAX_VDF: usize = 4 << 20;
 const MAX_ACF: usize = 1 << 20;
-/// `FILE_ATTRIBUTE_DIRECTORY`.
-const FILE_ATTRIBUTE_DIRECTORY: u32 = 0x10;
 
 /// `libraryfolders.vdf` is missing or broken: only the main library is used.
 pub(crate) const ISSUE_LIBRARYFOLDERS: &str = "issue.games.steam_libraryfolders_unreadable";
@@ -343,18 +341,6 @@ fn number(s: &str) -> Option<u64> {
     s.parse().ok()
 }
 
-/// A path from Steam files or the registry in native form: `/` becomes the
-/// platform separator (`SteamPath` is written as `c:/program files (x86)/steam`),
-/// trailing separators are dropped except after a drive (`C:\`).
-fn native_path(s: &str) -> PathBuf {
-    let s = s.trim().replace('/', MAIN_SEPARATOR_STR);
-    let trimmed = s.trim_end_matches(['\\', '/']);
-    if trimmed.len() == 2 && trimmed.ends_with(':') {
-        return PathBuf::from(format!("{trimmed}{MAIN_SEPARATOR_STR}"));
-    }
-    PathBuf::from(trimmed)
-}
-
 /// Upper-case drive letter of `C:\…` (or `\\?\C:\…`), on every OS.
 fn drive_letter(path: &Path) -> Option<char> {
     let s = path.to_string_lossy();
@@ -365,17 +351,6 @@ fn drive_letter(path: &Path) -> Option<char> {
             Some(letter.to_ascii_uppercase())
         }
         _ => None,
-    }
-}
-
-/// A folder, or a link to one (the Steam folder may be moved by a junction).
-fn is_folder(meta: &EntryMeta) -> bool {
-    match meta.kind {
-        EntryKind::Dir => true,
-        EntryKind::Reparse(ReparseKind::Junction | ReparseKind::Symlink) => {
-            meta.attrs & FILE_ATTRIBUTE_DIRECTORY != 0
-        }
-        EntryKind::File | EntryKind::Reparse(_) => false,
     }
 }
 

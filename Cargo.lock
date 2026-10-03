@@ -2842,6 +2842,7 @@ dependencies = [
  "rustls",
  "serde",
  "serde-saphyr",
+ "serde_json",
  "sk-core",
  "sk-scan",
  "tempfile",

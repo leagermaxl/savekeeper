@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-games` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-04 (токены `{STEAM}`, `{STEAM_USERID}`), SPEC-07, SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-03 (T-05-02: FR-05-11 ресурс снапшота, варианты `GamesError`, детали `ManifestStore` в §4.1, ключи issue манифеста в §5, встроенный снапшот из `third_party/ludusavi`; T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.1: реестр из sk-core, T-05-04 и T-05-09 зависят от T-02-10; T-05-03: detect_with_issues, SteamDetector, RegistryReader, детали Steam §4.4, ключи issue §5; T-05-01: API разбора манифеста, конкретные типы, параллельный разбор, бенч; §5: манифест с 0 игр; T-04-05: специализация `{STEAM_USERID}` в шаблоне находки, §4.7, §5); 2026-10-02 (§6: пути фикстур `fixtures/samples/...` и 20 игр, как в SPEC-12 §4.3; 2026-10-01: §4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
+| Последнее изменение | 2026-10-03 (T-05-04: условие обнаружения EA, тексты ключей games в T-05-09, детекторы Epic/GOG/Ubisoft/EA/Battle.net/Xbox в §4.1 и §4.4, находки лаунчеров, issue `launcher_file_unreadable` в §5; T-05-02: FR-05-11 ресурс снапшота, варианты `GamesError`, детали `ManifestStore` в §4.1, ключи issue манифеста в §5, встроенный снапшот из `third_party/ludusavi`; T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.1: реестр из sk-core, T-05-04 и T-05-09 зависят от T-02-10; T-05-03: detect_with_issues, SteamDetector, RegistryReader, детали Steam §4.4, ключи issue §5; T-05-01: API разбора манифеста, конкретные типы, параллельный разбор, бенч; §5: манифест с 0 игр; T-04-05: специализация `{STEAM_USERID}` в шаблоне находки, §4.7, §5); 2026-10-02 (§6: пути фикстур `fixtures/samples/...` и 20 игр, как в SPEC-12 §4.3; 2026-10-01: §4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
 
 ## 1. Цель
 
@@ -83,6 +83,9 @@ pub trait LauncherDetector: Send + Sync {
     fn detect_with_issues(&self, fs: &dyn FsScanner, env: &Environment) -> (Option<LauncherInfo>, Vec<ScanIssue>); // detect + проблемы по пути (ScanIssue::Info, source "games.<id>", §4.4); по умолчанию (self.detect(..), vec![])
 }
 pub struct SteamDetector;                                       // new() — системный реестр; with_registry(Arc<dyn RegistryReader>) — тесты
+pub struct EpicDetector; pub struct XboxDetector;               // new(); реестр не нужен
+pub struct GogDetector; pub struct UbisoftDetector; pub struct EaDetector; pub struct BattleNetDetector; // new() — системный реестр; with_registry(..) — тесты
+// все — LauncherDetector, реэкспорт из корня крейта
 pub const STEAM_ID64_BASE: u64 = 76_561_197_960_265_728;
 pub fn enrich(env: &mut Environment, fs: &dyn FsScanner) -> Vec<ScanIssue>; // вызывает все детекторы (SPEC-02 §3.3), возвращает их issues
 
@@ -185,12 +188,25 @@ Serde-модель: `GameEntry { files: BTreeMap<String, FileRule>, registry: BT
 | **Steam** | `HKCU\Software\Valve\Steam\SteamPath` → fallback `{PROGRAMFILES_X86}\Steam` | `steamapps\libraryfolders.vdf` → библиотеки → `steamapps\appmanifest_<appid>.acf` (`appid`, `name`, `installdir`, `SizeOnDisk`); install dir = `<lib>\steamapps\common\<installdir>` | `<root>\userdata\<id3>` (каталоги-числа), имена из `config\loginusers.vdf` (id64 → id3 = id64 − 76561197960265728) | VDF парсер `keyvalues-parser` |
 | **Epic** | `{PROGRAMDATA}\Epic\EpicGamesLauncher\Data\Manifests\*.item` (JSON) | поля `AppName`, `DisplayName`, `InstallLocation` | — | Сохранения Epic Cloud — только тег `cloud-epic`, если в манифесте |
 | **GOG** | `HKLM\SOFTWARE\WOW6432Node\GOG.com\Games\<id>` (`gameName`, `path`) | + Galaxy: `{PROGRAMDATA}\GOG.com\Galaxy\storage\galaxy-2.0.db` (SQLite, read-only, `?immutable=1`) — P2, желательно | — | |
-| **Ubisoft Connect** | `HKLM\SOFTWARE\WOW6432Node\Ubisoft\Launcher\Installs\<id>\InstallDir` | каталог `<UbisoftRoot>\savegames\<userid>\<gameid>` — отдельная находка `ubisoft.savegames` на весь каталог | подпапки savegames | сопоставление gameid→имя не требуется |
+| **Ubisoft Connect** | `HKLM\…\Ubisoft\Launcher\InstallDir` → fallback `{PROGRAMFILES_X86}\Ubisoft\Ubisoft Game Launcher`; игры — `HKLM\SOFTWARE\WOW6432Node\Ubisoft\Launcher\Installs\<id>\InstallDir` | каталог `<UbisoftRoot>\savegames\<userid>\<gameid>` — отдельная находка `ubisoft.savegames` на весь каталог | подпапки savegames | сопоставление gameid→имя не требуется |
 | **EA app** | `{PROGRAMDATA}\EA Desktop\InstallData\*\*.json` / `HKLM\SOFTWARE\WOW6432Node\Electronic Arts\<Game>\Install Dir` | | — | best effort |
 | **Battle.net** | `{PROGRAMDATA}\Battle.net\Agent\product.db` (protobuf) — MVP: только `HKLM\...\Uninstall\*` с Publisher «Blizzard Entertainment» | | — | Сохранения в облаке, конфиги в `{DOCUMENTS}` — из манифеста |
 | **Xbox / MS Store** | `{LOCALAPPDATA}\Packages\*` с `SystemAppData\wgs` | — | — | **Сохранения `wgs` хранятся в облаке и зашифрованы по контейнерам.** Создаём находку `xbox.wgs` (`game_save`, confidence 0.5, note «обычно синхронизируются через Xbox Cloud»), без расшифровки |
 
 Steam, детали: корень — первый существующий каталог (или junction/symlink на каталог) из `SteamPath` (`/`→`\`) и `{PROGRAMFILES_X86}\Steam`; нет — лаунчер не найден, без issue. Библиотеки: корень первым, затем пути `libraryfolders.vdf` по возрастанию числового ключа (формат `"N" { "path" "…" }` и старый `"N" "…"`), повторы без учёта регистра отбрасываются; неосновная библиотека на диске, которого нет в `Environment.drives`, пропускается без обращения к ФС; относительные пути библиотек пропускаются. Игры: `appmanifest_<цифры>.acf`; `appid` из файла, иначе из имени файла; `name`, иначе `installdir`; `installdir` — одно имя каталога (не пустое, не `.`/`..`, без `\`, `/`, `:`), иначе файл отбрасывается; один `appid` в нескольких библиотеках — берётся первая. Пользователи: подкаталоги `userdata` с каноническим десятичным именем u32, по возрастанию, `StoreUser { id: id3, alt_id: Some(id64), name: PersonaName }` (`AccountName` не читается). Лимиты: `.vdf` ≤ 4 МиБ, `.acf` ≤ 1 МиБ, вложенность `{` > 64 — файл невалиден.
+
+Другие лаунчеры, детали (T-05-04):
+- **Epic:** лаунчер есть, если `{PROGRAMDATA}\Epic\EpicGamesLauncher` — каталог (он же корень). Игры — `Data\Manifests\*.item` по имени файла; нет `Manifests` — нет игр. id = `AppName`, имя = `DisplayName`, иначе `AppName`. `InstallLocation` должен быть абсолютным; `size_bytes` = `InstallSize`. Дополнение (`MainGameAppName` ≠ `AppName`) пропускается, повтор `AppName` — берётся первый.
+- **GOG:** есть, если существует ключ `GOG.com\Games`. Подключ — id, `gameName` — имя (иначе имя каталога), `path` должен быть абсолютным; root = None.
+- **Ubisoft:** root = `HKLM\…\Ubisoft\Launcher\InstallDir`, иначе `{PROGRAMFILES_X86}\Ubisoft\Ubisoft Game Launcher`. Игры — `Installs\<id>\InstallDir`, имя по каталогу. Пользователи — подкаталоги `<root>\savegames`. Лаунчер есть, если есть корень или ключ `Installs`.
+- **EA:** root = `{PROGRAMDATA}\EA Desktop`. JSON `InstallData\*\*.json`: каталог установки — первое из `installLocation|installPath|baseInstallPath|installDir`, имя — `displayName|gameName|title`, id — `softwareId|contentId|offerId|productId`, иначе имя папки. JSON без каталога установки — не игра, без issue. Затем игры из реестра (`Install Dir`, имя `DisplayName`, иначе подключ), дедуп по каталогу установки. Формат JSON — best effort. Лаунчер есть, если есть корень или игра в реестре.
+- **Battle.net:** ключи Uninstall сначала WOW6432Node, затем 64-битные, дедуп по имени записи. Publisher начинается с «Blizzard Entertainment» без учёта регистра. Запись `Battle.net` даёт корень; прочие записи с абсолютным `InstallLocation` — игры, `size_bytes` = `EstimatedSize`×1024.
+- **Xbox:** есть, если у какого-либо `Packages\*` есть каталог `SystemAppData\wgs`. root = None, игр нет (нет каталога установки; каталог Packages не заявляется).
+- Все реестровые детекторы: записи без допустимого каталога установки пропускаются молча.
+
+Находки лаунчеров (`xbox.wgs`, `ubisoft.savegames`) строит `launchers::findings` (crate-private); `GamesCollector` (T-05-09) добавляет их в вывод. Общее: FileSet на весь каталог (`PathTemplate::from_path`), title `games.title.save`, `EvidenceSource::Launcher`.
+- `xbox.wgs`: шаблон `{PACKAGE:<name>}\SystemAppData\wgs`; evidence `evidence.games.xbox_wgs` {package}, confidence 0.5; note `games.note.xbox_wgs`; теги [xbox, cloud-xbox]; AppRef Game, id — ASCII-slug имени из PFN, `source_ids` {xbox: PFN}.
+- `ubisoft.savegames`: evidence `evidence.games.ubisoft_savegames`, confidence 0.9; теги [ubisoft]; AppRef «Ubisoft Connect» (`ubisoft-connect`, Application).
 
 Результат детекторов → `Environment.launchers`. Ошибки детектора → `ScanIssue::Info` с `source: "games.<launcher>"`.
 
@@ -238,6 +254,7 @@ Steam, детали: корень — первый существующий ка
 | Steam установлен, но `libraryfolders.vdf` отсутствует или битый | Только основная библиотека `<root>\steamapps`. Info `issue.games.steam_libraryfolders_unreadable`. |
 | Библиотека Steam на отключённом диске | Пропуск без обращения к ФС, `issue.games.steam_library_unavailable` { reason: drive_missing, drive: <буква> }; каталог библиотеки на имеющемся диске не читается — тот же ключ, reason по ошибке ФС; нет `steamapps` у основной библиотеки — не проблема. |
 | `appmanifest_*.acf` не читается/битый/недопустимый `installdir` | Игра пропускается, `issue.games.steam_appmanifest_unreadable` { reason }. |
+| Файл/каталог данных другого лаунчера (не Steam) не читается или невалиден | Запись пропускается, Info `issue.games.launcher_file_unreadable` { reason } (reason как у Steam), source `games.<id>`. |
 | Несколько Steam-аккаунтов | `{STEAM_USERID}` раскрывается во все; в шаблоне каждой находки токен специализирован в конкретный id3 (§4.7, SPEC-02 §3.2), `FindingId` — от специализированного шаблона. Title получает суффикс имени аккаунта из `loginusers.vdf`. |
 | Сохранения внутри каталога игры (`<base>/saves`) | Находка `game_save` внутри `Reinstallable`-находки каталога. SPEC-09 merge не должен поглотить её родителем (правило «Reinstallable не поглощает»). |
 | Одинаковый путь у двух игр (общий движок, `<winDocuments>/My Games`) | Один FindingId → одна находка, два Evidence и `AppRef` первой игры + тег `multi-game`. |
@@ -263,12 +280,12 @@ Issue Steam: reason ∈ not_found, access_denied, locked, too_large, cloud_only,
 - [x] **T-05-01** — Serde-модель манифеста §4.2, парсинг полного файла, бенч. *Зависит:* T-01-01. *Готово, когда:* реальный манифест парсится ≤ 3 с. *Проверено* 2026-10-03 пользователем: бенч на реальном манифесте — NFR-05-01 PASS.
 - [x] **T-05-02** — `ManifestStore`: HTTP с ETag, атомарная запись, кэш индекса (postcard), встроенный снапшот (zstd, `build.rs` скачивает или берёт из `third_party/ludusavi/manifest.yaml` в репо). *Зависит:* T-05-01, T-01-04.
 - [x] **T-05-03** — Детектор Steam (VDF, ACF, userdata, loginusers) + токены `{STEAM}`, `{STEAM_USERID}` в `PathTemplate::resolve`. *Зависит:* T-03-06, T-02-03.
-- [ ] **T-05-04** — Детекторы Epic, GOG (реестр), Ubisoft, EA, Battle.net (Uninstall), Xbox (`wgs`-находка). *Зависит:* T-05-03, T-02-10.
+- [x] **T-05-04** — Детекторы Epic, GOG (реестр), Ubisoft, EA, Battle.net (Uninstall), Xbox (`wgs`-находка). *Зависит:* T-05-03, T-02-10.
 - [ ] **T-05-05** — `enrich(env, fs)` (возвращает issues детекторов: `pub fn enrich(env: &mut Environment, fs: &dyn FsScanner) -> Vec<ScanIssue>`, §4.1) и интеграция в фазу Environment `sk-engine`. *Зависит:* T-05-04, T-01-06.
 - [ ] **T-05-06** — `translate` + фильтр `when` + `{GAME_DIR}`. *Зависит:* T-05-01, T-02-03.
 - [ ] **T-05-07** — Сопоставление установленных игр с манифестом (§4.5). *Зависит:* T-05-05, T-05-06.
 - [ ] **T-05-08** — Индекс якорей для неустановленных игр (§4.6). *Зависит:* T-05-06. *Готово, когда:* тест на счётчик `exists`.
-- [ ] **T-05-09** — `GamesCollector` (§4.7): группировка, реестр, cloud-теги, claimed_paths, Reinstallable-находки каталогов. *Зависит:* T-05-07, T-05-08, T-01-03, T-02-10.
+- [ ] **T-05-09** — `GamesCollector` (§4.7): группировка, реестр, cloud-теги, claimed_paths, Reinstallable-находки каталогов, находки лаунчеров (§4.4); ru/en тексты всех ключей `issue.games.*`, `evidence.games.*`, `games.*` (формат ресурсов как в SPEC-04 T-04-11) с тестом покрытия ключей. *Зависит:* T-05-07, T-05-08, T-01-03, T-02-10.
 - [ ] **T-05-10** — CLI `manifest update` + вывод источника манифеста в `savekeeper-cli env`. *Зависит:* T-05-02, T-01-07.
 - [ ] **T-05-11** — Атрибуция (FR-05-10, FR-05-11): `THIRD_PARTY_NOTICES.md`, строки в i18n «О программе», cargo-фича `embedded-manifest` (включена по умолчанию). Перед первым релизом сверить актуальную лицензию в README `ludusavi-manifest` и зафиксировать её в `THIRD_PARTY_NOTICES.md`. *Зависит:* T-05-02.
 

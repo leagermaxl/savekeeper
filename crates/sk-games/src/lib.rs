@@ -7,7 +7,10 @@ pub mod manifest;
 mod store;
 
 pub use error::GamesError;
-pub use launchers::{LauncherDetector, SteamDetector, STEAM_ID64_BASE};
+pub use launchers::{
+    BattleNetDetector, EaDetector, EpicDetector, GogDetector, LauncherDetector, SteamDetector,
+    UbisoftDetector, XboxDetector, STEAM_ID64_BASE,
+};
 pub use manifest::{
     CloudFlags, FileRule, GameEntry, GogRef, Ids, Manifest, ManifestMeta, ManifestSource, Os,
     RegRule, SteamRef, Store, When,
