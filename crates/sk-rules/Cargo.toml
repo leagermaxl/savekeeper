@@ -10,10 +10,14 @@ publish.workspace = true
 
 [dependencies]
 globset.workspace = true
+include_dir.workspace = true
 serde.workspace = true
 serde-saphyr.workspace = true
 sk-core.workspace = true
 thiserror.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
 
 [lints]
 workspace = true

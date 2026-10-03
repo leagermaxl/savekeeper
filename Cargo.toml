@@ -33,6 +33,7 @@ async-trait = "0.1"
 blake3 = "1"
 clap = { version = "4", features = ["derive"] }
 globset = "0.4"
+include_dir = "0.7"
 # Features are chosen per crate (sk-testkit: fixture repos; sk-heuristics: SPEC-07).
 gix = { version = "0.88", default-features = false }
 indicatif = "0.18"
