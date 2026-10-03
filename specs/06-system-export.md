@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-system` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-04 (`installed` условие), SPEC-09, SPEC-10 (выполнение экспортов), SPEC-13, SPEC-14 (elevation-хелпер) |
-| Последнее изменение | 2026-10-04 (статус in-progress — T-06-01); 2026-10-03 (T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.4: чтение Uninstall через `RegistryReader`, T-06-03 зависит от T-02-10); 2026-10-01 (решение по OEM-ключу) |
+| Последнее изменение | 2026-10-04 (T-06-02: API `Cmd`/`CmdOutput` в §4.1, FFI в `sk-core::win::process`, cp437 и `truncated` в §4.6; статус in-progress — T-06-01); 2026-10-03 (T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.4: чтение Uninstall через `RegistryReader`, T-06-03 зависит от T-02-10); 2026-10-01 (решение по OEM-ключу) |
 
 ## 1. Цель
 
@@ -104,10 +104,15 @@ pub struct Cmd { /* program, args, timeout, cwd, env */ }
 impl Cmd {
     pub fn new(program: &str) -> Self;
     pub fn args<I: IntoIterator<Item = S>, S: AsRef<OsStr>>(self, a: I) -> Self;
-    pub fn timeout(self, d: Duration) -> Self;
+    pub fn timeout(self, d: Duration) -> Self;                  // по умолчанию DEFAULT_TIMEOUT = 60 с
+    pub fn cwd(self, dir: impl Into<PathBuf>) -> Self;
+    pub fn env(self, key: impl AsRef<OsStr>, val: impl AsRef<OsStr>) -> Self;
+    pub fn encoding(self, e: OutputEncoding) -> Self;            // OutputEncoding { Oem (по умолчанию), Utf8 } — winget пишет UTF-8
+    pub fn get_program(&self) -> &OsStr; pub fn get_args(&self) -> &[OsString];
     pub async fn run(self, cancel: &CancellationToken) -> Result<CmdOutput, ExportError>;
 }
-pub struct CmdOutput { pub code: i32, pub stdout: String, pub stderr: String }
+pub const OUTPUT_LIMIT: usize = 16 * 1024 * 1024;
+pub struct CmdOutput { pub code: i32, pub stdout: String, pub stderr: String, pub truncated: bool } // ненулевой код выхода — в code, не ProcessFailed: смысл решает экспортёр
 ```
 
 Находка из `plan()`: `Target::SystemExport { exporter_id, params }`, `category: SystemSettings`
@@ -185,13 +190,13 @@ pub struct InstalledProgram {
 
 ### 4.6 Запуск процессов (`Cmd`)
 1. `tokio::process::Command` с `creation_flags(CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP)`.
-2. Процесс помещается в Job Object с `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE` → при отмене или таймауте убивается всё дерево (winget порождает дочерние процессы).
+2. Процесс помещается в Job Object с `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE` → при отмене или таймауте убивается всё дерево (winget порождает дочерние процессы). После нормального завершения главного процесса job тоже завершается, чтобы оставшиеся потомки освободили каналы. FFI (Job Object, `GetOEMCP`) — в `sk-core::win::process` (`ProcessJob { new, assign(pid), terminate, active_processes }`, `oem_code_page() -> Option<u32>`; вне Windows — заглушки), т.к. `unsafe` разрешён только в `sk-core::win` (SPEC-00 §7). Ограничение: потомок, порождённый в первые микросекунды до `assign`, может избежать job (std/tokio не дают `CREATE_SUSPENDED`).
 3. Программы вызываются по **полному пути** (`{WINDIR}\System32\reg.exe`, `netsh.exe`, `pnputil.exe`, `schtasks.exe`), не через PATH (защита от подмены). Для `winget` путь из detect.
 4. **Кодировка вывода:**
    - `winget`: UTF-8 (при `--disable-interactivity`), дополнительно env `WINGET_DISABLE_VT=1`? — не нужен, парсим только код выхода и файл.
-   - `netsh`, `schtasks`, `pnputil`, `reg`: вывод в OEM codepage консоли. Процесс без консоли получает `GetOEMCP()`. Декодируем через `encoding_rs` по `GetOEMCP()` (866 для ru-RU, 437 для en-US), fallback UTF-8 lossy. **Не** вызываем `chcp` (меняет состояние консоли пользователя, если CLI запущен в терминале).
+   - `netsh`, `schtasks`, `pnputil`, `reg`: вывод в OEM codepage консоли. Процесс без консоли получает `GetOEMCP()`. Декодируем через `encoding_rs` по `GetOEMCP()` (866 для ru-RU и др.); cp437 (en-US), которой нет в `encoding_rs`, — встроенной таблицей; прочие — fallback UTF-8 lossy. **Не** вызываем `chcp` (меняет состояние консоли пользователя, если CLI запущен в терминале).
    - Где возможно, используем структурный вывод (`/fo csv`, `/xml`, файлы экспорта), а не текст (NFR-06-02).
-5. stdout/stderr ограничены 16 МБ (защита памяти), лишнее отбрасывается с флагом.
+5. stdout/stderr ограничены 16 МБ (`OUTPUT_LIMIT`, защита памяти), лишнее отбрасывается с флагом `CmdOutput.truncated`.
 6. Логи: команда и аргументы (обезличенные), код выхода, время. Вывод пишется в лог только при ошибке.
 
 ### 4.7 Чек-лист (`checklist.md`)
@@ -226,7 +231,7 @@ pub struct InstalledProgram {
 
 ## 6. Тестирование
 
-- **Абстракция процессов:** трейт `CmdRunner` (реальный/фейковый) внутри крейта, чтобы тестировать экспортёры без Windows: фейк возвращает заготовленный stdout/файлы.
+- **Абстракция процессов:** трейт `CmdRunner` (pub(crate); `SystemCmdRunner`, `FakeCmdRunner` только под `cfg(test)`) внутри крейта, чтобы тестировать экспортёры без Windows: фейк возвращает заготовленный stdout/файлы.
 - Unit: декодирование OEM (фикстуры вывода `schtasks /fo csv` в cp866 и cp437), фильтр Uninstall-записей (фикстура JSON-дампа ключей), генерация `programs.csv/html`, генерация `checklist.md` (snapshot `insta` для набора фактов).
 - Unit: `plan()` для каждого экспортёра (категория, sensitivity, requires_elevation).
 - **Windows-интеграционные (`#[cfg(windows)]`):**
@@ -239,7 +244,7 @@ pub struct InstalledProgram {
 ## 7. Задачи
 
 - [x] **T-06-01** — Трейт `SystemExporter`, `Availability`, `ExportContext`, `ExportResult`, `registry()`. *Зависит:* T-02-01. *Готово, когда:* компилируется, документация.
-- [ ] **T-06-02** — `Cmd` + `CmdRunner`: `CREATE_NO_WINDOW`, Job Object, таймаут, отмена, OEM-декодирование, лимиты вывода. *Зависит:* T-06-01. *Готово, когда:* Windows-тест таймаута и unit-тест декодирования.
+- [x] **T-06-02** — `Cmd` + `CmdRunner`: `CREATE_NO_WINDOW`, Job Object, таймаут, отмена, OEM-декодирование, лимиты вывода. *Зависит:* T-06-01. *Готово, когда:* Windows-тест таймаута и unit-тест декодирования.
 - [ ] **T-06-03** — `enrich`: installed programs (4 источника, фильтры, дедуп). *Зависит:* T-02-05, T-02-10. *Готово, когда:* unit на фикстуре + ручная сверка с «Приложения и возможности».
 - [ ] **T-06-04** — `SystemCollector` (detect+plan параллельно, ≤ 3 с). *Зависит:* T-06-01, T-01-03.
 - [ ] **T-06-05** — Экспортёры `programs`, `winget`. *Зависит:* T-06-02, T-06-03.

@@ -9,10 +9,12 @@
 //! [`plan`]: SystemExporter::plan
 //! [`run`]: SystemExporter::run
 
+mod cmd;
 mod error;
 mod exporter;
 mod registry;
 
+pub use cmd::{Cmd, CmdOutput, OutputEncoding, DEFAULT_TIMEOUT, OUTPUT_LIMIT};
 pub use error::ExportError;
 pub use exporter::{
     Availability, ExportContext, ExportResult, ExportedFile, RestoreHint, SystemExporter,

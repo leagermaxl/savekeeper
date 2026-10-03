@@ -2921,10 +2921,12 @@ name = "sk-system"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "encoding_rs",
  "serde_json",
  "sk-core",
  "thiserror",
  "tokio",
+ "tracing",
 ]
 
 [[package]]

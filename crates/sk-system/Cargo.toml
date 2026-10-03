@@ -11,10 +11,16 @@ publish.workspace = true
 [dependencies]
 # `SystemExporter::run` is async (SPEC-06 §4.1).
 async-trait.workspace = true
+# OEM code page decoding of console tool output (SPEC-06 §4.6).
+encoding_rs.workspace = true
 # Exporter parameters `params` (SPEC-06 §4.3).
 serde_json.workspace = true
 sk-core.workspace = true
 thiserror.workspace = true
+# `Cmd`: child processes with timeout and cancellation (SPEC-06 §4.6).
+tokio = { workspace = true, features = ["io-util", "macros", "process", "time"] }
+# `Cmd` logs the command, exit code and time (SPEC-06 §4.6).
+tracing.workspace = true
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt", "sync"] }
