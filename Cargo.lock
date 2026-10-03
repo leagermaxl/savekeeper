@@ -2040,6 +2040,13 @@ dependencies = [
 [[package]]
 name = "sk-games"
 version = "0.1.0"
+dependencies = [
+ "criterion",
+ "serde",
+ "serde-saphyr",
+ "thiserror",
+ "time",
+]
 
 [[package]]
 name = "sk-heuristics"

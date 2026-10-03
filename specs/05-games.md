@@ -3,12 +3,12 @@
 | Поле | Значение |
 |---|---|
 | ID | SPEC-05 |
-| Статус | approved |
+| Статус | in-progress |
 | Фаза | P1 |
 | Крейт(ы) | `sk-games` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-04 (токены `{STEAM}`, `{STEAM_USERID}`), SPEC-07, SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-03 (T-04-05: специализация `{STEAM_USERID}` в шаблоне находки, §4.7, §5); 2026-10-02 (§6: пути фикстур `fixtures/samples/...` и 20 игр, как в SPEC-12 §4.3; 2026-10-01: §4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
+| Последнее изменение | 2026-10-03 (T-05-01: API разбора манифеста, конкретные типы, параллельный разбор, бенч; §5: манифест с 0 игр; T-04-05: специализация `{STEAM_USERID}` в шаблоне находки, §4.7, §5); 2026-10-02 (§6: пути фикстур `fixtures/samples/...` и 20 игр, как в SPEC-12 §4.3; 2026-10-01: §4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
 
 ## 1. Цель
 
@@ -49,7 +49,7 @@
 - **FR-05-11** — Условия CC BY-NC-SA для встроенного снапшота: (1) SaveKeeper распространяется **бесплатно и некоммерчески**; (2) снапшот лежит в бинарнике отдельным ресурсом (`assets/ludusavi-manifest.yaml.zst`) и сохраняет свою лицензию (ShareAlike относится к данным, а не к коду SaveKeeper); (3) атрибуция по FR-05-10. Если проект станет коммерческим, сборка выполняется с `--no-default-features` без фичи `embedded-manifest`, и манифест только скачивается.
 
 ### 3.2 Нефункциональные
-- **NFR-05-01** — Парсинг полного манифеста (~40 МБ YAML) ≤ 3 с, в фоне, параллельно фазе Environment. Кэш распарсенного индекса в бинарном виде (`bincode`/`postcard`) в `cache/ludusavi-index.bin`, инвалидация по etag.
+- **NFR-05-01** — Парсинг полного манифеста (~40 МБ YAML) ≤ 3 с, в фоне, параллельно фазе Environment. Кэш распарсенного индекса в бинарном виде (`bincode`/`postcard`) в `cache/ludusavi-index.bin`, инвалидация по etag. Файл ≥ 2 МБ режется по строкам ключей верхнего уровня и разбирается в нескольких потоках, только если вся раскладка проходит белый список: строки режутся по `\n`, нет `\r` без следующего `\n` и байтов NUL; до первой записи — только BOM в начале, пустые строки, комментарии и один `---`; дальше каждая строка, начинающаяся не с пробела, — начало записи (ключ в колонке 0, затем `:` и пробел/таб/конец строки), комментарий или пустая. Иначе — последовательный разбор. Он же выполняется при ошибке чанка, ошибке или панике потока, несовпадении числа игр в чанке с числом строк-ключей и повторе имени игры; результат и ошибки идентичны последовательному. Бюджет парсера (последовательный): события/узлы ≤ 2 × размер входа + 64 КиБ, байты скаляров/комментариев ≤ размер + 64 КиБ, лимиты алиасов — по умолчанию. Бюджет чанка — последовательный, умноженный на долю чанка во входе; лимиты алиасов, якорей и merge-ключей у чанка 0 (любой из них → последовательный разбор).
 - **NFR-05-02** — Весь коллектор ≤ 5 с при 200 установленных играх и прогретом кэше ФС.
 - **NFR-05-03** — Память под индекс ≤ 150 МБ.
 
@@ -61,6 +61,11 @@
 pub struct Manifest { pub games: HashMap<String, GameEntry>, pub meta: ManifestMeta }
 pub struct ManifestMeta { pub source: ManifestSource, pub etag: Option<String>, pub fetched_at: Option<OffsetDateTime>, pub games: usize }
 pub enum ManifestSource { Downloaded, Cache, Embedded { snapshot_date: String } }
+impl Manifest {
+    pub fn parse(yaml: &[u8], source: ManifestSource) -> Result<Manifest, GamesError>;   // разбор полного файла
+}
+#[non_exhaustive]
+pub enum GamesError { ManifestParse(Box<serde_saphyr::Error>) /* варианты HTTP/IO добавляет T-05-02 */ }
 
 pub struct ManifestStore { cache_dir: PathBuf, url: String }
 impl ManifestStore {
@@ -97,6 +102,8 @@ pub struct GamesCollector { store: ManifestStore }
 impl Collector for GamesCollector { /* id() = "games" */ }
 ```
 
+`Manifest::parse` разбирает полный файл манифеста: `meta.etag` и `meta.fetched_at` = `None` (их заполняет `ManifestStore`), `meta.games` = число записей, включая алиасы. `GamesError` — `#[non_exhaustive]`: сейчас только `ManifestParse(Box<serde_saphyr::Error>)`, варианты HTTP/IO добавляет T-05-02.
+
 ### 4.2 Формат манифеста (подмножество, которое мы читаем)
 
 ```yaml
@@ -121,6 +128,7 @@ ELDEN RING:
 
 Serde-модель: `GameEntry { files: BTreeMap<String, FileRule>, registry: BTreeMap<String, RegRule>, install_dir: BTreeMap<String, ()>, steam: Option<{id: u32}>, gog: Option<{id: u64}>, cloud: Option<CloudFlags>, alias: Option<String>, id: Option<Ids> }`. Неизвестные поля игнорируются (манифест эволюционирует).
 `FileRule { tags: Vec<String>, when: Vec<When { os, store }> }`.
+Конкретные типы: `steam: Option<SteamRef { id: u32 }>`, `gog: Option<GogRef { id: u64 }>` (без `id` → `None`); `RegRule` = `FileRule`; `When { os: Option<Os>, store: Option<Store> }`; `Os` = `windows` | `linux` | `mac` | `dos` | `Unknown(String)`, `Store` = `steam` | `epic` | `gog` | `gogGalaxy` | `ea` | `origin` | `uplay` | `microsoft` | `prime` | `heroic` | `legendary` | `lutris` | `other` | `Unknown(String)` — неизвестное значение не роняет разбор; `CloudFlags { origin, epic, gog, steam, uplay: bool }`; `Ids { flatpak: Option<String>, gog_extra: Vec<u64>, steam_extra: Vec<u32> }`. `null` у записи и у коллекций = пусто. Пустой документ = пустой манифест.
 
 ### 4.3 Маппинг плейсхолдеров
 
@@ -201,6 +209,7 @@ Serde-модель: `GameEntry { files: BTreeMap<String, FileRule>, registry: BT
 |---|---|
 | Нет сети / таймаут 15 с / HTTP ≠ 200/304 | Кэш → снапшот. `ScanIssue::Info { key: issue.games.manifest_offline }`. |
 | Скачанный манифест не парсится | Не заменяем кэш, используем предыдущий, Warning. |
+| Манифест разобран, но 0 игр (пустой/обрезанный ответ) | Как «не парсится»: кэш не заменяем, Warning (T-05-02). |
 | Частично скачанный файл | Пишем во временный `*.tmp`, атомарный rename после успешного парсинга. |
 | Steam установлен, но `libraryfolders.vdf` отсутствует или битый | Только основная библиотека `<root>\steamapps`. Info. |
 | Библиотека Steam на отключённом диске | Пропуск, Info с буквой диска. |
@@ -220,7 +229,7 @@ Serde-модель: `GameEntry { files: BTreeMap<String, FileRule>, registry: BT
 - `ManifestStore`: mock HTTP (`wiremock`): 200 + etag, 304, 500 → fallback, битый YAML → старый кэш.
 - Snapshot находок `insta` для фикстуры `fixtures/fs/gamer-profile.yaml` (Steam с 3 играми, одна удалённая с сохранениями в `{LOCALLOW}`, Epic-игра, Skyrim в Documents).
 - Windows-интеграционный (ручной чек-лист + `#[ignore]` тест): реальный Steam на машине разработчика.
-- Бенч: парсинг полного манифеста → NFR-05-01.
+- Бенч: парсинг полного манифеста → NFR-05-01. `cargo bench -p sk-games --bench manifest`; реальный файл — переменная `SK_LUDUSAVI_MANIFEST` (без неё пропуск), синтетика в памяти `SK_SYNTHETIC_MB` (по умолчанию 40). Проверка на реальном манифесте выполняется вручную (в среде агентов нет сети).
 
 ## 7. Задачи
 

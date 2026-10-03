@@ -8,5 +8,19 @@ license.workspace = true
 authors.workspace = true
 publish.workspace = true
 
+[dependencies]
+serde.workspace = true
+serde-saphyr.workspace = true
+thiserror.workspace = true
+time.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
+
+# Manual benchmark (SPEC-05 §6, NFR-05-01): `cargo bench -p sk-games --bench manifest`.
+[[bench]]
+name = "manifest"
+harness = false
+
 [lints]
 workspace = true

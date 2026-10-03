@@ -96,7 +96,7 @@
 | SPEC-02 | [02-data-model.md](02-data-model.md) | Доменные типы, шаблоны путей, форматы | P0 | `sk-core` | in-progress |
 | SPEC-03 | [03-scanner.md](03-scanner.md) | Обход ФС, замер размеров, FolderSummary, исключения | P1 | `sk-scan` | done |
 | SPEC-04 | [04-rules-engine.md](04-rules-engine.md) | Правила известных мест (YAML) + встроенная база | P1 | `sk-rules` | in-progress |
-| SPEC-05 | [05-games.md](05-games.md) | Сохранения игр: манифест Ludusavi, лаунчеры | P1 | `sk-games` | approved |
+| SPEC-05 | [05-games.md](05-games.md) | Сохранения игр: манифест Ludusavi, лаунчеры | P1 | `sk-games` | in-progress |
 | SPEC-06 | [06-system-export.md](06-system-export.md) | winget, реестр, Wi-Fi, драйверы, прочие системные экспорты | P1 | `sk-system` | approved |
 | SPEC-07 | [07-heuristics.md](07-heuristics.md) | Неизвестные папки, git-репозитории, пользовательские файлы, отсев мусора | P2 | `sk-heuristics` | approved |
 | SPEC-08 | [08-llm-classifier.md](08-llm-classifier.md) | Абстракция LLM, провайдеры, промпт, приватность, кэш | P2 | `sk-llm` | approved |

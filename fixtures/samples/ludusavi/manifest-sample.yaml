@@ -1,0 +1,647 @@
+# Hand-written sample in the format of
+# https://github.com/mtkennerly/ludusavi-manifest (data/manifest.yaml):
+# block style, games sorted by name, strings quoted only where YAML needs it.
+# Paths and ids are illustrative, not copied from the real manifest.
+# Covers every field and variant of the SPEC-05 §4.2 model plus fields the
+# model ignores (launch, notes, id.lutris, unknown keys). Used by
+# crates/sk-games/tests/manifest_parse.rs; keep the expectations in sync.
+'1849':
+  files:
+    <winAppData>/1849:
+      tags:
+        - save
+      when:
+        - os: windows
+  installDir:
+    '1849': {}
+  steam:
+    id: 1037920
+"2064: Read Only Memories":
+  files:
+    <winAppData>/MidBoss/2064ROM:
+      tags:
+        - save
+        - config
+      when:
+        - os: windows
+    <home>/Library/Application Support/MidBoss/2064ROM:
+      tags:
+        - save
+      when:
+        - os: mac
+  installDir:
+    2064 Read Only Memories: {}
+  steam:
+    id: 333980
+  gog:
+    id: 1207665723
+Baldur's Gate 3:
+  cloud:
+    gog: true
+    steam: true
+  files:
+    <winLocalAppData>/Larian Studios/Baldur's Gate 3/PlayerProfiles:
+      tags:
+        - save
+        - config
+      when:
+        - os: windows
+    <winLocalAppData>/Larian Studios/Baldur's Gate 3/LevelCache:
+      when:
+        - os: windows
+    <winDocuments>/Larian Studios/Baldur's Gate 3/PlayerProfiles:
+      tags:
+        - save
+      when:
+        - os: windows
+          store: gog
+        - os: windows
+          store: gogGalaxy
+  gog:
+    id: 1456460669
+  id:
+    gogExtra:
+      - 1456460669
+      - 1904268542
+  installDir:
+    Baldurs Gate 3: {}
+  launch:
+    <base>/bin/bg3.exe:
+      - when:
+          - bit: 64
+            os: windows
+  steam:
+    id: 1086940
+Cyberpunk 2077:
+  cloud:
+    epic: true
+    gog: true
+    steam: true
+  files:
+    <home>/Saved Games/CD Projekt Red/Cyberpunk 2077:
+      tags:
+        - save
+      when:
+        - os: windows
+    <winLocalAppData>/CD Projekt Red/Cyberpunk 2077/UserSettings.json:
+      tags:
+        - config
+      when:
+        - os: windows
+  gog:
+    id: 1423049311
+  id:
+    gogExtra:
+      - 1256837418
+    steamExtra:
+      - 2138330
+  installDir:
+    Cyberpunk 2077: {}
+  steam:
+    id: 1091500
+Cyberpunk2077:
+  alias: Cyberpunk 2077
+DARK SOULS III:
+  cloud:
+    steam: false
+  files:
+    <winAppData>/DarkSoulsIII:
+      tags:
+        - save
+        - config
+      when:
+        - os: windows
+  installDir:
+    DARK SOULS III: {}
+  steam:
+    id: 374320
+DOOM (1993):
+  files:
+    <base>/*.dsg:
+      tags:
+        - save
+      when:
+        - os: dos
+        - os: windows
+    <base>/default.cfg:
+      tags:
+        - config
+  installDir:
+    DOOM: {}
+    Ultimate Doom: {}
+    The Ultimate DOOM: {}
+  steam:
+    id: 2280
+  gog:
+    id: 1435827232
+Deep Rock Galactic:
+  files:
+    <base>/FSD/Saved/SaveGames:
+      tags:
+        - save
+      when:
+        - os: windows
+          store: steam
+    <base>/FSD/Saved/Config/WindowsNoEditor:
+      tags:
+        - config
+      when:
+        - os: windows
+    <winLocalAppData>/Packages/CoffeeStainStudios.DeepRockGalactic_*/SystemAppData/wgs:
+      tags:
+        - save
+      when:
+        - os: windows
+          store: microsoft
+  installDir:
+    Deep Rock Galactic: {}
+  registry:
+    HKEY_CURRENT_USER/Software/Ghost Ship Games/FSD:
+      tags:
+        - config
+      when:
+        - store: microsoft
+  steam:
+    id: 548430
+ELDEN RING:
+  cloud:
+    steam: true
+  files:
+    <winAppData>/EldenRing:
+      tags:
+        - save
+        - config
+      when:
+        - os: windows
+    <base>/Game/*.ini:
+      tags:
+        - config
+  installDir:
+    ELDEN RING: {}
+  registry:
+    HKEY_CURRENT_USER/Software/FromSoftware/ELDEN RING:
+      tags:
+        - config
+  steam:
+    id: 1245620
+Elden Ring:
+  alias: ELDEN RING
+Empty Game: {}
+Factorio:
+  files:
+    <winAppData>/Factorio/saves:
+      tags:
+        - save
+      when:
+        - os: windows
+    <winAppData>/Factorio/config/config.ini:
+      tags:
+        - config
+      when:
+        - os: windows
+    <winAppData>/Factorio/player-data.json:
+      tags:
+        - save
+      when:
+        - os: windows
+    <xdgData>/factorio/saves:
+      tags:
+        - save
+      when:
+        - os: linux
+  gog:
+    id: 1418224081
+  installDir:
+    Factorio: {}
+  notes:
+    - message: The headless server keeps saves next to the binary.
+  steam:
+    id: 427520
+Far Cry 5:
+  cloud:
+    uplay: true
+  files:
+    <root>/savegames/<storeUserId>/1803:
+      tags:
+        - save
+      when:
+        - os: windows
+          store: uplay
+    <winDocuments>/My Games/Far Cry 5/gamerprofile.xml:
+      tags:
+        - config
+      when:
+        - os: windows
+  installDir:
+    Far Cry 5: {}
+  registry:
+    HKEY_LOCAL_MACHINE/SOFTWARE/WOW6432Node/Ubisoft/Far Cry 5:
+      tags:
+        - config
+      when:
+        - store: uplay
+  steam:
+    id: 552520
+Fortnite:
+  cloud:
+    epic: true
+  files:
+    <winLocalAppData>/FortniteGame/Saved/Config/WindowsClient:
+      tags:
+        - config
+      when:
+        - os: windows
+          store: epic
+        - os: windows
+          store: legendary
+        - os: windows
+          store: heroic
+  installDir:
+    Fortnite: {}
+Grand Theft Auto V:
+  files:
+    <winDocuments>/Rockstar Games/GTA V/Profiles:
+      tags:
+        - save
+        - config
+      when:
+        - os: windows
+    "<winDocuments>/Rockstar Games/GTA V/Profiles/*/cfg.dat":
+      tags:
+        - config
+      when:
+        - os: windows
+  installDir:
+    Grand Theft Auto V: {}
+  steam:
+    id: 271590
+Half-Life 2:
+  files:
+    <base>/hl2/SAVE/*.sav:
+      tags:
+        - save
+      when:
+        - os: windows
+    <base>/hl2/cfg/config.cfg:
+      tags:
+        - config
+    <root>/userdata/<storeUserId>/<storeGameId>/remote:
+      tags:
+        - save
+      when:
+        - store: steam
+  installDir:
+    Half-Life 2: {}
+  registry:
+    HKEY_CURRENT_USER/Software/Valve/Half-Life 2/Settings:
+      tags:
+        - config
+      when:
+        - os: windows
+          store: steam
+  steam:
+    id: 220
+Hollow Knight:
+  cloud:
+    gog: true
+    steam: true
+  files:
+    <winLocalAppDataLow>/Team Cherry/Hollow Knight:
+      tags:
+        - save
+      when:
+        - os: windows
+    <winLocalAppDataLow>/Team Cherry/Hollow Knight/*.dat:
+      tags:
+        - save
+    <home>/Library/Application Support/unity.Team Cherry.Hollow Knight:
+      tags:
+        - save
+      when:
+        - os: mac
+    <xdgConfig>/unity3d/Team Cherry/Hollow Knight:
+      tags:
+        - save
+      when:
+        - os: linux
+  gog:
+    id: 1308320804
+  id:
+    flatpak: com.teamcherry.HollowKnight
+    lutris: hollow-knight
+  installDir:
+    Hollow Knight: {}
+  launch:
+    <base>/hollow_knight.exe:
+      - when:
+          - bit: 64
+            os: windows
+            store: steam
+  registry:
+    HKEY_CURRENT_USER/Software/Team Cherry/Hollow Knight:
+      tags:
+        - config
+  steam:
+    id: 367520
+Mass Effect Legendary Edition:
+  cloud:
+    origin: true
+    steam: true
+  files:
+    <winDocuments>/BioWare/Mass Effect Legendary Edition/Save:
+      tags:
+        - save
+      when:
+        - os: windows
+          store: ea
+        - os: windows
+          store: origin
+        - os: windows
+          store: steam
+  installDir:
+    Mass Effect Legendary Edition: {}
+  steam:
+    id: 1328670
+Microsoft Flight Simulator:
+  files:
+    <winAppData>/Microsoft Flight Simulator/UserCfg.opt:
+      tags:
+        - config
+      when:
+        - os: windows
+          store: steam
+    <winLocalAppData>/Packages/Microsoft.FlightSimulator_8wekyb3d8bbwe/LocalCache/UserCfg.opt:
+      tags:
+        - config
+      when:
+        - os: windows
+          store: microsoft
+  steam:
+    id: 1250410
+"Mount & Blade II: Bannerlord":
+  files:
+    "<winDocuments>/Mount and Blade II Bannerlord/Game Saves":
+      tags:
+        - save
+      when:
+        - os: windows
+    "<winDocuments>/Mount and Blade II Bannerlord/Configs/engine_config.txt":
+      tags:
+        - config
+      when:
+        - os: windows
+  installDir:
+    Mount & Blade II Bannerlord: {}
+  steam:
+    id: 261550
+No Store Ids:
+  files:
+    <winPublic>/Documents/Shared Game/save.dat:
+      tags:
+        - save
+    <winProgramData>/Shared Game/settings.ini:
+      tags:
+        - config
+    <winDir>/SharedGame.ini:
+      tags:
+        - config
+    <home>/.sharedgame/**/*.sav:
+      tags:
+        - save
+    <osUserName>.profile:
+      tags:
+        - save
+  steam: {}
+  gog: {}
+Prime Gaming Title:
+  files:
+    <winAppData>/Prime Title/Saves:
+      tags:
+        - save
+      when:
+        - os: windows
+          store: prime
+        - os: windows
+          store: other
+        - os: windows
+          store: lutris
+  installDir:
+    Prime Gaming Title: {}
+Registry Only Game:
+  registry:
+    HKEY_CURRENT_USER/Software/Registry Only Studio/Game:
+      tags:
+        - save
+    HKEY_CURRENT_USER/Software/Registry Only Studio/Game/Options:
+      tags:
+        - config
+    <regHkcu>/Software/Unsupported Placeholder:
+      tags:
+        - config
+  steam:
+    id: 999999
+Sekiro™ Shadows Die Twice:
+  cloud:
+    steam: true
+  files:
+    <winAppData>/Sekiro:
+      tags:
+        - save
+        - config
+      when:
+        - os: windows
+  installDir:
+    Sekiro: {}
+  steam:
+    id: 814380
+Skyrim:
+  alias: "The Elder Scrolls V: Skyrim Special Edition"
+Slay the Spire:
+  files:
+    <base>/saves:
+      tags:
+        - save
+      when:
+        - os: windows
+    <base>/preferences:
+      tags:
+        - config
+      when:
+        - os: windows
+    <base>/../SlayTheSpire-shared/escape.dat:
+      tags:
+        - save
+  installDir:
+    SlayTheSpire: {}
+  steam:
+    id: 646570
+Stardew Valley:
+  cloud:
+    gog: true
+    steam: true
+  files:
+    <winAppData>/StardewValley/Saves:
+      tags:
+        - save
+      when:
+        - os: windows
+    <winAppData>/StardewValley/startup_preferences:
+      tags:
+        - config
+      when:
+        - os: windows
+    <xdgConfig>/StardewValley/Saves:
+      tags:
+        - save
+      when:
+        - os: linux
+  gog:
+    id: 1453375253
+  id:
+    gogExtra:
+      - 1453375253
+    steamExtra:
+      - 413151
+      - 413152
+  installDir:
+    Stardew Valley: {}
+  steam:
+    id: 413150
+Steam Only Id:
+  steam:
+    id: 4294967295
+Tags And When Edge Cases:
+  files:
+    <base>/null-rule:
+    <base>/empty-rule: {}
+    <base>/null-fields:
+      tags:
+      when:
+    <base>/flow-style: { tags: [save, config], when: [{ os: windows, store: steam }, { store: epic }] }
+    <base>/unknown-values:
+      tags:
+        - save
+        - futureTag
+      when:
+        - os: android
+          store: newStore
+    "<base>/Game # 2/save":
+      tags:
+        - save
+    <game>/<storeGameId>/save.bin:
+      tags:
+        - save
+  futureField:
+    nested:
+      - 1
+      - 2
+  gog:
+    id: 18446744073709551615
+  installDir:
+    Edge Cases: {}
+  registry:
+    HKEY_CURRENT_USER/Software/Edge/null-rule:
+    HKEY_CURRENT_USER/Software/Edge/empty-rule: {}
+Terraria:
+  cloud:
+    steam: true
+  files:
+    <winDocuments>/My Games/Terraria/Players:
+      tags:
+        - save
+      when:
+        - os: windows
+    <winDocuments>/My Games/Terraria/Worlds:
+      tags:
+        - save
+      when:
+        - os: windows
+    <winDocuments>/My Games/Terraria/config.json:
+      tags:
+        - config
+      when:
+        - os: windows
+  gog:
+    id: 1207665503
+  installDir:
+    Terraria: {}
+  steam:
+    id: 105600
+"The Elder Scrolls V: Skyrim Special Edition":
+  cloud:
+    steam: true
+  files:
+    <winDocuments>/My Games/Skyrim Special Edition/Saves:
+      tags:
+        - save
+      when:
+        - os: windows
+    <winDocuments>/My Games/Skyrim Special Edition/*.ini:
+      tags:
+        - config
+      when:
+        - os: windows
+    <winDocuments>/My Games/Skyrim Special Edition GOG/Saves:
+      tags:
+        - save
+      when:
+        - os: windows
+          store: gog
+  gog:
+    id: 1711230643
+  installDir:
+    Skyrim Special Edition: {}
+  registry:
+    HKEY_LOCAL_MACHINE/SOFTWARE/WOW6432Node/Bethesda Softworks/Skyrim Special Edition:
+      tags:
+        - config
+  steam:
+    id: 489830
+"The Witcher 3: Wild Hunt":
+  cloud:
+    gog: true
+    steam: true
+  files:
+    <winDocuments>/The Witcher 3/gamesaves:
+      tags:
+        - save
+      when:
+        - os: windows
+    <winDocuments>/The Witcher 3/user.settings:
+      tags:
+        - config
+      when:
+        - os: windows
+  gog:
+    id: 1207664663
+  id:
+    gogExtra:
+      - 1207664643
+      - 1495134320
+    steamExtra:
+      - 499450
+  installDir:
+    The Witcher 3 Wild Hunt: {}
+    The Witcher 3 Wild Hunt GOTY: {}
+  steam:
+    id: 292030
+Мор (Утопия):
+  files:
+    <winLocalAppDataLow>/Ice-Pick Lodge/Pathologic/Saves:
+      tags:
+        - save
+      when:
+        - os: windows
+  installDir:
+    Pathologic Classic HD: {}
+  steam:
+    id: 384110
+ファイナルファンタジーXIV:
+  files:
+    <winDocuments>/My Games/FINAL FANTASY XIV - A Realm Reborn:
+      tags:
+        - config
+      when:
+        - os: windows
+  steam:
+    id: 39210
