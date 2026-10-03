@@ -8,20 +8,20 @@
 //! `process_running` never decides whether a rule matches; it only reports
 //! that findings should get the [`APP_RUNNING_TAG`] tag.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
+use std::sync::{Mutex, MutexGuard, PoisonError};
 
 use regex::bytes::Regex as BytesRegex;
 use regex::Regex;
 use sk_core::env::Environment;
 use sk_core::fs::FsScanner;
-use sk_core::model::{IssueSeverity, RegHive, ScanIssue};
+use sk_core::model::{RegHive, ScanIssue};
 use sk_core::template::{PathTemplate, ResolveContext};
 
+use crate::once::OnceIssues;
 use crate::registry::{normalize_key, KeyState, RegistryProbe};
 use crate::schema::{Condition, FileContainsCondition, InstalledCondition, RegistryKey, Rule};
-use crate::set::issue;
 
 /// Tag added to the findings of a rule whose `process_running` program is
 /// running: the UI asks to close it before the backup (SPEC-04 §4.3).
@@ -53,36 +53,11 @@ pub struct ConditionEvaluator<'a> {
     pub(crate) fs: &'a dyn FsScanner,
     pub(crate) registry: &'a dyn RegistryProbe,
     pub(crate) resolve: &'a ResolveContext,
-    /// Shared with the target expanders made from this evaluator
-    /// (`TargetExpander::from_evaluator`).
-    pub(crate) denied_keys: DeniedKeys,
+    /// Once-per-scan issues, shared with the target expanders made from
+    /// this evaluator (`TargetExpander::from_evaluator`).
+    pub(crate) once: OnceIssues,
     cache: Mutex<Cache>,
     issues: Mutex<Vec<ScanIssue>>,
-}
-
-/// Registry keys whose `issue.rules.registry_access_denied` was already
-/// raised in this scan. One set serves conditions and targets, so a key is
-/// reported once per scan whichever met it first (SPEC-04 §5).
-#[derive(Debug, Clone, Default)]
-pub(crate) struct DeniedKeys(Arc<Mutex<HashSet<(RegHive, String)>>>);
-
-impl DeniedKeys {
-    /// The Info issue for an unreadable key (normalized), or `None` when the
-    /// key was already reported.
-    pub(crate) fn report(&self, rule_id: &str, hive: RegHive, key: &str) -> Option<ScanIssue> {
-        let first = lock(&self.0).insert((hive, key.to_lowercase()));
-        first.then(|| {
-            issue(
-                IssueSeverity::Info,
-                ISSUE_REGISTRY_ACCESS_DENIED,
-                [
-                    ("rule_id", rule_id.to_owned()),
-                    ("hive", hive_name(hive).to_owned()),
-                    ("key", key.to_owned()),
-                ],
-            )
-        })
-    }
 }
 
 /// Results computed so far in this scan.
@@ -92,14 +67,12 @@ struct Cache {
     exists: HashMap<PathBuf, bool>,
     /// `installed` by `(display_name_regex, winget)`.
     installed: HashMap<(Option<String>, Option<String>), bool>,
-    /// `registry_exists` by hive and lower-cased normalized key.
-    registry: HashMap<(RegHive, String), bool>,
-    /// Compiled text regexes; `None` for an invalid pattern.
-    text_regex: HashMap<String, Option<Regex>>,
-    /// Compiled byte regexes; `None` for an invalid pattern.
-    bytes_regex: HashMap<String, Option<BytesRegex>>,
-    /// Invalid patterns already reported, shared by both regex kinds.
-    invalid_regex_reported: HashSet<String>,
+    /// Registry key states by hive and lower-cased normalized key.
+    registry: HashMap<(RegHive, String), KeyState>,
+    /// Compiled text regexes; the error text for an invalid pattern.
+    text_regex: HashMap<String, Result<Regex, String>>,
+    /// Compiled byte regexes; the error text for an invalid pattern.
+    bytes_regex: HashMap<String, Result<BytesRegex, String>>,
 }
 
 impl<'a> ConditionEvaluator<'a> {
@@ -116,7 +89,7 @@ impl<'a> ConditionEvaluator<'a> {
             fs,
             registry,
             resolve,
-            denied_keys: DeniedKeys::default(),
+            once: OnceIssues::default(),
             cache: Mutex::new(Cache::default()),
             issues: Mutex::new(Vec::new()),
         }
@@ -135,7 +108,19 @@ impl<'a> ConditionEvaluator<'a> {
     /// Issues raised so far (inaccessible registry keys, invalid regexes);
     /// each is reported once per scan. Drains the list.
     pub fn take_issues(&self) -> Vec<ScanIssue> {
-        std::mem::take(&mut *lock(&self.issues))
+        let mut issues = std::mem::take(&mut *lock(&self.issues));
+        issues.extend(self.once.take_ranked());
+        issues
+    }
+
+    /// Attributes each once-per-scan issue to the rule earliest in
+    /// `rule_ids` that met it, whatever the order rules are evaluated in
+    /// (the set order of the rules collector, §4.5). The issues, also those
+    /// met by targets of expanders made from this evaluator, are then held
+    /// back until [`take_issues`](Self::take_issues).
+    pub(crate) fn rank_rules<'r>(self, rule_ids: impl IntoIterator<Item = &'r str>) -> Self {
+        self.once.rank_by(rule_ids);
+        self
     }
 
     /// AND of `conditions`; `None` when none of them decides (only
@@ -225,6 +210,12 @@ impl<'a> ConditionEvaluator<'a> {
     /// criteria. `winget` never matches: `InstalledProgram` has no winget id
     /// (SPEC-02 §3.3, SPEC-06 §4.4).
     fn installed(&self, condition: &InstalledCondition, rule_id: &str) -> bool {
+        // Before the result cache, so every rule with an invalid pattern
+        // takes part in its once-per-scan issue.
+        let re = condition
+            .display_name_regex
+            .as_deref()
+            .and_then(|pattern| self.text_regex(pattern, rule_id));
         let key = (
             condition.display_name_regex.clone(),
             condition.winget.clone(),
@@ -232,16 +223,12 @@ impl<'a> ConditionEvaluator<'a> {
         if let Some(&hit) = lock(&self.cache).installed.get(&key) {
             return hit;
         }
-        let found = condition
-            .display_name_regex
-            .as_deref()
-            .and_then(|pattern| self.text_regex(pattern, rule_id))
-            .is_some_and(|re| {
-                self.env
-                    .installed_programs
-                    .iter()
-                    .any(|program| re.is_match(&program.name))
-            });
+        let found = re.is_some_and(|re| {
+            self.env
+                .installed_programs
+                .iter()
+                .any(|program| re.is_match(&program.name))
+        });
         lock(&self.cache).installed.insert(key, found);
         found
     }
@@ -251,18 +238,20 @@ impl<'a> ConditionEvaluator<'a> {
     fn registry_exists(&self, key: &RegistryKey, rule_id: &str) -> bool {
         let normalized = normalize_key(&key.key);
         let cache_key = (key.hive, normalized.to_lowercase());
-        if let Some(&hit) = lock(&self.cache).registry.get(&cache_key) {
-            return hit;
-        }
-        let state = self.registry.key_state(key.hive, &normalized);
-        let found = state == KeyState::Present;
-        lock(&self.cache).registry.insert(cache_key, found);
+        let cached = lock(&self.cache).registry.get(&cache_key).copied();
+        let state = cached.unwrap_or_else(|| {
+            let state = self.registry.key_state(key.hive, &normalized);
+            lock(&self.cache).registry.insert(cache_key, state);
+            state
+        });
+        // A cached denial is reported too: the issue names the earliest
+        // rule that met the key (`rank_rules`).
         if state == KeyState::AccessDenied {
-            if let Some(issue) = self.denied_keys.report(rule_id, key.hive, &normalized) {
+            if let Some(issue) = self.once.denied(rule_id, key.hive, &normalized) {
                 self.push_issue(issue);
             }
         }
-        found
+        state == KeyState::Present
     }
 
     /// Any resolved path is a file of at most `max_bytes` whose content
@@ -305,42 +294,30 @@ impl<'a> ConditionEvaluator<'a> {
         &self,
         pattern: &str,
         rule_id: &str,
-        slot: fn(&mut Cache) -> &mut HashMap<String, Option<R>>,
+        slot: fn(&mut Cache) -> &mut HashMap<String, Result<R, String>>,
         build: fn(&str) -> Result<R, regex::Error>,
     ) -> Option<R> {
-        if let Some(cached) = slot(&mut lock(&self.cache)).get(pattern) {
-            return cached.clone();
-        }
-        let compiled = build(pattern);
-        let mut cache = lock(&self.cache);
-        let result = match compiled {
+        let cached = slot(&mut lock(&self.cache)).get(pattern).cloned();
+        let compiled = cached.unwrap_or_else(|| {
+            let compiled = build(pattern).map_err(|err| err.to_string());
+            slot(&mut lock(&self.cache)).insert(pattern.to_owned(), compiled.clone());
+            compiled
+        });
+        match compiled {
             Ok(re) => Some(re),
-            Err(err) => {
-                if cache.invalid_regex_reported.insert(pattern.to_owned()) {
-                    self.push_issue(invalid_regex_issue(rule_id, pattern, &err));
+            // Reported for every rule; `OnceIssues` keeps one per pattern.
+            Err(error) => {
+                if let Some(issue) = self.once.invalid_regex(rule_id, pattern, &error) {
+                    self.push_issue(issue);
                 }
                 None
             }
-        };
-        slot(&mut cache).insert(pattern.to_owned(), result.clone());
-        result
+        }
     }
 
     fn push_issue(&self, issue: ScanIssue) {
         lock(&self.issues).push(issue);
     }
-}
-
-fn invalid_regex_issue(rule_id: &str, pattern: &str, err: &regex::Error) -> ScanIssue {
-    issue(
-        IssueSeverity::Warning,
-        ISSUE_INVALID_REGEX,
-        [
-            ("rule_id", rule_id.to_owned()),
-            ("pattern", pattern.to_owned()),
-            ("error", err.to_string()),
-        ],
-    )
 }
 
 /// The build number of `OsInfo.build` ("26100.2033" → 26100).
@@ -357,7 +334,7 @@ pub(crate) fn hive_name(hive: RegHive) -> &'static str {
 
 /// Locks a mutex; a poisoned cache is still consistent (every write is a
 /// single insert), so poisoning is ignored.
-fn lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
+pub(crate) fn lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
     mutex.lock().unwrap_or_else(PoisonError::into_inner)
 }
 

@@ -9,14 +9,17 @@ authors.workspace = true
 publish.workspace = true
 
 [dependencies]
+async-trait.workspace = true
 globset.workspace = true
 include_dir.workspace = true
+rayon.workspace = true
 regex.workspace = true
 serde.workspace = true
 serde-saphyr.workspace = true
 serde_json.workspace = true
 sk-core.workspace = true
 thiserror.workspace = true
+tokio = { workspace = true, features = ["rt"] }
 
 [target.'cfg(windows)'.dependencies]
 winreg.workspace = true
@@ -26,6 +29,7 @@ insta.workspace = true
 sk-scan.workspace = true
 sk-testkit.workspace = true
 tempfile.workspace = true
+tokio = { workspace = true, features = ["macros", "rt"] }
 
 [lints]
 workspace = true

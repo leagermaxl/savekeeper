@@ -28,7 +28,8 @@ use sk_core::model::{
 use sk_core::template::{PathTemplate, ResolveContext};
 
 use crate::compile::{CompiledRule, CompiledTarget, TargetRoot};
-use crate::conditions::{ConditionEvaluator, ConditionOutcome, DeniedKeys, APP_RUNNING_TAG};
+use crate::conditions::{ConditionEvaluator, ConditionOutcome, APP_RUNNING_TAG};
+use crate::once::OnceIssues;
 use crate::registry::{normalize_key, KeyState, RegistryProbe};
 use crate::schema::{Condition, RegistryTarget, Rule};
 use crate::set::issue;
@@ -74,8 +75,8 @@ pub struct TargetExpander<'a> {
     fs: &'a dyn FsScanner,
     registry: &'a dyn RegistryProbe,
     resolve: &'a ResolveContext,
-    /// Registry keys whose access problem was already reported.
-    denied_keys: DeniedKeys,
+    /// Once-per-scan issues (unreadable registry keys).
+    once: OnceIssues,
 }
 
 impl<'a> TargetExpander<'a> {
@@ -96,21 +97,23 @@ impl<'a> TargetExpander<'a> {
             fs,
             registry,
             resolve,
-            denied_keys: DeniedKeys::default(),
+            once: OnceIssues::default(),
         }
     }
 
     /// An expander over the inputs of `evaluator` that reports an unreadable
     /// registry key only if the evaluator (or another expander made from it)
     /// has not reported it yet: "once per key per scan" is shared by
-    /// conditions and targets (SPEC-04 §5).
+    /// conditions and targets (SPEC-04 §5). When the evaluator ranks rules
+    /// (as in the rules collector), that issue is held back and comes from
+    /// the evaluator's `take_issues` instead of [`RuleOutput::issues`].
     pub fn from_evaluator(evaluator: &ConditionEvaluator<'a>) -> Self {
         Self {
             env: evaluator.env,
             fs: evaluator.fs,
             registry: evaluator.registry,
             resolve: evaluator.resolve,
-            denied_keys: evaluator.denied_keys.clone(),
+            once: evaluator.once.clone(),
         }
     }
 
@@ -277,7 +280,7 @@ impl<'a> TargetExpander<'a> {
             KeyState::Missing => Vec::new(),
             KeyState::AccessDenied => {
                 out.issues
-                    .extend(self.denied_keys.report(rule_id, registry.hive, &key));
+                    .extend(self.once.denied(rule_id, registry.hive, &key));
                 Vec::new()
             }
         }

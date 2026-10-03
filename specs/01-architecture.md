@@ -8,7 +8,7 @@
 | Крейт(ы) | все, в первую очередь `sk-core`, `sk-engine`, `sk-cli` |
 | Зависит от | SPEC-00, SPEC-02 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-10-03 (T-04-12: from_json issues/args, нормализация, claims конфига; §4.2: `regex`, `winreg` в зависимостях `sk-rules`; 2026-10-02: §4.4, §4.8.2: `scan.exclude_globs` не проверяются при загрузке; §4.9: `debug summarize`; §4.4: `max_depth` для Measure из `ScanOptions` с откатом на конфиг, `measure.panicked`; §4.4: подключение фазы `Measure`; §4.2: `sk-scan` без `jwalk`; §8: ручная проверка Ctrl+C перенесена в SPEC-04 T-04-07; §4.2: `windows` в зависимостях `sk-scan`; §4.2: `xtask` может подключать `sk-testkit` как обычную зависимость; статус done; §8: Ctrl+C принят по тесту, ручная проверка перенесена в SPEC-03 T-03-04; §4.10: API `sk-core::win::single_instance` и кто берёт блокировку; §4.4: внедрение зависимостей `ScanPipeline`, поведение `run` по фазам, сохранение отчётов, заглушка сканера; §4.7: варианты `EngineError`; §4.8.3: API `sk-core::logging`, обезличивание в писателе, имя файла лога; §4.8.2: API `Config`/`LoadedConfig`/`ConfigWarning`/`DataDir`, правила загрузки, типы значений; §4.5: `ScanPhase`, `LogLevel`, API и правила `ThrottledSink`; T-01-03: `PathSet` вынесен в T-02-02; MSRV 1.93; YAML: `serde-saphyr`; `FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; уточнение T-01-01) |
+| Последнее изменение | 2026-10-03 (T-04-06: зависимости sk-rules, with_rules_dir; T-04-12: from_json issues/args, нормализация, claims конфига; §4.2: `regex`, `winreg` в зависимостях `sk-rules`; 2026-10-02: §4.4, §4.8.2: `scan.exclude_globs` не проверяются при загрузке; §4.9: `debug summarize`; §4.4: `max_depth` для Measure из `ScanOptions` с откатом на конфиг, `measure.panicked`; §4.4: подключение фазы `Measure`; §4.2: `sk-scan` без `jwalk`; §8: ручная проверка Ctrl+C перенесена в SPEC-04 T-04-07; §4.2: `windows` в зависимостях `sk-scan`; §4.2: `xtask` может подключать `sk-testkit` как обычную зависимость; статус done; §8: Ctrl+C принят по тесту, ручная проверка перенесена в SPEC-03 T-03-04; §4.10: API `sk-core::win::single_instance` и кто берёт блокировку; §4.4: внедрение зависимостей `ScanPipeline`, поведение `run` по фазам, сохранение отчётов, заглушка сканера; §4.7: варианты `EngineError`; §4.8.3: API `sk-core::logging`, обезличивание в писателе, имя файла лога; §4.8.2: API `Config`/`LoadedConfig`/`ConfigWarning`/`DataDir`, правила загрузки, типы значений; §4.5: `ScanPhase`, `LogLevel`, API и правила `ThrottledSink`; T-01-03: `PathSet` вынесен в T-02-02; MSRV 1.93; YAML: `serde-saphyr`; `FsScanner` и секции конфига в `sk-core`; правила графа для `sk-testkit`/`xtask` и транзитивных рёбер; зависимости T-01-03/T-01-04; уточнение T-01-01) |
 
 ## 1. Цель
 
@@ -115,7 +115,7 @@ graph BT
 |---|---|---|
 | `sk-core` | Типы SPEC-02, `PathTemplate`, `KnownFolders`, `Config` со всеми секциями, `Event`, `CancellationToken` (реэкспорт `tokio_util::sync`), трейт `FsScanner` и его типы (SPEC-03 §4.1), общие ошибки | `serde`, `thiserror`, `windows`, `uuid`, `time`, `blake3`, `globset` |
 | `sk-scan` | Параллельный обход, `measure()`, `summarize()`, глобальные исключения | `rayon`, `globset`, `windows` (FFI в `sk-scan::win`) |
-| `sk-rules` | Загрузка, валидация и матчинг YAML-правил | `serde-saphyr`, `serde_json` (`from_json`, SPEC-04 §4.2.1), `globset`, `include_dir`, `regex`, `winreg` (только Windows, без `unsafe`; `registry_exists`) |
+| `sk-rules` | Загрузка, валидация и матчинг YAML-правил | `serde-saphyr`, `serde_json` (`from_json`, SPEC-04 §4.2.1), `globset`, `include_dir`, `regex`, `winreg` (только Windows, без `unsafe`; `registry_exists`), `rayon` (параллельный прогон правил), `tokio` (feature `rt`: `spawn_blocking`), `async-trait` (`Collector`) |
 | `sk-games` | Парсинг манифеста Ludusavi, детект лаунчеров, резолв путей игр | `serde-saphyr` (большой манифест: feature `huge_documents` или увеличенный бюджет парсера), `reqwest` (blocking=false), `keyvalues-parser` (VDF) |
 | `sk-system` | Обнаружение и выполнение системных экспортов | `winreg`, `std::process` |
 | `sk-heuristics` | Неизвестные папки, git, пользовательские файлы, мусор | `gix` (git) |
@@ -222,13 +222,14 @@ pub struct ScanOptions {
 pub struct ScanPipeline { /* collectors, post_collectors, classifier, scorer */ }
 
 impl ScanPipeline {
-    pub fn new(config: Arc<Config>) -> Self;          // регистрирует коллекторы из конфигурации
+    pub fn new(config: Arc<Config>) -> Self;          // регистрирует коллектор `rules` (SPEC-04 T-04-13), остальные — по своим спекам
     // Подмена зависимостей (тесты, CLI-отладка):
     pub fn with_collector(self, c: Arc<dyn Collector>) -> Self;
     pub fn with_post_collector(self, c: Arc<dyn PostCollector>) -> Self;
     pub fn with_scanner(self, s: Arc<dyn FsScanner>) -> Self;
     pub fn with_environment(self, env: Environment) -> Self;   // вместо Environment::detect()
     pub fn with_scans_dir(self, dir: PathBuf) -> Self;          // куда сохранять отчёты (DataDir::scans)
+    pub fn with_rules_dir(self, dir: PathBuf) -> Self;          // DataDir::rules; без вызова — только встроенные правила
     pub fn with_app_version(self, v: String) -> Self;           // по умолчанию версия sk-engine
     pub async fn run(&self, opts: ScanOptions, events: EventSink, cancel: CancellationToken)
         -> Result<ScanReport, EngineError>;

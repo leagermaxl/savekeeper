@@ -128,6 +128,28 @@ impl RuleSet {
     pub fn source(&self, id: &str) -> Option<&RuleSource> {
         self.index.get(id).and_then(|&i| self.sources.get(i))
     }
+
+    /// Active rules in order: `priority` desc, then `id`.
+    pub(crate) fn rules(&self) -> &[CompiledRule] {
+        &self.rules
+    }
+
+    /// A set of compiled rules merged as one built-in source, for tests.
+    #[cfg(test)]
+    pub(crate) fn from_rules(rules: Vec<CompiledRule>) -> Self {
+        let mut merger = Merger::default();
+        for rule in rules {
+            let id = rule.id().to_owned();
+            let entry = Entry {
+                source: RuleSource::Builtin {
+                    file: "test.yaml".to_owned(),
+                },
+                rule: (!rule.rule.disabled).then_some(rule),
+            };
+            merger.entries.insert(id, entry);
+        }
+        merger.finish()
+    }
 }
 
 /// `(name, text)` of each built-in rule file, in alphabetical order.

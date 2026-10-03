@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-rules`, каталог `rules/` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-07 (claimed_paths), SPEC-09, SPEC-11 (редактор правил, P4) |
-| Последнее изменение | 2026-10-03 (T-04-12: from_json issues/args, нормализация, claims конфига; T-04-05: условие срабатывания правила (FR-04-03), reparse-корни targets, специализация мульти-значных токенов, заголовок с `label_key`, семантика `claims` и `glob_root`, API `expand` в §4.1, поля находки, issues `glob_root_truncated` и доступ к реестру для targets в §5); 2026-10-03 (T-04-03/T-04-04: API `RuleSource`/`conditions`/`registry`, семантика условий, `installed.winget` зарезервирован, regex проверяется при компиляции, ключи issue в §5, детали слияния; T-04-02: `RuleDiagnostic.severity`, API `compile`/`diagnostic` в §4.1, `hklm` в §4.2 согласован с §4.4; уточнения по T-04-01: `tags` у target, `registry.recursive` по умолчанию `true`, `file_contains.pattern` — regex, обязательные поля §4.4; 2026-10-02: T-04-07: ручные проверки критериев SPEC-03 §8; T-04-07: ручная проверка Ctrl+C из SPEC-01 §8; 2026-10-01: YAML: `serde-saphyr` вместо `serde_yaml`; `from_json` в схеме v1) |
+| Последнее изменение | 2026-10-03 (T-04-06: API RulesCollector, прогресс, слияние, отмена, T-04-13; T-04-12: from_json issues/args, нормализация, claims конфига; T-04-05: условие срабатывания правила (FR-04-03), reparse-корни targets, специализация мульти-значных токенов, заголовок с `label_key`, семантика `claims` и `glob_root`, API `expand` в §4.1, поля находки, issues `glob_root_truncated` и доступ к реестру для targets в §5); 2026-10-03 (T-04-03/T-04-04: API `RuleSource`/`conditions`/`registry`, семантика условий, `installed.winget` зарезервирован, regex проверяется при компиляции, ключи issue в §5, детали слияния; T-04-02: `RuleDiagnostic.severity`, API `compile`/`diagnostic` в §4.1, `hklm` в §4.2 согласован с §4.4; уточнения по T-04-01: `tags` у target, `registry.recursive` по умолчанию `true`, `file_contains.pattern` — regex, обязательные поля §4.4; 2026-10-02: T-04-07: ручные проверки критериев SPEC-03 §8; T-04-07: ручная проверка Ctrl+C из SPEC-01 §8; 2026-10-01: YAML: `serde-saphyr` вместо `serde_yaml`; `from_json` в схеме v1) |
 
 ## 1. Цель
 
@@ -67,8 +67,12 @@ impl RuleSet {
 // Отключённые правила в RuleSet не входят.
 pub enum RuleSource { Builtin { file: String /* имя файла в rules/ */ }, User { file: PathBuf } } // + fn is_user(&self) -> bool
 
-pub struct RulesCollector { set: Arc<RuleSet> }
-impl Collector for RulesCollector { /* id() = "rules" */ }
+pub struct RulesCollector { set: Arc<RuleSet>, registry: Arc<dyn RegistryProbe> }
+impl RulesCollector {
+    pub fn new(set: Arc<RuleSet>) -> Self;                                // реестр — SystemRegistry
+    pub fn with_registry(self, registry: Arc<dyn RegistryProbe>) -> Self; // MemRegistry в тестах
+}
+impl Collector for RulesCollector { /* id() = "rules", display_key() = "collector.rules" */ }
 
 pub struct RuleDiagnostic { pub file: PathBuf, pub line: Option<usize>, pub rule_id: Option<String>, pub severity: DiagnosticSeverity, pub message: String }
 /// Error — файл невалиден; Warning — автоисправление §4.4 (например, credentials → high), файл валиден.
@@ -257,6 +261,9 @@ Issues `from_json` создаются при чтении target'а незави
 
 ### 4.5 Алгоритм `RulesCollector::collect`
 1. Для каждого правила (параллельно через rayon, правила независимы):
+
+   Работа выполняется в `tokio::task::spawn_blocking`, внутри — `rayon` `par_iter` по правилам. Паника задачи пробрасывается (`resume_unwind`), движок превращает её в `collector.panicked` (SPEC-01 §4.4); иная `JoinError` → `CollectorError::Other`. `ResolveContext.steam_user_ids` (SPEC-02 §3.2) = `StoreUser.id` (id3) из `user_ids` всех лаунчеров с `id == "steam"` в `Environment.launchers` (SPEC-02 §3.3); прочие поля `ResolveContext` пусты.
+
    1. Проверить `conditions` (кэш результатов `exists`/`installed` в `HashMap` на скан).
    2. Для каждого target раскрыть шаблон (`resolve`, `glob_root` → `read_dir` по сегментам). Правило срабатывает по FR-04-03. Корень target'а — reparse point (Symlink/Junction/Other): находка создаётся (`FileSet`, если у записи `FILE_ATTRIBUTE_DIRECTORY`, иначе `File`), Measure помечает её `reparse_root` (SPEC-03 §4.3, §5). В сегментах `*` (`glob_root`, claims) ссылки не раскрываются и не совпадают.
    3. Для каждого существующего пути создать `Finding { target, category, app, title, evidence, sensitivity, tags, default_selected: false /*SPEC-09*/, stats: None }`.
@@ -264,8 +271,9 @@ Issues `from_json` создаются при чтении target'а незави
       - Поля: `app` из `rule.app`: `source_ids.winget` из `app.winget`, `installed: None`, `process_names` — lowercase имена из `process_running` (включая `any_of`); `evidence.message_args` пусты; `tags` = теги правила + target'а (+`app-running`); `requires_elevation: false`; `notes_key` из правила.
    4. Добавить корни targets, конфиги `from_json` (§4.2.1 п. 9) и `claims` (раскрытые) в `claimed_paths`. `claims` добавляются, если выполнены `conditions` (независимо от существования targets); `claims` без `*` не проверяются на существование; `*` раскрывается как в `glob_root` (только существующие пути).
    5. Проверить `process_running` по `Environment.running_processes` (SPEC-02 §3.3, снимок делается один раз в фазе Environment).
-2. Конфликты: если два правила дают одинаковый `FindingId`, остаётся находка от правила с большим `priority`, evidence второго дописывается. Вложенность (правило A — `{APPDATA}\Foo`, правило B — `{APPDATA}\Foo\Bar`) не решается здесь, это задача SPEC-09 §merge.
-3. `Event::Progress { phase: Collect, current: rule_id }` каждые N правил.
+2. Конфликты и слияние: если два правила дают одинаковый `FindingId`, остаётся находка от правила с большим `priority`. Правила сливаются в порядке `RuleSet` (`priority desc`, затем `id`); при равном `priority` остаётся находка правила, идущего раньше (меньший `id`). Evidence: сначала победителя, затем остальных в порядке набора. `claimed_paths` без повторов, в порядке первого появления. Issues детерминированы: сначала issues правил в порядке набора, затем issues условий и issues «один раз за скан» (включая `registry_access_denied` от targets), отсортированные по (`message_key`, `path`, `rule_id`, затем `message_args`); у issue, которое сообщается «один раз за скан» (например `registry_access_denied`), `rule_id` — правила, идущего раньше в `RuleSet`. Вложенность (правило A — `{APPDATA}\Foo`, правило B — `{APPDATA}\Foo\Bar`) не решается здесь, это задача SPEC-09 §merge.
+3. `Event::Progress { phase: Collect, done, total: Some(число активных правил), current: Some(rule_id) }` после каждого 10-го обработанного правила и после последнего, через `ThrottledSink` (SPEC-01 §4.5), `flush` в конце; `done` строго растёт.
+4. Отмена: правила проверяют `ctx.cancel` перед запуском; при отмене `collect` возвращает пустой `CollectOutput` (движок всё равно завершает скан `EngineError::Cancelled`, SPEC-01 §4.4).
 
 ### 4.6 Пользовательские правила
 - Каталог `savekeeper-data/rules.d/` (SPEC-01 §4.8.1), файлы `*.yaml`/`*.yml`, загружаются в алфавитном порядке. Читаются только файлы прямо в `rules.d/` (без подпапок), расширение без учёта регистра; порядок алфавитный без учёта регистра, при равенстве — точное сравнение. Отсутствие `rules.d` — не ошибка.
@@ -434,9 +442,10 @@ OneDrive, Dropbox, Google Drive, iCloud, Yandex.Disk: локальные кэш�
 - [x] **T-04-03** — Загрузка builtin (`include_dir!`) + `rules.d`, слияние, disable. *Зависит:* T-04-02, T-01-04.
 - [x] **T-04-04** — Оценщик условий с кэшем на скан; `process_running` по `Environment.running_processes`. *Зависит:* T-04-02, T-03-01, T-02-05.
 - [x] **T-04-05** — Раскрытие targets, `glob_root`, создание `Finding` и `claimed_paths`. *Зависит:* T-04-04. *Готово, когда:* snapshot-тест profile-typical.
-- [ ] **T-04-06** — `RulesCollector: Collector`, прогресс, конфликты FindingId. *Зависит:* T-04-05, T-01-03.
+- [x] **T-04-06** — `RulesCollector: Collector`, прогресс, конфликты FindingId. *Зависит:* T-04-05, T-01-03.
 - [x] **T-04-12** — Target `from_json` (§4.2.1): JSONC-препроцессор, вычисление `select` с `*`, нормализация и фильтры путей, создание находок и `claimed_paths`. *Зависит:* T-04-05, T-03-06. *Готово, когда:* тесты из §6 по `from_json` проходят.
-- [ ] **T-04-07** — YAML-правила §4.7.1–§4.7.2 (браузеры, dev, включая `unityhub.projects`). *Зависит:* T-04-02, T-04-12. *Готово, когда:* проверены вручную на Windows-машине разработчика (чек-лист в PR); ручная проверка критерия SPEC-01 §8: Ctrl+C во время `savekeeper-cli scan` по реальному профилю завершает процесс за ≤ 1 с с кодом 2 (перенесено из SPEC-03 T-03-04: первый скан, который идёт по реальным файлам); ручная проверка критериев SPEC-03 §8 на том же скане: OneDrive-папка «только онлайн» после скана остаётся с облачным значком (файлы не гидрированы), junction'ы профиля (`Application Data` и т.д.) не дают двойного счёта размеров.
+- [ ] **T-04-13** — Подключение `RulesCollector` в `sk-engine`: `ScanPipeline::new` регистрирует его, правила загружаются `RuleSet::load(true, rules_dir)` в начале каждого `run` (пользовательские правила подхватываются без перезапуска), issues загрузки (`source: "rules"`) идут в отчёт и `Event::Issue`; `sk-cli scan` передаёт `DataDir::rules()`. *Зависит:* T-04-06, T-01-06, T-01-07. *Готово, когда:* интеграционный тест `sk-engine` с `MemFs` + `rules.d` во временной папке даёт находки правил и issue битого файла.
+- [ ] **T-04-07** — YAML-правила §4.7.1–§4.7.2 (браузеры, dev, включая `unityhub.projects`). *Зависит:* T-04-02, T-04-12, T-04-13. *Готово, когда:* проверены вручную на Windows-машине разработчика (чек-лист в PR); ручная проверка критерия SPEC-01 §8: Ctrl+C во время `savekeeper-cli scan` по реальному профилю завершает процесс за ≤ 1 с с кодом 2 (перенесено из SPEC-03 T-03-04: первый скан, который идёт по реальным файлам); ручная проверка критериев SPEC-03 §8 на том же скане: OneDrive-папка «только онлайн» после скана остаётся с облачным значком (файлы не гидрированы), junction'ы профиля (`Application Data` и т.д.) не дают двойного счёта размеров.
 - [ ] **T-04-08** — YAML-правила §4.7.3–§4.7.7 (включая `obsidian.vaults`). *Зависит:* T-04-02, T-04-12.
 - [ ] **T-04-09** — YAML-правила §4.7.8–§4.7.9. *Зависит:* T-04-02, T-05-03 (токены Steam).
 - [ ] **T-04-10** — CLI `rules validate` + вывод диагностики. *Зависит:* T-04-02, T-01-07.

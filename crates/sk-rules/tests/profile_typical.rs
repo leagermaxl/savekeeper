@@ -1,17 +1,27 @@
 //! Findings and claimed paths of typical rules on `fixtures/fs/profile-typical`
-//! (SPEC-04 §6, T-04-05): VS Code, Chrome with two profiles, Firefox, SSH,
+//! (SPEC-04 §6, T-04-05, T-04-06): VS Code, Chrome with two profiles, Firefox, SSH,
 //! OBS Studio and Telegram, through conditions and target expansion.
 //!
 //! The rules mirror the starting base (SPEC-04 §4.7) and live here until the
 //! built-in YAML files exist (T-04-07, T-04-08).
 
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use serde_json::{json, Value};
-use sk_core::model::RegHive;
+use sk_core::collector::{CollectContext, Collector};
+use sk_core::config::Config;
+use sk_core::env::Environment;
+use sk_core::events::{Event, ScanPhase};
+use sk_core::model::{Finding, RegHive, ScanIssue};
 use sk_core::template::ResolveContext;
+use sk_core::CancellationToken;
 use sk_rules::compile::compile_yaml;
-use sk_rules::{ConditionEvaluator, MemRegistry, RuleOutput, TargetExpander};
+use sk_rules::{
+    ConditionEvaluator, MemRegistry, RuleOutput, RuleSet, RulesCollector, TargetExpander,
+};
+use sk_scan::MemFs;
+use tokio::sync::mpsc::unbounded_channel;
 
 const RULES: &str = r#"
 schema_version: 1
@@ -138,8 +148,9 @@ fn redact(value: &mut Value, root: &str) {
     }
 }
 
-#[test]
-fn profile_typical_snapshot() {
+/// The fixture with OBS running, and the registry key of the VS Code
+/// protocol handler.
+fn setup() -> (MemFs, Environment, MemRegistry) {
     let (fs, mut env) = sk_testkit::mem_fixture("profile-typical", &root());
     env.running_processes = vec!["explorer.exe".to_owned(), "obs64.exe".to_owned()];
     let mut registry = MemRegistry::new();
@@ -147,6 +158,23 @@ fn profile_typical_snapshot() {
         RegHive::Hkcu,
         "Software\\Classes\\vscode\\shell\\open\\command",
     );
+    (fs, env, registry)
+}
+
+/// Findings, claimed paths and issues as one JSON value, OS-independent.
+fn snapshot(findings: &[Finding], claimed_paths: &[PathBuf], issues: &[ScanIssue]) -> Value {
+    let mut snapshot = json!({
+        "findings": findings,
+        "claimed_paths": claimed_paths,
+        "issues": issues,
+    });
+    redact(&mut snapshot, &root().to_string_lossy());
+    snapshot
+}
+
+#[test]
+fn profile_typical_snapshot() {
+    let (fs, env, registry) = setup();
     let resolve = ResolveContext::default();
 
     let mut rules = compile_yaml(RULES)
@@ -199,11 +227,50 @@ fn profile_typical_snapshot() {
     assert!(claimed("AppData/Local/JetBrains"));
     assert!(!claimed("AppData/Roaming/vlc"));
 
-    let mut snapshot = json!({
-        "findings": total.findings,
-        "claimed_paths": total.claimed_paths,
-        "issues": total.issues,
-    });
-    redact(&mut snapshot, &root().to_string_lossy());
-    insta::assert_json_snapshot!("profile_typical", snapshot);
+    insta::assert_json_snapshot!(
+        "profile_typical",
+        snapshot(&total.findings, &total.claimed_paths, &total.issues)
+    );
+}
+
+/// T-04-06: `RulesCollector` over a `RuleSet` loaded from `rules.d` gives the
+/// same findings, claimed paths and issues, and reports its progress.
+#[tokio::test]
+async fn profile_typical_collector() {
+    let (fs, env, registry) = setup();
+    let user_dir = tempfile::tempdir().unwrap();
+    std::fs::write(user_dir.path().join("typical.yaml"), RULES).unwrap();
+    let (set, issues) = RuleSet::load(false, Some(user_dir.path()));
+    assert!(issues.is_empty(), "{issues:?}");
+    assert_eq!(set.len(), 8);
+
+    let (events, mut rx) = unbounded_channel();
+    let ctx = CollectContext {
+        env: Arc::new(env),
+        config: Arc::new(Config::default()),
+        scanner: Arc::new(fs),
+        events,
+        cancel: CancellationToken::new(),
+    };
+    let collector = RulesCollector::new(Arc::new(set)).with_registry(Arc::new(registry));
+    assert_eq!(collector.id(), "rules");
+    let out = collector.collect(&ctx).await.unwrap();
+
+    insta::assert_json_snapshot!(
+        "profile_typical",
+        snapshot(&out.findings, &out.claimed_paths, &out.issues)
+    );
+    let last = sk_testkit::drain_events(&mut rx).pop();
+    assert!(
+        matches!(
+            last,
+            Some(Event::Progress {
+                phase: ScanPhase::Collect,
+                done: 8,
+                total: Some(8),
+                current: Some(_),
+            })
+        ),
+        "{last:?}"
+    );
 }

@@ -7,18 +7,22 @@
 //! [`conditions`] evaluates rule conditions with a per-scan cache (§4.3);
 //! [`registry`] probes registry keys for `registry_exists`;
 //! [`expand`] turns targets of matched rules into findings and claimed paths (§4.5);
+//! [`RulesCollector`] runs all rules as the `rules` scan collector (§4.5);
 //! [`RuleError`] reports problems in rule files.
 
+mod collector;
 pub mod compile;
 pub mod conditions;
 pub mod diagnostic;
 mod error;
 pub mod expand;
+mod once;
 pub mod registry;
 pub mod schema;
 mod set;
 mod win;
 
+pub use collector::RulesCollector;
 pub use compile::{CompiledRule, CompiledTarget};
 pub use conditions::{ConditionEvaluator, ConditionOutcome, APP_RUNNING_TAG};
 pub use diagnostic::{DiagnosticSeverity, RuleDiagnostic};

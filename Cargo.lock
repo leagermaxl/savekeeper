@@ -2055,9 +2055,11 @@ version = "0.1.0"
 name = "sk-rules"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "globset",
  "include_dir",
  "insta",
+ "rayon",
  "regex",
  "serde",
  "serde-saphyr",
@@ -2067,6 +2069,7 @@ dependencies = [
  "sk-testkit",
  "tempfile",
  "thiserror",
+ "tokio",
  "winreg",
 ]
 

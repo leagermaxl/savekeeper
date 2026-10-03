@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use sk_core::env::{InstalledProgram, ProgramSource};
+use sk_core::model::IssueSeverity;
 use sk_scan::MemFs;
 
 use super::*;
