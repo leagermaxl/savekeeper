@@ -1,5 +1,6 @@
 //! Game save discovery: Ludusavi manifest and launchers (SPEC-05).
 
+mod anchors;
 mod embedded;
 mod error;
 pub mod launchers;
