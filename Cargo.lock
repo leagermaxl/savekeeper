@@ -2036,6 +2036,7 @@ version = "0.1.0"
 name = "sk-rules"
 version = "0.1.0"
 dependencies = [
+ "globset",
  "serde",
  "serde-saphyr",
  "sk-core",
