@@ -6,6 +6,7 @@
 mod cli;
 mod commands;
 mod progress;
+mod rules;
 mod scan;
 mod summarize;
 
@@ -90,8 +91,8 @@ fn run(cli: Cli) -> anyhow::Result<Status> {
             commands::not_implemented("backup", "SPEC-10, T-10-14")
         }
         Command::Rules {
-            command: RulesCommand::Validate(_),
-        } => commands::not_implemented("rules validate", "SPEC-04, T-04-10"),
+            command: RulesCommand::Validate(args),
+        } => rules::validate(args),
         Command::Manifest {
             command: ManifestCommand::Update(_),
         } => commands::not_implemented("manifest update", "SPEC-05, T-05-10"),

@@ -307,7 +307,6 @@ fn unimplemented_commands_fail_with_a_message() {
             &["backup", "--report", "r.json", "--to", "b"][..],
             "`backup`",
         ),
-        (&["rules", "validate", "a.yaml"], "`rules validate`"),
         (&["manifest", "update"], "`manifest update`"),
     ] {
         cli.cmd(args)

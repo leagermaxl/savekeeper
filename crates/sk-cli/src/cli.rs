@@ -85,8 +85,16 @@ impl From<LlmArg> for LlmMode {
 
 #[derive(Debug, Subcommand)]
 pub(crate) enum RulesCommand {
-    /// Check rule files and print the errors (not implemented yet).
-    Validate(StubArgs),
+    /// Check rule files and print their errors and warnings with line numbers.
+    Validate(ValidateArgs),
+}
+
+#[derive(Debug, Args)]
+pub(crate) struct ValidateArgs {
+    /// Rule files or folders (their `*.yaml`/`*.yml` files); default: the user
+    /// rule folder `rules.d`.
+    #[arg(value_name = "PATH")]
+    pub(crate) paths: Vec<PathBuf>,
 }
 
 #[derive(Debug, Subcommand)]
@@ -191,11 +199,33 @@ mod tests {
         for args in [
             &["backup", "--report", "r.json", "--to", "E:\\b", "--encrypt"][..],
             &["backup"],
-            &["rules", "validate", "a.yaml", "b.yaml"],
             &["manifest", "update"],
         ] {
             assert!(parse(args).is_ok(), "{args:?}");
         }
+    }
+
+    #[test]
+    fn rules_validate_takes_any_number_of_paths() {
+        for (args, expected) in [
+            (&["rules", "validate"][..], &[][..]),
+            (&["rules", "validate", "a.yaml"], &["a.yaml"]),
+            (
+                &["rules", "validate", "a.yaml", r"D:\rules"],
+                &["a.yaml", r"D:\rules"],
+            ),
+        ] {
+            let Command::Rules {
+                command: RulesCommand::Validate(parsed),
+            } = parse(args).unwrap().command
+            else {
+                panic!("not rules validate: {args:?}");
+            };
+            let expected: Vec<PathBuf> = expected.iter().map(PathBuf::from).collect();
+            assert_eq!(parsed.paths, expected);
+        }
+        assert!(parse(&["rules", "validate", "--strict"]).is_err());
+        assert!(parse(&["rules"]).is_err());
     }
 
     #[test]
