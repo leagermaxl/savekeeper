@@ -5,6 +5,16 @@
 [graph]
 # Check optional dependencies too (e.g. `sk-llm` feature `mock`).
 all-features = true
+# Only the platforms SaveKeeper is built and tested on (SPEC-00 §3, SPEC-12 §4.8). Without this,
+# wasm32-only crates are checked too (e.g. `webpki-root-certs`, CDLA-Permissive-2.0, which
+# `rustls-platform-verifier` uses only on wasm32).
+targets = [
+    "x86_64-pc-windows-msvc",
+    "aarch64-pc-windows-msvc",
+    "x86_64-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "aarch64-apple-darwin",
+]
 
 [advisories]
 version = 2

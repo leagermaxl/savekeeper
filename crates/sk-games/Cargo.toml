@@ -10,15 +10,28 @@ publish.workspace = true
 
 [dependencies]
 keyvalues-parser.workspace = true
+postcard.workspace = true
+reqwest.workspace = true
+rustls.workspace = true
 serde.workspace = true
 serde-saphyr.workspace = true
 sk-core.workspace = true
 thiserror.workspace = true
 time.workspace = true
+tokio = { workspace = true, features = ["macros", "rt"] }
+tracing.workspace = true
+zstd.workspace = true
+
+# build.rs compresses third_party/ludusavi/manifest.yaml into the embedded snapshot (FR-05-02).
+[build-dependencies]
+zstd.workspace = true
 
 [dev-dependencies]
 criterion.workspace = true
 sk-scan.workspace = true
+tempfile.workspace = true
+tokio = { workspace = true, features = ["macros", "rt", "time"] }
+wiremock.workspace = true
 
 # Manual benchmark (SPEC-05 §6, NFR-05-01): `cargo bench -p sk-games --bench manifest`.
 [[bench]]

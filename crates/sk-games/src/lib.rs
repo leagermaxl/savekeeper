@@ -1,8 +1,10 @@
 //! Game save discovery: Ludusavi manifest and launchers (SPEC-05).
 
+mod embedded;
 mod error;
 pub mod launchers;
 pub mod manifest;
+mod store;
 
 pub use error::GamesError;
 pub use launchers::{LauncherDetector, SteamDetector, STEAM_ID64_BASE};
@@ -12,3 +14,4 @@ pub use manifest::{
 };
 /// Launcher types of `Environment.launchers`, defined in `sk-core` (SPEC-02 §3.3).
 pub use sk_core::env::{InstalledGame, LauncherInfo, StoreUser};
+pub use store::{ManifestStore, UpdateOutcome};

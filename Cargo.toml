@@ -40,6 +40,11 @@ keyvalues-parser = "0.2"
 gix = { version = "0.88", default-features = false }
 indicatif = "0.18"
 rayon = "1"
+# Ludusavi index cache `cache/ludusavi-index.bin` (SPEC-05 NFR-05-01).
+postcard = { version = "1", default-features = false, features = ["use-std"] }
+# Manifest download (SPEC-05 FR-05-01): rustls with the `ring` provider, no OpenSSL (SPEC-12 §4.6).
+reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider", "gzip", "system-proxy"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 # Linear-time regexes for rule conditions (SPEC-04 NFR-04-02).
 regex = "1"
 serde = { version = "1", features = ["derive"] }
@@ -55,6 +60,8 @@ tracing = "0.1"
 tracing-appender = "0.2"
 tracing-subscriber = "0.3"
 uuid = "1"
+# Embedded Ludusavi snapshot, compressed by sk-games/build.rs (SPEC-05 FR-05-02).
+zstd = "0.14"
 windows = "0.62"
 winreg = "0.56"
 
@@ -65,6 +72,8 @@ criterion = { version = "0.7", default-features = false, features = ["cargo_benc
 insta = { version = "1", features = ["json"] }
 predicates = "3"
 tempfile = "3"
+# Mock HTTP server for ManifestStore tests (SPEC-05 §6).
+wiremock = "0.6"
 
 [workspace.lints.rust]
 unsafe_code = "deny" # allowed only in sk-core::win and sk-scan::win (SPEC-00 §7.1)
@@ -76,3 +85,8 @@ unwrap_used = "warn"
 expect_used = "warn"
 dbg_macro = "warn"
 todo = "warn"
+
+# sk-games/build.rs compresses the ~17 MB Ludusavi snapshot at zstd level 19, and tests
+# decompress it: build the zstd C library optimized in dev and test builds too.
+[profile.dev.package.zstd-sys]
+opt-level = 3

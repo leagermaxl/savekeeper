@@ -1,5 +1,6 @@
 //! The Ludusavi manifest: model (SPEC-05 §4.2) and parsing of the full file.
 
+pub(crate) mod index;
 mod model;
 mod parse;
 

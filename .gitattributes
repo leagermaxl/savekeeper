@@ -13,3 +13,6 @@
 *.zip  binary
 *.age  binary
 *.reg  binary
+
+# Vendored Ludusavi manifest (SPEC-05): large generated YAML, no textual diffs.
+third_party/ludusavi/manifest.yaml -diff linguist-vendored

@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-games` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-04 (токены `{STEAM}`, `{STEAM_USERID}`), SPEC-07, SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-03 (T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.1: реестр из sk-core, T-05-04 и T-05-09 зависят от T-02-10; T-05-03: detect_with_issues, SteamDetector, RegistryReader, детали Steam §4.4, ключи issue §5; T-05-01: API разбора манифеста, конкретные типы, параллельный разбор, бенч; §5: манифест с 0 игр; T-04-05: специализация `{STEAM_USERID}` в шаблоне находки, §4.7, §5); 2026-10-02 (§6: пути фикстур `fixtures/samples/...` и 20 игр, как в SPEC-12 §4.3; 2026-10-01: §4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
+| Последнее изменение | 2026-10-03 (T-05-02: FR-05-11 ресурс снапшота, варианты `GamesError`, детали `ManifestStore` в §4.1, ключи issue манифеста в §5, встроенный снапшот из `third_party/ludusavi`; T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.1: реестр из sk-core, T-05-04 и T-05-09 зависят от T-02-10; T-05-03: detect_with_issues, SteamDetector, RegistryReader, детали Steam §4.4, ключи issue §5; T-05-01: API разбора манифеста, конкретные типы, параллельный разбор, бенч; §5: манифест с 0 игр; T-04-05: специализация `{STEAM_USERID}` в шаблоне находки, §4.7, §5); 2026-10-02 (§6: пути фикстур `fixtures/samples/...` и 20 игр, как в SPEC-12 §4.3; 2026-10-01: §4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
 
 ## 1. Цель
 
@@ -46,7 +46,7 @@
 - **FR-05-08** — Если у игры в манифесте `cloud: { steam: true, ... }`, у находки тег `cloud-steam` (и т.п.). **Находка всё равно создаётся**: облако бывает выключено или неполно. SPEC-09 учитывает это в скоринге.
 - **FR-05-09** — Все корни найденных сохранений и каталоги установки игр (`{GAME_DIR}`) попадают в `claimed_paths`. Каталоги установки дополнительно дают находку `Category::Reinstallable` (не выбрана по умолчанию), чтобы UI показал «игра X, 60 ГБ, переустанавливается из Steam».
 - **FR-05-10** — Атрибуция: в UI «О программе», в `report.html` и в `THIRD_PARTY_NOTICES.md` указывается «Game save data: Ludusavi Manifest (MIT, github.com/mtkennerly/ludusavi-manifest) / PCGamingWiki (CC BY-NC-SA 3.0)», со ссылкой на текст лицензии и с пометкой, что встроенный снапшот не изменялся (или перечнем изменений, если он сжат или отфильтрован).
-- **FR-05-11** — Условия CC BY-NC-SA для встроенного снапшота: (1) SaveKeeper распространяется **бесплатно и некоммерчески**; (2) снапшот лежит в бинарнике отдельным ресурсом (`assets/ludusavi-manifest.yaml.zst`) и сохраняет свою лицензию (ShareAlike относится к данным, а не к коду SaveKeeper); (3) атрибуция по FR-05-10. Если проект станет коммерческим, сборка выполняется с `--no-default-features` без фичи `embedded-manifest`, и манифест только скачивается.
+- **FR-05-11** — Условия CC BY-NC-SA для встроенного снапшота: (1) SaveKeeper распространяется **бесплатно и некоммерчески**; (2) снапшот лежит в бинарнике отдельным ресурсом (zstd-файл, который `build.rs` собирает из `third_party/ludusavi/manifest.yaml`, §4.1) и сохраняет свою лицензию (ShareAlike относится к данным, а не к коду SaveKeeper); (3) атрибуция по FR-05-10. Если проект станет коммерческим, сборка выполняется с `--no-default-features` без фичи `embedded-manifest`, и манифест только скачивается.
 
 ### 3.2 Нефункциональные
 - **NFR-05-01** — Парсинг полного манифеста (~40 МБ YAML) ≤ 3 с, в фоне, параллельно фазе Environment. Кэш распарсенного индекса в бинарном виде (`bincode`/`postcard`) в `cache/ludusavi-index.bin`, инвалидация по etag. Файл ≥ 2 МБ режется по строкам ключей верхнего уровня и разбирается в нескольких потоках, только если вся раскладка проходит белый список: строки режутся по `\n`, нет `\r` без следующего `\n` и байтов NUL; до первой записи — только BOM в начале, пустые строки, комментарии и один `---`; дальше каждая строка, начинающаяся не с пробела, — начало записи (ключ в колонке 0, затем `:` и пробел/таб/конец строки), комментарий или пустая. Иначе — последовательный разбор. Он же выполняется при ошибке чанка, ошибке или панике потока, несовпадении числа игр в чанке с числом строк-ключей и повторе имени игры; результат и ошибки идентичны последовательному. Бюджет парсера (последовательный): события/узлы ≤ 2 × размер входа + 64 КиБ, байты скаляров/комментариев ≤ размер + 64 КиБ, лимиты алиасов — по умолчанию. Бюджет чанка — последовательный, умноженный на долю чанка во входе; лимиты алиасов, якорей и merge-ключей у чанка 0 (любой из них → последовательный разбор).
@@ -65,13 +65,14 @@ impl Manifest {
     pub fn parse(yaml: &[u8], source: ManifestSource) -> Result<Manifest, GamesError>;   // разбор полного файла
 }
 #[non_exhaustive]
-pub enum GamesError { ManifestParse(Box<serde_saphyr::Error>) /* варианты HTTP/IO добавляет T-05-02 */ }
+pub enum GamesError { ManifestParse(Box<serde_saphyr::Error>), Io(std::io::Error), Cancelled } // сетевые сбои — не ошибки, а UpdateOutcome::Failed / issues
 
-pub struct ManifestStore { cache_dir: PathBuf, url: String }
+pub struct ManifestStore { cache_dir: PathBuf, url: String, /* + приватные: auto_update, интервал, таймаут, встроенный снапшот, накопленные issues */ }
 impl ManifestStore {
     pub fn new(cfg: &Config, data_dir: &Path) -> Self;
     pub async fn load(&self, allow_network: bool, cancel: &CancellationToken) -> Result<Arc<Manifest>, GamesError>;
     pub async fn update(&self, force: bool) -> Result<UpdateOutcome, GamesError>;   // CLI `manifest update`
+    pub(crate) fn take_issues(&self) -> Vec<ScanIssue>;  // issues последних load/update (§5) для GamesCollector (T-05-09)
 }
 pub enum UpdateOutcome { NotModified, Updated { games: usize }, Failed { reason: String, fallback: ManifestSource } }
 
@@ -112,7 +113,17 @@ pub struct GamesCollector { store: ManifestStore }
 impl Collector for GamesCollector { /* id() = "games" */ }
 ```
 
-`Manifest::parse` разбирает полный файл манифеста: `meta.etag` и `meta.fetched_at` = `None` (их заполняет `ManifestStore`), `meta.games` = число записей, включая алиасы. `GamesError` — `#[non_exhaustive]`: сейчас только `ManifestParse(Box<serde_saphyr::Error>)`, варианты HTTP/IO добавляет T-05-02.
+`Manifest::parse` разбирает полный файл манифеста: `meta.etag` и `meta.fetched_at` = `None` (их заполняет `ManifestStore`), `meta.games` = число записей, включая алиасы. `GamesError` — `#[non_exhaustive]`: `ManifestParse`, `Io` (кэш, снапшот), `Cancelled`. HTTP-варианта нет: сетевые сбои дают `UpdateOutcome::Failed` или issue §5, а не ошибку.
+
+`ManifestStore` (T-05-02):
+- `new(cfg, data_dir)` принимает корень `DataDir`; кэш — `data_dir/cache` (§4.8).
+- `games.auto_update: false` — `load` не ходит в сеть; сеть только через `update`.
+- Время последней проверки — mtime файла `.etag`; при 304 файл перезаписывается. Проверка не чаще `update_interval_hours`.
+- `update(force: true)` не шлёт `If-None-Match`.
+- Таймаут 15 с — на соединение и на каждое чтение, не на всю загрузку. Размер загрузки ограничен 512 МиБ.
+- Индекс `ludusavi-index.bin` (postcard) ключуется версией программы + etag + размером и mtime YAML; для встроенного снапшота — датой снапшота (индекс строится и для него). Несовпадение ключа или битый индекс — перестроение из YAML.
+- Встроенный снапшот: в репозитории хранится исходник `third_party/ludusavi/manifest.yaml` и дата `third_party/ludusavi/manifest.date`; `build.rs` сжимает YAML zstd (уровень 19) в `$OUT_DIR`, крейт подключает его `include_bytes!`. Без YAML сборка падает с подсказкой. Скачивание в `build.rs` (системный `curl` в `OUT_DIR`) — только при `SK_LUDUSAVI_DOWNLOAD=1`; по умолчанию сборка офлайн.
+- TLS: `reqwest` с `rustls` и провайдером `ring` (бэкенд `aws-lc` не используется из-за лицензии OpenSSL).
 
 ### 4.2 Формат манифеста (подмножество, которое мы читаем)
 
@@ -219,8 +230,9 @@ Steam, детали: корень — первый существующий ка
 
 | Ситуация | Поведение |
 |---|---|
-| Нет сети / таймаут 15 с / HTTP ≠ 200/304 | Кэш → снапшот. `ScanIssue::Info { key: issue.games.manifest_offline }`. |
-| Скачанный манифест не парсится | Не заменяем кэш, используем предыдущий, Warning. |
+| Нет сети / таймаут 15 с / HTTP ≠ 200/304 | Кэш → снапшот. `ScanIssue::Info { key: issue.games.manifest_offline, args: { reason } }`, source `games`. |
+| Скачанный манифест не парсится | Не заменяем кэш, используем предыдущий, Warning `issue.games.manifest_invalid` { reason }. |
+| Кэш не читается/не пишется или индекс не сохраняется | Работаем с тем, что есть (скачанное/снапшот), Warning `issue.games.manifest_cache_failed` { reason }. |
 | Манифест разобран, но 0 игр (пустой/обрезанный ответ) | Как «не парсится»: кэш не заменяем, Warning (T-05-02). |
 | Частично скачанный файл | Пишем во временный `*.tmp`, атомарный rename после успешного парсинга. |
 | Steam установлен, но `libraryfolders.vdf` отсутствует или битый | Только основная библиотека `<root>\steamapps`. Info `issue.games.steam_libraryfolders_unreadable`. |
@@ -249,7 +261,7 @@ Issue Steam: reason ∈ not_found, access_denied, locked, too_large, cloud_only,
 ## 7. Задачи
 
 - [x] **T-05-01** — Serde-модель манифеста §4.2, парсинг полного файла, бенч. *Зависит:* T-01-01. *Готово, когда:* реальный манифест парсится ≤ 3 с. *Проверено* 2026-10-03 пользователем: бенч на реальном манифесте — NFR-05-01 PASS.
-- [ ] **T-05-02** — `ManifestStore`: HTTP с ETag, атомарная запись, кэш индекса (postcard), встроенный снапшот (zstd, `build.rs` скачивает или берёт из `third_party/ludusavi/manifest.yaml` в репо). *Зависит:* T-05-01, T-01-04.
+- [x] **T-05-02** — `ManifestStore`: HTTP с ETag, атомарная запись, кэш индекса (postcard), встроенный снапшот (zstd, `build.rs` скачивает или берёт из `third_party/ludusavi/manifest.yaml` в репо). *Зависит:* T-05-01, T-01-04.
 - [x] **T-05-03** — Детектор Steam (VDF, ACF, userdata, loginusers) + токены `{STEAM}`, `{STEAM_USERID}` в `PathTemplate::resolve`. *Зависит:* T-03-06, T-02-03.
 - [ ] **T-05-04** — Детекторы Epic, GOG (реестр), Ubisoft, EA, Battle.net (Uninstall), Xbox (`wgs`-находка). *Зависит:* T-05-03, T-02-10.
 - [ ] **T-05-05** — `enrich(env, fs)` (возвращает issues детекторов: `pub fn enrich(env: &mut Environment, fs: &dyn FsScanner) -> Vec<ScanIssue>`, §4.1) и интеграция в фазу Environment `sk-engine`. *Зависит:* T-05-04, T-01-06.
