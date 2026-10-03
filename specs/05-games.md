@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-games` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-04 (токены `{STEAM}`, `{STEAM_USERID}`), SPEC-07, SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-02 (§6: пути фикстур `fixtures/samples/...` и 20 игр, как в SPEC-12 §4.3; 2026-10-01: §4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
+| Последнее изменение | 2026-10-03 (T-04-05: специализация `{STEAM_USERID}` в шаблоне находки, §4.7, §5); 2026-10-02 (§6: пути фикстур `fixtures/samples/...` и 20 игр, как в SPEC-12 §4.3; 2026-10-01: §4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
 
 ## 1. Цель
 
@@ -182,7 +182,7 @@ Serde-модель: `GameEntry { files: BTreeMap<String, FileRule>, registry: BT
 
 ### 4.7 Алгоритм `GamesCollector::collect`
 1. `manifest = store.load(allow_network = !offline)` (параллельно с фазой Environment через `tokio::spawn` в `sk-engine`).
-2. Для каждой установленной игры (`env.launchers[*].games`): сопоставить (§4.5) → для каждой `files`-записи с учётом `when` → `translate` с `GameCtx { game_dir, store_user_ids, store_game_id }` → `resolve` → существующие пути → Finding.
+2. Для каждой установленной игры (`env.launchers[*].games`): сопоставить (§4.5) → для каждой `files`-записи с учётом `when` → `translate` с `GameCtx { game_dir, store_user_ids, store_game_id }` → `resolve` → существующие пути → Finding. Перед созданием находки мульти-значные токены специализируются, как в SPEC-04 §4.5 и SPEC-02 §3.2: `{STEAM_USERID}` → конкретный id3 (стабилен для аккаунта); `FindingId` считается от специализированного шаблона, поэтому id находок SPEC-04 и SPEC-05 для одного пути совпадают. Каждый аккаунт Steam даёт отдельную находку.
 3. Неустановленные: индекс §4.6 → Finding с тегом `not-installed` (UI: «игра удалена, но сохранения остались»).
 4. `registry`-записи (HKCU) → проверка `registry_exists` → `Target::Registry`.
 5. Группировка: все files-записи одной игры с одинаковым корнем объединяются в один Finding (union include). Разные корни дают разные находки с одним `AppRef`.
@@ -204,7 +204,7 @@ Serde-модель: `GameEntry { files: BTreeMap<String, FileRule>, registry: BT
 | Частично скачанный файл | Пишем во временный `*.tmp`, атомарный rename после успешного парсинга. |
 | Steam установлен, но `libraryfolders.vdf` отсутствует или битый | Только основная библиотека `<root>\steamapps`. Info. |
 | Библиотека Steam на отключённом диске | Пропуск, Info с буквой диска. |
-| Несколько Steam-аккаунтов | `{STEAM_USERID}` раскрывается во все. Title получает суффикс имени аккаунта из `loginusers.vdf`. |
+| Несколько Steam-аккаунтов | `{STEAM_USERID}` раскрывается во все; в шаблоне каждой находки токен специализирован в конкретный id3 (§4.7, SPEC-02 §3.2), `FindingId` — от специализированного шаблона. Title получает суффикс имени аккаунта из `loginusers.vdf`. |
 | Сохранения внутри каталога игры (`<base>/saves`) | Находка `game_save` внутри `Reinstallable`-находки каталога. SPEC-09 merge не должен поглотить её родителем (правило «Reinstallable не поглощает»). |
 | Одинаковый путь у двух игр (общий движок, `<winDocuments>/My Games`) | Один FindingId → одна находка, два Evidence и `AppRef` первой игры + тег `multi-game`. |
 | Огромные сохранения (> 2 ГБ: симуляторы, Minecraft-миры) | Создаём, скоринг решает про `default_selected` (SPEC-09). |

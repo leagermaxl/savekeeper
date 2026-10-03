@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-rules`, каталог `rules/` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-07 (claimed_paths), SPEC-09, SPEC-11 (редактор правил, P4) |
-| Последнее изменение | 2026-10-03 (T-04-03/T-04-04: API `RuleSource`/`conditions`/`registry`, семантика условий, `installed.winget` зарезервирован, regex проверяется при компиляции, ключи issue в §5, детали слияния; T-04-02: `RuleDiagnostic.severity`, API `compile`/`diagnostic` в §4.1, `hklm` в §4.2 согласован с §4.4; уточнения по T-04-01: `tags` у target, `registry.recursive` по умолчанию `true`, `file_contains.pattern` — regex, обязательные поля §4.4; 2026-10-02: T-04-07: ручные проверки критериев SPEC-03 §8; T-04-07: ручная проверка Ctrl+C из SPEC-01 §8; 2026-10-01: YAML: `serde-saphyr` вместо `serde_yaml`; `from_json` в схеме v1) |
+| Последнее изменение | 2026-10-03 (T-04-05: условие срабатывания правила (FR-04-03), reparse-корни targets, специализация мульти-значных токенов, заголовок с `label_key`, семантика `claims` и `glob_root`, API `expand` в §4.1, поля находки, issues `glob_root_truncated` и доступ к реестру для targets в §5); 2026-10-03 (T-04-03/T-04-04: API `RuleSource`/`conditions`/`registry`, семантика условий, `installed.winget` зарезервирован, regex проверяется при компиляции, ключи issue в §5, детали слияния; T-04-02: `RuleDiagnostic.severity`, API `compile`/`diagnostic` в §4.1, `hklm` в §4.2 согласован с §4.4; уточнения по T-04-01: `tags` у target, `registry.recursive` по умолчанию `true`, `file_contains.pattern` — regex, обязательные поля §4.4; 2026-10-02: T-04-07: ручные проверки критериев SPEC-03 §8; T-04-07: ручная проверка Ctrl+C из SPEC-01 §8; 2026-10-01: YAML: `serde-saphyr` вместо `serde_yaml`; `from_json` в схеме v1) |
 
 ## 1. Цель
 
@@ -37,7 +37,7 @@
 ### 3.1 Функциональные
 - **FR-04-01** — Один YAML-файл содержит одно или несколько правил (`rules: [...]`).
 - **FR-04-02** — Каждое правило порождает **не больше одной находки на каждый раскрытый путь** target'а. Если target раскрывается в несколько путей (`{STEAM_USERID}`), будет несколько находок.
-- **FR-04-03** — Находка создаётся только если выполнены `conditions` правила и хотя бы один путь target'а существует (или ветка реестра существует).
+- **FR-04-03** — Правило срабатывает, если выполнены `conditions` и существует хотя бы один путь (или ключ реестра) хотя бы одного не-`optional` target'а; если все targets `optional` — хотя бы одного любого. `optional`-target сам по себе правило не запускает, но даёт находки, когда правило сработало. Правило без targets (только `claims`) срабатывает по `conditions`.
 - **FR-04-04** — Все пути из сработавших правил (корни targets) попадают в `claimed_paths`, даже если находка отфильтрована как `Cache` или `Reinstallable`.
 - **FR-04-05** — Правило может объявить `claims` — дополнительные пути, которые считаются «объяснёнными», но не сохраняются (например, кэш браузера), чтобы SPEC-07 не считал их неизвестными.
 - **FR-04-06** — Пользовательское правило с тем же `id` полностью заменяет встроенное. Правило с `disabled: true` отключает встроенное.
@@ -105,6 +105,18 @@ pub mod registry {
     pub struct MemRegistry;    // фейк для тестов: new/add_key/add_denied_key, без учёта регистра, родители существуют
 }
 
+// Раскрытие targets в находки (§4.5 шаги 1.2–1.4). Sync, один экземпляр на скан.
+pub mod expand {
+    pub const MAX_GLOB_ROOT_MATCHES: usize = 50;
+    pub const TITLE_LABEL_SEPARATOR: &str = " — ";
+    pub struct RuleOutput { pub findings: Vec<Finding>, pub claimed_paths: Vec<PathBuf>, pub issues: Vec<ScanIssue> }
+    pub struct TargetExpander<'a>;
+    impl TargetExpander<'_> {
+        pub fn new(env: &Environment, fs: &dyn FsScanner, registry: &dyn RegistryProbe, resolve: &ResolveContext) -> Self;
+        pub fn expand(&self, rule: &CompiledRule, outcome: ConditionOutcome) -> RuleOutput;
+    }
+}
+
 // Диагностика для CLI (RuleSet::validate_file делегирует сюда).
 pub mod diagnostic {
     pub fn validate_file(path: &Path) -> Vec<RuleDiagnostic>;
@@ -149,22 +161,23 @@ rules:
 ```
 
 **Семантика targets.** Каждый элемент `targets` становится **отдельной** находкой с
-`id = FindingId(target)` (SPEC-02 §2.7). `title` получает суффикс, если target'ов больше одного
-(`title_key` + `target.label_key` при наличии). Evidence каждой находки:
+`id = FindingId(target)` (SPEC-02 §2.7). `title` = `title_key` (или литерал `title`); при >1 target
+и наличии `label_key` у target'а — `"{title_key} — {label_key}"` (разделитель ` — `, константа
+`TITLE_LABEL_SEPARATOR`). Evidence каждой находки:
 `EvidenceSource::Rule { rule_id }`, `confidence` из правила.
 
 Поля target:
 
 | Поле | Тип | Описание |
 |---|---|---|
-| `path` | PathTemplate | Корень. Каталог → `Target::FileSet`, файл → `Target::File`, определяется по `metadata` в рантайме. |
+| `path` | PathTemplate | Корень. Каталог → `Target::FileSet`, файл → `Target::File`, определяется по `metadata` в рантайме. Корень — reparse point (Symlink/Junction/Other): находка создаётся (`FileSet`, если у записи `FILE_ATTRIBUTE_DIRECTORY`, иначе `File`), Measure помечает её `reparse_root` (SPEC-03 §4.3, §5). |
 | `include` / `exclude` | [glob] | Относительно `path`, синтаксис globset, `/` или `\\` допустимы, нормализуются в `/`. |
 | `registry` | {hive, key, recursive} | → `Target::Registry`. `recursive` необязательное, по умолчанию `true`. `hive: hklm` допустим только с `category: system_settings` или `app_config` (§4.4) и помечает `requires_elevation: false` (чтение HKLM доступно), экспорт `reg export` HKLM тоже работает без админа для большинства веток. |
 | `category` / `sensitivity` | override | Переопределение для конкретного target (например, `Cookies` → high). |
 | `optional` | bool | См. FR-04-03. |
 | `label_key` | string | Суффикс заголовка. |
 | `tags` | [string] | Дополнительные теги находок этого target'а, добавляются к `tags` правила. |
-| `glob_root` | bool | Если `true`, `path` может содержать `*` в сегментах (`{APPDATA}\\Mozilla\\Firefox\\Profiles\\*`); каждое совпадение даёт отдельную находку. Глубина `*` не больше 2 сегментов. |
+| `glob_root` | bool | Если `true`, `path` может содержать `*` в сегментах (`{APPDATA}\\Mozilla\\Firefox\\Profiles\\*`); каждое совпадение даёт отдельную находку. Глубина `*` не больше 2 сегментов. `*` — любая (в т.ч. пустая) последовательность символов в пределах сегмента, без учёта регистра; прочие символы буквальны; промежуточное совпадение — каталог, последнее — каталог или файл (облачные заглушки учитываются); каждый уровень — один `read_dir`. При >50 берутся 50 новейших по mtime (без mtime — в конце, при равенстве — по пути), результат сортируется по пути. Reparse point'ы в сегментах `*` не раскрываются и не совпадают. |
 | `from_json` | object | Динамические корни, прочитанные из JSON-конфига программы (§4.2.1). Взаимоисключающее с `path`/`registry`. |
 
 #### 4.2.1 Target `from_json` (динамические пути)
@@ -226,22 +239,24 @@ Obsidian, проекты Unity Hub. Правило с таким target'ом ч�
 | `any_of` | `any_of: [ {exists: ...}, {installed: ...} ]` | OR; `any_of: []` ложно |
 | `process_running` | `process_running: "obs64.exe"` | **Не влияет на создание находки.** Добавляет тег `app-running` → UI/SPEC-10 предупредит «закройте программу перед бэкапом». |
 
-Пустой `conditions` означает «достаточно существования хотя бы одного target'а» (FR-04-03).
+Пустой `conditions` выполнен всегда: правило срабатывает по существованию targets по правилу FR-04-03 (хотя бы один не-`optional` target, а если все `optional` — хотя бы один любой; правило только с `claims` срабатывает сразу).
 
 `process_running` не участвует в AND/OR: правило, где оно единственное условие (или единственный элемент `any_of`), совпадает; в смешанном `any_of` оно игнорируется. `app_running` ставится, только если правило совпало.
 
 ### 4.4 Компиляция и валидация
 1. Парсинг `serde-saphyr` с `deny_unknown_fields` (опечатки ловятся сразу).
-2. Проверки: `schema_version == 1`; если у правила нет `disabled: true`, обязательны `app`, `category`, `title_key` или `title` и непустой `targets` или `claims` (правилу только с отключением, §4.6, достаточно `id`); `id` по regex и уникальность в пределах источника; `PathTemplate::parse` для всех путей (неизвестный токен — ошибка); глобы компилируются; `confidence ∈ [0,1]`; `category: credentials` ⇒ `sensitivity: high` (автоматически повышается с warning); `hive: hklm` ⇒ `category ∈ {system_settings, app_config}`; `*` в `path` только при `glob_root: true`; `installed.display_name_regex` и `file_contains.pattern` (включая вложенные в `any_of`) компилируются крейтом `regex`, ошибка — ошибка валидации правила; `installed: {}` — ошибка; `installed` с `winget` без `display_name_regex` — warning; `file_contains.max_bytes` ≤ 1 MiB.
+2. Проверки: `schema_version == 1`; если у правила нет `disabled: true`, обязательны `app`, `category`, `title_key` или `title` и непустой `targets` или `claims` (правилу только с отключением, §4.6, достаточно `id`); `id` по regex и уникальность в пределах источника; `PathTemplate::parse` для всех путей (неизвестный токен — ошибка); глобы компилируются; `confidence ∈ [0,1]`; `category: credentials` ⇒ `sensitivity: high` (автоматически повышается с warning); `hive: hklm` ⇒ `category ∈ {system_settings, app_config}`; `*` в `path` только при `glob_root: true`; в `claims` `*` допустим без `glob_root`, не больше 2 сегментов с `*` (как у `glob_root`); `installed.display_name_regex` и `file_contains.pattern` (включая вложенные в `any_of`) компилируются крейтом `regex`, ошибка — ошибка валидации правила; `installed: {}` — ошибка; `installed` с `winget` без `display_name_regex` — warning; `file_contains.max_bytes` ≤ 1 MiB.
 3. Результат `CompiledRule { rule, targets: Vec<CompiledTarget { template, include: GlobSet, exclude: GlobSet, ... }> }`.
 4. Слияние источников: builtin → user (по `id`: replace / disable). Итоговый порядок: `priority desc`, затем `id`. Встроенные файлы — один источник: `id` уникален во всех `rules/*.yaml`, иначе `RuleError::DuplicateId` (`builtin()` возвращает первую ошибку). Пользовательские правила проверяются на уникальность внутри файла, между файлами действует §5. `disabled: true` у встроенного правила делает его неактивным. Отключение несуществующего `id` молча игнорируется. Автоисправления (warnings §4.4) в пользовательских файлах не порождают `ScanIssue`. Если встроенные правила не загрузились, `load` продолжает только с пользовательскими и добавляет `ScanIssue::Error issue.rules.builtin_invalid {error}`.
 
 ### 4.5 Алгоритм `RulesCollector::collect`
 1. Для каждого правила (параллельно через rayon, правила независимы):
    1. Проверить `conditions` (кэш результатов `exists`/`installed` в `HashMap` на скан).
-   2. Для каждого target раскрыть шаблон (`resolve`, `glob_root` → `read_dir` по сегментам).
+   2. Для каждого target раскрыть шаблон (`resolve`, `glob_root` → `read_dir` по сегментам). Правило срабатывает по FR-04-03. Корень target'а — reparse point (Symlink/Junction/Other): находка создаётся (`FileSet`, если у записи `FILE_ATTRIBUTE_DIRECTORY`, иначе `File`), Measure помечает её `reparse_root` (SPEC-03 §4.3, §5). В сегментах `*` (`glob_root`, claims) ссылки не раскрываются и не совпадают.
    3. Для каждого существующего пути создать `Finding { target, category, app, title, evidence, sensitivity, tags, default_selected: false /*SPEC-09*/, stats: None }`.
-   4. Добавить корни targets и `claims` (раскрытые) в `claimed_paths`.
+      - Перед созданием находки мульти-значные токены специализируются: `{DRIVE:*}` → `{DRIVE:X}`, `{STEAM_USERID}` → конкретный id3 (стабилен для аккаунта), сегменты `*` `glob_root` → имя совпадения; `FindingId` считается от специализированного шаблона. `{PACKAGE:name}` не специализируется. (SPEC-02 §3.2.)
+      - Поля: `app` из `rule.app`: `source_ids.winget` из `app.winget`, `installed: None`, `process_names` — lowercase имена из `process_running` (включая `any_of`); `evidence.message_args` пусты; `tags` = теги правила + target'а (+`app-running`); `requires_elevation: false`; `notes_key` из правила.
+   4. Добавить корни targets и `claims` (раскрытые) в `claimed_paths`. `claims` добавляются, если выполнены `conditions` (независимо от существования targets); `claims` без `*` не проверяются на существование; `*` раскрывается как в `glob_root` (только существующие пути).
    5. Проверить `process_running` по `Environment.running_processes` (SPEC-02 §3.3, снимок делается один раз в фазе Environment).
 2. Конфликты: если два правила дают одинаковый `FindingId`, остаётся находка от правила с большим `priority`, evidence второго дописывается. Вложенность (правило A — `{APPDATA}\Foo`, правило B — `{APPDATA}\Foo\Bar`) не решается здесь, это задача SPEC-09 §merge.
 3. `Event::Progress { phase: Collect, current: rule_id }` каждые N правил.
@@ -385,11 +400,11 @@ OneDrive, Dropbox, Google Drive, iCloud, Yandex.Disk: локальные кэш�
 | Два пользовательских правила с одинаковым id | Побеждает последнее по алфавиту файлов + `ScanIssue::Warning issue.rules.duplicate_id {rule_id, file, previous_file}`. |
 | Каталог `rules.d` существует, но не читается | Пользовательские правила пропущены, `ScanIssue::Warning issue.rules.user_dir_unreadable {error}`. |
 | Правило ссылается на `{STEAM}`, а Steam не установлен | resolve пустой → находки нет, без issue. |
-| `glob_root` дал > 50 совпадений | Берём первые 50 по mtime desc + warning (защита от патологий). |
+| `glob_root` дал > 50 совпадений | Берём 50 новейших по mtime (без mtime — в конце, при равенстве — по пути), результат сортируется по пути (§4.2, защита от патологий) + `ScanIssue::Warning issue.rules.glob_root_truncated {rule_id, path (шаблон), matches, limit}`, `path` = шаблон. |
 | `from_json`: файл битый, не тот формат или схема программы изменилась (`select` ничего не нашёл) | `ScanIssue::Warning issue.rules.from_json_parse` (с номером строки, если есть) / `Info issue.rules.from_json_empty`. Остальные targets правила работают. |
 | `from_json`: значение указывает на отключённый внешний диск | Путь не существует → пропуск + Info с шаблоном пути («vault на диске E:, диск не подключён»). |
 | Target — файл, а include задан | include игнорируется, warning при валидации. |
-| HKLM/HKCU-ветка без прав на чтение | `registry_exists` = false, `ScanIssue::Info issue.rules.registry_access_denied {rule_id, hive, key}`, один раз на ключ за скан. |
+| HKLM/HKCU-ветка без прав на чтение | `registry_exists` = false, `ScanIssue::Info issue.rules.registry_access_denied {rule_id, hive, key}`, один раз на ключ за скан. То же для `Target::Registry`: target считается отсутствующим + тот же Info; «один раз на ключ за скан» — общий для условий и targets. |
 | Некорректный regex в `display_name_regex`/`file_contains.pattern` (правило не прошло через компиляцию §4.4) | Условие ложно, `ScanIssue::Warning issue.rules.invalid_regex {rule_id, pattern, error}`, один раз на шаблон за скан. |
 | Портативная программа в нестандартной папке (Notepad++ portable) | Не покрывается правилами → SPEC-07. |
 | Путь внутри глобального исключения SPEC-03 (`{PROGRAMFILES_X86}\MSI Afterburner\Profiles`) | Разрешено как явный корень (SPEC-03 §4.5 `explicit_root`). |

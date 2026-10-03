@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-restore` (оркестрация — `sk-engine::RestoreJob`), экран в `app/` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-06, SPEC-10, SPEC-11, SPEC-14 |
 | Используется в | — |
-| Последнее изменение | 2026-10-01 (закрыт вопрос по `environment.drives`: SPEC-02 §6) |
+| Последнее изменение | 2026-10-03 (T-04-05: §4.2 — шаблон содержит конкретный id3 Steam); 2026-10-01 (закрыт вопрос по `environment.drives`: SPEC-02 §6) |
 
 ## 1. Цель
 
@@ -119,7 +119,7 @@ pub async fn rollback_files(log: &RestoreLog, events: EventSink, cancel: Cancell
 
 1. Для каждой `ManifestFinding.target` (шаблон) выполняется `resolve(env)`:
    - одно значение → `target_root`;
-   - много значений (`{STEAM_USERID}` с несколькими пользователями на новой машине) → выбор пользователя в UI (по умолчанию — пользователь с `MostRecent=1` в `loginusers.vdf`, SPEC-05);
+   - Steam: мульти-значный `{STEAM_USERID}` специализирован при скане (SPEC-02 §3.2), шаблон содержит конкретный id3; если на новой машине папки этого id нет, а пользователей Steam несколько — выбор в UI (по умолчанию — пользователь с `MostRecent=1` в `loginusers.vdf`, SPEC-05);
    - пусто → `Unresolved`.
 2. `ManifestEntry.source` (шаблон файла) → абсолютный путь. Относительная часть берётся из `archive_path` после `files/<id>/`, чтобы не зависеть от повторного resolve шаблонов внутри.
 3. Специальные случаи:

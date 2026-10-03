@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-core` |
 | Зависит от | SPEC-00 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-10-02 (§4.1: `Marker::ALL`; §6: `from_env`, `from_json`, `ReportError`, правила снапшота окружения; §2.7: API `FindingId::for_target`, уточнения формулы; §4.2: API `sk-core::privacy`, правила замен, `machine_name`; §3.1–§3.3: синтаксис шаблонов, `Token`, `TemplateError`, правила `resolve`/`from_path`, токены `{STORE_GAME_ID}`/`{GAME_DIR_NAME}` в таблице, `Environment.store_packages` для `{PACKAGE:…}`; §3.3: `Environment::known_folder`, `KnownFolder::ALL/token/from_token`; §3.1, §3.3: OneDrive-корни заполняет `detect()`, `EnvError`, раскладка `fake`, правила для дисков и процессов, состав T-02-05; §5: API `sk-core::path` и `PathSet`; §8, T-02-09: снапшот контракта — TS-декларации вместо JSON Schema, `u64` → `number`; T-02-09: `xtask bindings`, зависит от T-11-01; определены `OsInfo`, `KnownFolder`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `CollectorToggles`, `LlmMode`; обязательные Known Folders; состав и зависимости T-02-01/05/08) |
+| Последнее изменение | 2026-10-03 (T-04-05: §3.2, §2.7 — специализация мульти-значных токенов в шаблоне находки до расчёта `FindingId`); 2026-10-02 (§4.1: `Marker::ALL`; §6: `from_env`, `from_json`, `ReportError`, правила снапшота окружения; §2.7: API `FindingId::for_target`, уточнения формулы; §4.2: API `sk-core::privacy`, правила замен, `machine_name`; §3.1–§3.3: синтаксис шаблонов, `Token`, `TemplateError`, правила `resolve`/`from_path`, токены `{STORE_GAME_ID}`/`{GAME_DIR_NAME}` в таблице, `Environment.store_packages` для `{PACKAGE:…}`; §3.3: `Environment::known_folder`, `KnownFolder::ALL/token/from_token`; §3.1, §3.3: OneDrive-корни заполняет `detect()`, `EnvError`, раскладка `fake`, правила для дисков и процессов, состав T-02-05; §5: API `sk-core::path` и `PathSet`; §8, T-02-09: снапшот контракта — TS-декларации вместо JSON Schema, `u64` → `number`; T-02-09: `xtask bindings`, зависит от T-11-01; определены `OsInfo`, `KnownFolder`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `CollectorToggles`, `LlmMode`; обязательные Known Folders; состав и зависимости T-02-01/05/08) |
 
 ## 1. Цель
 
@@ -165,7 +165,9 @@ pub struct ScanIssue {
 - `SystemExport`: `"sys:" + exporter_id + "|" + canonical_json(params)`
 
 Используем шаблон, а не resolved-путь, поэтому id совпадает на разных машинах и у разных
-пользователей. Это нужно для SPEC-13 (restore) и для сравнения сканов.
+пользователей. Это нужно для SPEC-13 (restore) и для сравнения сканов. Мульти-значные токены
+(`{DRIVE:*}`, `{STEAM_USERID}`, сегменты `*` `glob_root`) в шаблоне находки специализированы до
+расчёта id (§3.2), `{PACKAGE:name}` — нет.
 
 ```rust
 impl FindingId {
@@ -264,6 +266,7 @@ pub struct ResolveContext {
 - `resolve`: декартово произведение значений всех токенов (`{DRIVE:*}` × `{STEAM_USERID}`), порядок — порядок значений в `Environment`/`ResolveContext`. `{DRIVE:*}` — диски `Fixed`.
 - `from_path`: кандидаты — пути `known_folders`, `{ONEDRIVE}`, `{STEAM}` и корни дисков `Environment.drives`; выбирается самый длинный по числу компонентов, при равенстве — в этом порядке. Если результат `{LOCALAPPDATA}\Packages\<name>_<publisherId>\…` (publisherId — 13 символов `[a-z0-9]`), он записывается как `{PACKAGE:name}\…`. Путь вне кандидатов с буквой диска даёт `{DRIVE:X}\…`, иначе (UNC, относительный) — сам путь. Регистр хвоста сохраняется.
 - **Решение по SPEC-05 §9:** плейсхолдеры Ludusavi `<storeGameId>` и `<game>` **не** подставляются строкой до `parse`, а передаются через `ResolveContext`. Так шаблон остаётся стабильным, а `FindingId` не зависит от имени папки установки. В нашем синтаксисе они записываются как `{STORE_GAME_ID}` и `{GAME_DIR_NAME}` (токены, валидные только в контексте игр).
+- **Исключение — специализация мульти-значных токенов в шаблоне находки.** Перед созданием находки мульти-значные токены специализируются: `{DRIVE:*}` → `{DRIVE:X}`, `{STEAM_USERID}` → конкретный id3 (стабилен для аккаунта), сегменты `*` `glob_root` → имя совпадения; `FindingId` (§2.7) считается от специализированного шаблона. `{PACKAGE:name}` не специализируется. Так каждый раскрытый путь даёт свою находку со своим id (SPEC-04 §4.5, SPEC-05). Контекстные значения `{STORE_GAME_ID}` и `{GAME_DIR_NAME}` по-прежнему не подставляются.
 
 ### 3.3 Environment
 
