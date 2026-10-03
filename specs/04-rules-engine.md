@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-rules`, каталог `rules/` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-07 (claimed_paths), SPEC-09, SPEC-11 (редактор правил, P4) |
-| Последнее изменение | 2026-10-03 (уточнения по T-04-01: `tags` у target, `registry.recursive` по умолчанию `true`, `file_contains.pattern` — regex, обязательные поля §4.4; 2026-10-02: T-04-07: ручные проверки критериев SPEC-03 §8; T-04-07: ручная проверка Ctrl+C из SPEC-01 §8; 2026-10-01: YAML: `serde-saphyr` вместо `serde_yaml`; `from_json` в схеме v1) |
+| Последнее изменение | 2026-10-03 (T-04-02: `RuleDiagnostic.severity`, API `compile`/`diagnostic` в §4.1, `hklm` в §4.2 согласован с §4.4; уточнения по T-04-01: `tags` у target, `registry.recursive` по умолчанию `true`, `file_contains.pattern` — regex, обязательные поля §4.4; 2026-10-02: T-04-07: ручные проверки критериев SPEC-03 §8; T-04-07: ручная проверка Ctrl+C из SPEC-01 §8; 2026-10-01: YAML: `serde-saphyr` вместо `serde_yaml`; `from_json` в схеме v1) |
 
 ## 1. Цель
 
@@ -66,7 +66,26 @@ impl RuleSet {
 pub struct RulesCollector { set: Arc<RuleSet> }
 impl Collector for RulesCollector { /* id() = "rules" */ }
 
-pub struct RuleDiagnostic { pub file: PathBuf, pub line: Option<usize>, pub rule_id: Option<String>, pub message: String }
+pub struct RuleDiagnostic { pub file: PathBuf, pub line: Option<usize>, pub rule_id: Option<String>, pub severity: DiagnosticSeverity, pub message: String }
+/// Error — файл невалиден; Warning — автоисправление §4.4 (например, credentials → high), файл валиден.
+pub enum DiagnosticSeverity { Error, Warning }
+
+// Компиляция одного файла правил (§4.4); файл проходит или отклоняется целиком, возвращаются все ошибки.
+pub mod compile {
+    pub fn compile_yaml(text: &str) -> Result<CompiledFile, Vec<RuleError>>;
+    pub fn compile(file: RuleFile) -> Result<CompiledFile, Vec<RuleError>>;
+    pub struct CompiledFile { pub rules: Vec<CompiledRule>, pub warnings: Vec<RuleWarning> }
+    pub struct RuleWarning { /* rule_id, message */ }
+    pub struct CompiledRule { pub rule: Rule, pub targets: Vec<CompiledTarget> }
+    pub struct CompiledTarget { pub root: TargetRoot, /* globs, effective category/sensitivity/tags, optional, label_key */ }
+    pub enum TargetRoot { Path { template: PathTemplate, glob_root: bool }, Registry(..), FromJson(..) }
+}
+
+// Диагностика для CLI (RuleSet::validate_file делегирует сюда).
+pub mod diagnostic {
+    pub fn validate_file(path: &Path) -> Vec<RuleDiagnostic>;
+    pub fn validate_str(file: &Path, text: &str) -> Vec<RuleDiagnostic>;
+}
 
 #[derive(thiserror::Error, Debug)]
 pub enum RuleError { Yaml(serde_saphyr::Error), Invalid { rule_id: String, reason: String }, DuplicateId(String) }
@@ -116,7 +135,7 @@ rules:
 |---|---|---|
 | `path` | PathTemplate | Корень. Каталог → `Target::FileSet`, файл → `Target::File`, определяется по `metadata` в рантайме. |
 | `include` / `exclude` | [glob] | Относительно `path`, синтаксис globset, `/` или `\\` допустимы, нормализуются в `/`. |
-| `registry` | {hive, key, recursive} | → `Target::Registry`. `recursive` необязательное, по умолчанию `true`. `hive: hklm` допустим только с `category: system_settings` и помечает `requires_elevation: false` (чтение HKLM доступно), экспорт `reg export` HKLM тоже работает без админа для большинства веток. |
+| `registry` | {hive, key, recursive} | → `Target::Registry`. `recursive` необязательное, по умолчанию `true`. `hive: hklm` допустим только с `category: system_settings` или `app_config` (§4.4) и помечает `requires_elevation: false` (чтение HKLM доступно), экспорт `reg export` HKLM тоже работает без админа для большинства веток. |
 | `category` / `sensitivity` | override | Переопределение для конкретного target (например, `Cookies` → high). |
 | `optional` | bool | См. FR-04-03. |
 | `label_key` | string | Суффикс заголовка. |
