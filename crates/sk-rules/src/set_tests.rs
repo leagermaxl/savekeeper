@@ -283,3 +283,78 @@ fn validate_file_delegates_to_diagnostic() {
     fs::write(&valid, file_yaml(&[rule_yaml("app.one", 100, "A")])).unwrap();
     assert_eq!(RuleSet::validate_file(&valid), vec![]);
 }
+
+#[test]
+fn parallel_compile_keeps_file_order() {
+    // Every 7th rule has an invalid confidence, every 5th repeats an id.
+    let rules: Vec<String> = (0..60)
+        .map(|i| {
+            let id = if i % 5 == 4 {
+                format!("app.r{}", i - 1)
+            } else {
+                format!("app.r{i}")
+            };
+            let yaml = rule_yaml(&id, 100, "T");
+            if i % 7 == 0 {
+                format!("{yaml}    confidence: 2.0\n")
+            } else {
+                yaml
+            }
+        })
+        .collect();
+    let errors = match crate::compile::compile_yaml(&file_yaml(&rules)) {
+        Ok(_) => panic!("file must be rejected"),
+        Err(errors) => errors,
+    };
+    // Per rule in file order: the duplicate id first, then the rule's own error.
+    let expected: Vec<String> = (0..60)
+        .flat_map(|i| {
+            let mut e = Vec::new();
+            if i % 5 == 4 {
+                e.push(format!("duplicate rule id app.r{}", i - 1));
+            }
+            if i % 7 == 0 {
+                let id = if i % 5 == 4 { i - 1 } else { i };
+                e.push(format!(
+                    "invalid rule app.r{id}: confidence 2 is outside 0..=1"
+                ));
+            }
+            e
+        })
+        .collect();
+    let errors: Vec<String> = errors.iter().map(ToString::to_string).collect();
+    assert_eq!(errors.len(), expected.len());
+    for (error, expected) in errors.iter().zip(&expected) {
+        assert!(error.contains(expected.as_str()), "{error} vs {expected}");
+    }
+
+    let ok_rules: Vec<String> = (0..60)
+        .map(|i| rule_yaml(&format!("app.r{i:02}"), 100, "T"))
+        .collect();
+    let compiled = crate::compile::compile_yaml(&file_yaml(&ok_rules)).unwrap();
+    let ids: Vec<&str> = compiled.rules.iter().map(CompiledRule::id).collect();
+    let expected: Vec<String> = (0..60).map(|i| format!("app.r{i:02}")).collect();
+    assert_eq!(ids, expected);
+}
+
+#[test]
+fn condition_regexes_are_kept_for_the_evaluator() {
+    let text = r"schema_version: 1
+rules:
+  - id: app.one
+    app: { id: app, name: App, kind: application }
+    category: app_config
+    title: T
+    conditions:
+      - any_of:
+          - installed: { display_name_regex: '(?i)^app\b' }
+          - file_contains: { path: '{APPDATA}\App\a.txt', pattern: 'x+' }
+    targets: [ { path: '{APPDATA}\App' } ]
+";
+    let set = builtin_set(&[("a.yaml", text)]);
+    let patterns = |list: Vec<&String>| list.into_iter().cloned().collect::<Vec<_>>();
+    let text_patterns = patterns(set.regexes().text.iter().map(|(p, _)| p).collect());
+    let bytes_patterns = patterns(set.regexes().bytes.iter().map(|(p, _)| p).collect());
+    assert_eq!(text_patterns, [r"(?i)^app\b"]);
+    assert_eq!(bytes_patterns, ["x+"]);
+}

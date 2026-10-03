@@ -5,10 +5,14 @@
 //! resolves per-target overrides. A file is compiled all-or-nothing: any error
 //! rejects the whole file, and every error found is reported. Merging of
 //! sources (builtin → user) is not done here (SPEC-04 §4.4 step 4).
+//!
+//! The rules of a file are compiled in parallel (rayon); results, errors and
+//! warnings keep the file order, so the output does not depend on threads.
 
 use std::collections::HashSet;
 
 use globset::{GlobBuilder, GlobSet, GlobSetBuilder};
+use rayon::prelude::*;
 use sk_core::model::{Category, RegHive, Sensitivity};
 use sk_core::template::PathTemplate;
 
@@ -18,6 +22,7 @@ use crate::schema::{FromJson, RegistryTarget, Rule, RuleFile, RuleTarget, SCHEMA
 #[path = "compile_conditions.rs"]
 mod cond_checks;
 
+pub(crate) use cond_checks::CompiledRegexes;
 pub use cond_checks::MAX_FILE_CONTAINS_BYTES;
 
 /// Most `*` segments in a `glob_root` path (SPEC-04 §4.2).
@@ -108,21 +113,35 @@ pub struct RuleWarning {
 
 /// Parses and compiles a rule file; see [`compile`].
 pub fn compile_yaml(text: &str) -> Result<CompiledFile, Vec<RuleError>> {
-    let file = RuleFile::from_yaml(text).map_err(|e| vec![e])?;
-    compile(file)
+    compile_yaml_keeping_regexes(text).map(|(file, _)| file)
 }
 
 /// Validates and compiles a parsed rule file (SPEC-04 §4.4 step 2–3).
 ///
 /// Returns every error found; a single error rejects the whole file.
 pub fn compile(file: RuleFile) -> Result<CompiledFile, Vec<RuleError>> {
+    compile_keeping_regexes(file).map(|(file, _)| file)
+}
+
+/// [`compile_yaml`] that also returns the regexes compiled for validation.
+pub(crate) fn compile_yaml_keeping_regexes(
+    text: &str,
+) -> Result<(CompiledFile, CompiledRegexes), Vec<RuleError>> {
+    let file = RuleFile::from_yaml(text).map_err(|e| vec![e])?;
+    compile_keeping_regexes(file)
+}
+
+fn compile_keeping_regexes(
+    file: RuleFile,
+) -> Result<(CompiledFile, CompiledRegexes), Vec<RuleError>> {
     let mut out = Compilation::default();
     compile_into(file, &mut out);
     if out.errors.is_empty() {
-        Ok(CompiledFile {
+        let file = CompiledFile {
             rules: out.rules,
             warnings: out.warnings.into_iter().map(|(_, w)| w).collect(),
-        })
+        };
+        Ok((file, out.regexes))
     } else {
         Err(out.errors.into_iter().map(|(_, e)| e).collect())
     }
@@ -135,6 +154,8 @@ pub(crate) struct Compilation {
     pub(crate) rules: Vec<CompiledRule>,
     pub(crate) errors: Vec<(Option<usize>, RuleError)>,
     pub(crate) warnings: Vec<(Option<usize>, RuleWarning)>,
+    /// Regexes of the conditions of the compiled rules.
+    pub(crate) regexes: CompiledRegexes,
 }
 
 pub(crate) fn compile_into(file: RuleFile, out: &mut Compilation) {
@@ -152,23 +173,38 @@ pub(crate) fn compile_into(file: RuleFile, out: &mut Compilation) {
         return;
     }
     let mut seen = HashSet::new();
-    for (index, rule) in file.rules.into_iter().enumerate() {
-        if !seen.insert(rule.id.clone()) {
+    let duplicate: Vec<bool> = file
+        .rules
+        .iter()
+        .map(|rule| !seen.insert(rule.id.as_str()))
+        .collect();
+    // Rules are independent; `collect` keeps the file order.
+    let compiled: Vec<(RuleCtx, Option<CompiledRule>)> = file
+        .rules
+        .into_par_iter()
+        .map(|rule| {
+            let mut ctx = RuleCtx {
+                id: rule.id.clone(),
+                errors: Vec::new(),
+                warnings: Vec::new(),
+                regexes: CompiledRegexes::default(),
+            };
+            let compiled = compile_rule(rule, &mut ctx);
+            (ctx, compiled)
+        })
+        .collect();
+    for (index, ((ctx, compiled), duplicate)) in compiled.into_iter().zip(duplicate).enumerate() {
+        if duplicate {
             out.errors
-                .push((Some(index), RuleError::DuplicateId(rule.id.clone())));
+                .push((Some(index), RuleError::DuplicateId(ctx.id.clone())));
         }
-        let mut ctx = RuleCtx {
-            id: rule.id.clone(),
-            errors: Vec::new(),
-            warnings: Vec::new(),
-        };
-        let compiled = compile_rule(rule, &mut ctx);
         out.errors
             .extend(ctx.errors.into_iter().map(|e| (Some(index), e)));
         out.warnings
             .extend(ctx.warnings.into_iter().map(|w| (Some(index), w)));
         if let Some(compiled) = compiled {
             out.rules.push(compiled);
+            out.regexes.extend(ctx.regexes);
         }
     }
 }
@@ -178,6 +214,8 @@ struct RuleCtx {
     id: String,
     errors: Vec<RuleError>,
     warnings: Vec<RuleWarning>,
+    /// Regexes compiled by the condition checks.
+    regexes: CompiledRegexes,
 }
 
 impl RuleCtx {
@@ -397,6 +435,10 @@ fn normalize_globs(globs: &[String]) -> Vec<String> {
 /// Compiles globs the way `sk-scan` matches them: case-insensitive, `*` does
 /// not cross `/`.
 fn glob_set(globs: &[String], at: &str, ctx: &mut RuleCtx) -> Option<GlobSet> {
+    if globs.is_empty() {
+        // Most targets have no include or exclude; skip building a matcher.
+        return Some(GlobSet::empty());
+    }
     let mut builder = GlobSetBuilder::new();
     let mut ok = true;
     for pattern in globs {

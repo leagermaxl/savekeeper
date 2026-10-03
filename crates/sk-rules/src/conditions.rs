@@ -20,6 +20,7 @@ use sk_core::model::{RegHive, ScanIssue};
 use sk_core::registry::{normalize_key, KeyState, RegistryReader};
 use sk_core::template::{PathTemplate, ResolveContext};
 
+use crate::compile::CompiledRegexes;
 use crate::once::OnceIssues;
 use crate::schema::{Condition, FileContainsCondition, InstalledCondition, RegistryKey, Rule};
 
@@ -93,6 +94,20 @@ impl<'a> ConditionEvaluator<'a> {
             cache: Mutex::new(Cache::default()),
             issues: Mutex::new(Vec::new()),
         }
+    }
+
+    /// Seeds the regex cache with the regexes compiled while loading the
+    /// rules, so they are not compiled again. Patterns not seeded are still
+    /// compiled on first use.
+    pub(crate) fn with_regexes(mut self, regexes: &CompiledRegexes) -> Self {
+        let cache = self.cache.get_mut().unwrap_or_else(PoisonError::into_inner);
+        for (pattern, re) in &regexes.text {
+            cache.text_regex.insert(pattern.clone(), Ok(re.clone()));
+        }
+        for (pattern, re) in &regexes.bytes {
+            cache.bytes_regex.insert(pattern.clone(), Ok(re.clone()));
+        }
+        self
     }
 
     /// Evaluates the `conditions` of `rule`.

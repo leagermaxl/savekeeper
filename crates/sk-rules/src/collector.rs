@@ -124,6 +124,7 @@ pub(crate) fn run(
     // Once-per-scan issues name the earliest rule of the set that met them,
     // whatever thread got there first.
     let evaluator = ConditionEvaluator::new(env, fs, registry, &resolve)
+        .with_regexes(set.regexes())
         .rank_rules(set.rules().iter().map(CompiledRule::id));
     let expander = TargetExpander::from_evaluator(&evaluator);
     let sink = ThrottledSink::new(events.clone());

@@ -22,11 +22,17 @@ thiserror.workspace = true
 tokio = { workspace = true, features = ["rt"] }
 
 [dev-dependencies]
+criterion.workspace = true
 insta.workspace = true
 sk-scan.workspace = true
 sk-testkit.workspace = true
 tempfile.workspace = true
 tokio = { workspace = true, features = ["macros", "rt"] }
+
+# Manual benchmark (SPEC-04 §6, NFR-04-01): `cargo bench -p sk-rules --bench rules`.
+[[bench]]
+name = "rules"
+harness = false
 
 [lints]
 workspace = true

@@ -5,15 +5,19 @@
 //! user rules are `*.yaml`/`*.yml` files in `savekeeper-data/rules.d/`. Both
 //! are loaded in alphabetical file order. A user rule replaces the built-in
 //! rule with the same id; a user rule with `disabled: true` removes it.
+//!
+//! Files are read and compiled in parallel (rayon) and then merged one by
+//! one in file order, so the result and the issues do not depend on threads.
 
 use std::collections::{BTreeMap, HashMap};
 use std::io;
 use std::path::{Path, PathBuf};
 
 use include_dir::{include_dir, Dir};
+use rayon::prelude::*;
 use sk_core::model::{IssueSeverity, ScanIssue};
 
-use crate::compile::{compile_yaml, CompiledRule};
+use crate::compile::{compile_yaml_keeping_regexes, CompiledFile, CompiledRegexes, CompiledRule};
 use crate::diagnostic::{self, DiagnosticSeverity, RuleDiagnostic};
 use crate::error::RuleError;
 
@@ -68,6 +72,8 @@ pub struct RuleSet {
     sources: Vec<RuleSource>,
     /// Rule id → index in `rules`.
     index: HashMap<String, usize>,
+    /// Condition regexes compiled while loading, reused by the evaluator.
+    regexes: CompiledRegexes,
 }
 
 impl RuleSet {
@@ -134,6 +140,11 @@ impl RuleSet {
         &self.rules
     }
 
+    /// Condition regexes compiled while loading the rules.
+    pub(crate) fn regexes(&self) -> &CompiledRegexes {
+        &self.regexes
+    }
+
     /// A set of compiled rules merged as one built-in source, for tests.
     #[cfg(test)]
     pub(crate) fn from_rules(rules: Vec<CompiledRule>) -> Self {
@@ -193,14 +204,24 @@ struct Entry {
 #[derive(Default)]
 struct Merger {
     entries: BTreeMap<String, Entry>,
+    regexes: CompiledRegexes,
 }
+
+/// A compiled user file, or the issue that skips it.
+type UserFile = Result<(CompiledFile, CompiledRegexes), ScanIssue>;
 
 impl Merger {
     /// Adds built-in files all-or-nothing: on error nothing is added.
     fn add_builtin(&mut self, files: &[(&str, &str)]) -> Result<(), RuleError> {
+        let compiled: Vec<_> = files
+            .par_iter()
+            .map(|(_, text)| compile_yaml_keeping_regexes(text))
+            .collect();
         let mut added: BTreeMap<String, Entry> = BTreeMap::new();
-        for (name, text) in files {
-            let compiled = compile_yaml(text).map_err(first_error)?;
+        let mut regexes = CompiledRegexes::default();
+        for ((name, _), compiled) in files.iter().zip(compiled) {
+            let (compiled, file_regexes) = compiled.map_err(first_error)?;
+            regexes.extend(file_regexes);
             for rule in compiled.rules {
                 let id = rule.id().to_owned();
                 if added.contains_key(&id) || self.entries.contains_key(&id) {
@@ -216,6 +237,7 @@ impl Merger {
             }
         }
         self.entries.extend(added);
+        self.regexes.extend(regexes);
         Ok(())
     }
 
@@ -232,32 +254,23 @@ impl Merger {
                 return;
             }
         };
-        for path in files {
-            self.add_user_file(&path, issues);
+        let loaded: Vec<UserFile> = files.par_iter().map(|path| load_user_file(path)).collect();
+        for (path, loaded) in files.iter().zip(loaded) {
+            self.add_user_file(path, loaded, issues);
         }
     }
 
-    /// Adds one user file, or skips it whole with a `Warning` issue.
-    fn add_user_file(&mut self, path: &Path, issues: &mut Vec<ScanIssue>) {
+    /// Adds one loaded user file, or skips it whole with its `Warning` issue.
+    fn add_user_file(&mut self, path: &Path, loaded: UserFile, issues: &mut Vec<ScanIssue>) {
+        let (compiled, regexes) = match loaded {
+            Ok(loaded) => loaded,
+            Err(skipped) => {
+                issues.push(skipped);
+                return;
+            }
+        };
+        self.regexes.extend(regexes);
         let name = file_name(path);
-        let text = match std::fs::read_to_string(path) {
-            Ok(text) => text,
-            Err(err) => {
-                let args = [
-                    ("file", name),
-                    ("error", format!("cannot read file: {err}")),
-                ];
-                issues.push(issue(IssueSeverity::Warning, ISSUE_INVALID_FILE, args));
-                return;
-            }
-        };
-        let compiled = match compile_yaml(&text) {
-            Ok(compiled) => compiled,
-            Err(errors) => {
-                issues.push(invalid_file_issue(path, &text, name, &errors));
-                return;
-            }
-        };
         for rule in compiled.rules {
             let id = rule.id().to_owned();
             if let Some(previous) = self.entries.get(&id) {
@@ -303,8 +316,27 @@ impl Merger {
             rules,
             sources,
             index,
+            regexes: self.regexes,
         }
     }
+}
+
+/// Reads and compiles one user file; a file that cannot be read or is
+/// invalid gives the `Warning` issue that skips it.
+fn load_user_file(path: &Path) -> UserFile {
+    let name = file_name(path);
+    let text = match std::fs::read_to_string(path) {
+        Ok(text) => text,
+        Err(err) => {
+            let args = [
+                ("file", name),
+                ("error", format!("cannot read file: {err}")),
+            ];
+            return Err(issue(IssueSeverity::Warning, ISSUE_INVALID_FILE, args));
+        }
+    };
+    compile_yaml_keeping_regexes(&text)
+        .map_err(|errors| invalid_file_issue(path, &text, name, &errors))
 }
 
 /// Rule files directly in `dir`, in alphabetical order; empty when `dir`
