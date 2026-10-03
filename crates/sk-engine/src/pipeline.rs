@@ -19,12 +19,14 @@ use sk_core::model::{
 use sk_core::path::PathSet;
 use sk_core::template::PathTemplate;
 use sk_core::CancellationToken;
+use sk_rules::RegistryProbe;
 use sk_scan::{measure_all, ExcludeSet, MeasureOptions, RealFs};
 use time::OffsetDateTime;
 use tokio::task::{JoinError, JoinSet};
 use uuid::Uuid;
 
 use crate::reports;
+use crate::rules::{BuiltinRules, RULES_ID};
 
 /// What to scan.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -48,11 +50,14 @@ pub struct ScanPipeline {
     scanner: Option<Arc<dyn FsScanner>>,
     environment: Option<Environment>,
     scans_dir: Option<PathBuf>,
+    /// The `rules` collector, loaded anew for each run.
+    rules: BuiltinRules,
     app_version: String,
 }
 
 impl ScanPipeline {
-    /// A pipeline with the built-in collectors for `config` (none yet in P0).
+    /// A pipeline with the built-in collectors for `config`: `rules`
+    /// (SPEC-04), with the built-in rules only until [`Self::with_rules_dir`].
     pub fn new(config: Arc<Config>) -> Self {
         Self {
             config,
@@ -61,12 +66,17 @@ impl ScanPipeline {
             scanner: None,
             environment: None,
             scans_dir: None,
+            rules: BuiltinRules::default(),
             app_version: env!("CARGO_PKG_VERSION").to_owned(),
         }
     }
 
-    /// Adds a collector.
+    /// Adds a collector. A collector with the id `rules` replaces the
+    /// built-in rules collector.
     pub fn with_collector(mut self, collector: Arc<dyn Collector>) -> Self {
+        if collector.id() == RULES_ID {
+            self.rules.enabled = false;
+        }
         self.collectors.push(collector);
         self
     }
@@ -92,6 +102,19 @@ impl ScanPipeline {
     /// Saves reports to `dir` (`DataDir::scans`).
     pub fn with_scans_dir(mut self, dir: PathBuf) -> Self {
         self.scans_dir = Some(dir);
+        self
+    }
+
+    /// Loads the user rules from `dir` (`DataDir::rules`) at the start of
+    /// each run, besides the built-in ones.
+    pub fn with_rules_dir(mut self, dir: PathBuf) -> Self {
+        self.rules.dir = Some(dir);
+        self
+    }
+
+    /// Replaces the registry the rules probe (`MemRegistry` in tests).
+    pub fn with_rules_registry(mut self, registry: Arc<dyn RegistryProbe>) -> Self {
+        self.rules.registry = Some(registry);
         self
     }
 
@@ -167,17 +190,38 @@ impl ScanPipeline {
     }
 
     /// Collectors in parallel tasks; dropping the future (cancellation) aborts them.
+    /// The rules are loaded first; their load issues come before the outcomes.
     async fn collect(&self, ctx: &CollectContext, toggles: &CollectorToggles) -> Vec<Outcome> {
+        let mut outcomes = Vec::new();
+        let mut collectors: Vec<Arc<dyn Collector>> = Vec::new();
+        if self.rules.enabled && enabled(toggles, RULES_ID) {
+            match self.rules.load().await {
+                Ok((collector, issues)) => {
+                    collectors.push(collector);
+                    if !issues.is_empty() {
+                        outcomes.push(Outcome::Output(CollectOutput {
+                            issues,
+                            ..CollectOutput::default()
+                        }));
+                    }
+                }
+                Err(error) => outcomes.extend(Outcome::from_join(RULES_ID, &error)),
+            }
+        }
+        collectors.extend(
+            self.collectors
+                .iter()
+                .filter(|c| enabled(toggles, c.id()))
+                .cloned(),
+        );
         let mut tasks = JoinSet::new();
         let mut ids = HashMap::new();
-        for collector in self.collectors.iter().filter(|c| enabled(toggles, c.id())) {
-            let collector = Arc::clone(collector);
+        for collector in collectors {
             let ctx = ctx.clone();
             let id = collector.id();
             let handle = tasks.spawn(async move { collector.collect(&ctx).await });
             ids.insert(handle.id(), id);
         }
-        let mut outcomes = Vec::new();
         let name = |task| ids.get(&task).copied().unwrap_or("unknown");
         while let Some(joined) = tasks.join_next_with_id().await {
             let outcome = match joined {

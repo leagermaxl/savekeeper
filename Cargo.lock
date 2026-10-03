@@ -2028,6 +2028,7 @@ dependencies = [
  "async-trait",
  "serde_json",
  "sk-core",
+ "sk-rules",
  "sk-scan",
  "tempfile",
  "time",
