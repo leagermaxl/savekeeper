@@ -53,5 +53,12 @@ wiremock.workspace = true
 name = "manifest"
 harness = false
 
+# Manual acceptance benchmark (SPEC-05 §8, NFR-05-01..03) on the embedded snapshot:
+# `cargo bench -p sk-games --bench games`.
+[[bench]]
+name = "games"
+harness = false
+required-features = ["embedded-manifest"]
+
 [lints]
 workspace = true
