@@ -5,6 +5,8 @@ mod error;
 pub mod launchers;
 pub mod manifest;
 mod store;
+mod translate;
+mod when;
 
 pub use error::GamesError;
 pub use launchers::{

@@ -2837,6 +2837,7 @@ name = "sk-games"
 version = "0.1.0"
 dependencies = [
  "criterion",
+ "globset",
  "keyvalues-parser",
  "postcard",
  "reqwest",

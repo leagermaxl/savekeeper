@@ -30,6 +30,8 @@ zstd.workspace = true
 
 [dev-dependencies]
 criterion.workspace = true
+# Checks that translated include globs compile and match like `sk-scan` (SPEC-05 §4.3).
+globset.workspace = true
 sk-scan.workspace = true
 tempfile.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "time"] }

@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-games` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-04 (токены `{STEAM}`, `{STEAM_USERID}`), SPEC-07, SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-03 (T-05-05: `enrich_with_registry` в §4.1; T-05-04: условие обнаружения EA, тексты ключей games в T-05-09, детекторы Epic/GOG/Ubisoft/EA/Battle.net/Xbox в §4.1 и §4.4, находки лаунчеров, issue `launcher_file_unreadable` в §5; T-05-02: FR-05-11 ресурс снапшота, варианты `GamesError`, детали `ManifestStore` в §4.1, ключи issue манифеста в §5, встроенный снапшот из `third_party/ludusavi`; T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.1: реестр из sk-core, T-05-04 и T-05-09 зависят от T-02-10; T-05-03: detect_with_issues, SteamDetector, RegistryReader, детали Steam §4.4, ключи issue §5; T-05-01: API разбора манифеста, конкретные типы, параллельный разбор, бенч; §5: манифест с 0 игр; T-04-05: специализация `{STEAM_USERID}` в шаблоне находки, §4.7, §5); 2026-10-02 (§6: пути фикстур `fixtures/samples/...` и 20 игр, как в SPEC-12 §4.3; 2026-10-01: §4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
+| Последнее изменение | 2026-10-03 (T-05-06: `GameCtx`, глобы, `<home>/AppData`, `Saved Games` и причины пропуска в §4.3, соответствие store → лаунчер в FR-05-05; T-05-05: `enrich_with_registry` в §4.1; T-05-04: условие обнаружения EA, тексты ключей games в T-05-09, детекторы Epic/GOG/Ubisoft/EA/Battle.net/Xbox в §4.1 и §4.4, находки лаунчеров, issue `launcher_file_unreadable` в §5; T-05-02: FR-05-11 ресурс снапшота, варианты `GamesError`, детали `ManifestStore` в §4.1, ключи issue манифеста в §5, встроенный снапшот из `third_party/ludusavi`; T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.1: реестр из sk-core, T-05-04 и T-05-09 зависят от T-02-10; T-05-03: detect_with_issues, SteamDetector, RegistryReader, детали Steam §4.4, ключи issue §5; T-05-01: API разбора манифеста, конкретные типы, параллельный разбор, бенч; §5: манифест с 0 игр; T-04-05: специализация `{STEAM_USERID}` в шаблоне находки, §4.7, §5); 2026-10-02 (§6: пути фикстур `fixtures/samples/...` и 20 игр, как в SPEC-12 §4.3; 2026-10-01: §4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
 
 ## 1. Цель
 
@@ -40,7 +40,7 @@
 - **FR-05-02** — При недоступности сети используется кэш. Если кэша нет, используется встроенный снапшот (`include_bytes!` сжатого zstd манифеста). Версия и дата снапшота видны в UI и отчёте.
 - **FR-05-03** — Для установленных игр (обнаруженных лаунчерами) проверяются все их записи, включая `<base>`/`<game>`/`<storeUserId>`.
 - **FR-05-04** — Для остальных игр манифеста проверяются только записи, которые раскрываются без `<base>`/`<game>`/`<storeGameId>` (сохранения в AppData/Documents остаются после удаления игры, и это частый сценарий). Проверка идёт через индекс §4.6, не перебором.
-- **FR-05-05** — Учитываются только записи `when` без ограничений или с `os: windows`. `store` в `when` учитывается, если соответствующий лаунчер есть, либо store не указан.
+- **FR-05-05** — Учитываются только записи `when` без ограничений или с `os: windows`. `store` в `when` учитывается, если соответствующий лаунчер есть, либо store не указан. Соответствие store → лаунчер: steam→steam, epic→epic, gog/gogGalaxy→gog, ea/origin→ea, uplay→ubisoft, microsoft→xbox; prime, heroic, legendary, lutris, other и неизвестные — лаунчера нет, условие не выполняется. `os` кроме `windows` (в т.ч. `dos`) — не выполняется.
 - **FR-05-06** — Теги Ludusavi `save` → `Category::GameSave`, `config` → `Category::GameConfig`. Без тегов → `GameSave` с confidence 0.7.
 - **FR-05-07** — Реестровые записи манифеста (`registry:`) → `Target::Registry` (только HKCU. HKLM → issue Info, не сохраняем).
 - **FR-05-08** — Если у игры в манифесте `cloud: { steam: true, ... }`, у находки тег `cloud-steam` (и т.п.). **Находка всё равно создаётся**: облако бывает выключено или неполно. SPEC-09 учитывает это в скоринге.
@@ -175,12 +175,18 @@ Serde-модель: `GameEntry { files: BTreeMap<String, FileRule>, registry: BT
 | `<osUserName>` | `Environment.user_name` | подставляется строкой |
 | `<xdgData>`, `<xdgConfig>`, `<regHkcu>`, `<regHklm>` | не поддерживаются | запись пропускается |
 
-Пути манифеста используют `/`, мы нормализуем в `\`. Звёздочки (`*`, `**`) в пути:
-статическая часть до первого `*` → корень `Target::FileSet.root`, остаток → `include`-glob.
+Пути манифеста используют `/` (и иногда `\`), мы нормализуем в `\`. `<home>/AppData/Roaming|Local|LocalLow/…` → `{APPDATA}|{LOCALAPPDATA}|{LOCALLOW}\…`, `<home>/Saved Games/…` → `{SAVED_GAMES}\…` (без учёта регистра), чтобы якоря §4.6 и FindingId совпадали с правилами SPEC-04.
+
+Глоб-символы Ludusavi (`*`, `**`, `?`, класс `[…]`; `[` без `]` — текст) в пути:
+статическая часть до первого сегмента с глоб-символом → корень `Target::FileSet.root`, остаток через `/` → один `include`-glob. В include `{`, `}` экранируются (`[{]`, `[}]`), значения `<game>`/`<storeGameId>`/`<osUserName>` подставляются экранированным текстом (токены-значения внутри include не допускаются), `<storeUserId>` → `*`.
 Пример: `<winDocuments>/My Games/Skyrim/Saves/*.ess` → root `{DOCUMENTS}\My Games\Skyrim\Saves`, include `["*.ess"]`.
 Если путь без `*` указывает на файл → `Target::File`.
 
-Функция: `fn translate(path: &str, ctx: &GameCtx) -> Option<(PathTemplate, Vec<String> /*include*/)>`.
+Функция (crate-private): `translate(path, ctx: &GameCtx) -> Option<(PathTemplate, Vec<String> /*include*/)>`.
+`GameCtx { game_dir: Option<PathBuf>, launcher: Option<String> /* id лаунчера игры */, root: Option<PathTemplate> /* <root>, напр. {STEAM} */, store_user_ids: Vec<String> /* id3 и id64 */, store_game_id: Option<String>, os_user_name: Option<String> }`; `GameCtx::resolve_context()` даёт `ResolveContext` (`game_dir_name` = `game_dir.file_name()`). `GameCtx::default()` — неустановленная игра. `root` — шаблон, а не путь, чтобы FindingId не зависел от машины.
+`None` (запись пропускается): неподдерживаемый/неизвестный плейсхолдер; путь не с корневого плейсхолдера, `<root>` или буквы диска `X:`; корневой плейсхолдер не первым сегментом; сегменты `.`/`..`; отсутствующее в ctx значение (`<base>`/`<game>` без `game_dir`, `<root>`, `<storeGameId>`, `<osUserName>`); текст, похожий на токен (`{APPDATA}` в имени); невалидный шаблон.
+
+Фильтр `when` (FR-05-05, crate-private `when_applies(&[When], &[LauncherInfo]) -> bool`).
 
 ### 4.4 Детект лаунчеров
 
@@ -283,7 +289,7 @@ Issue Steam: reason ∈ not_found, access_denied, locked, too_large, cloud_only,
 - [x] **T-05-03** — Детектор Steam (VDF, ACF, userdata, loginusers) + токены `{STEAM}`, `{STEAM_USERID}` в `PathTemplate::resolve`. *Зависит:* T-03-06, T-02-03.
 - [x] **T-05-04** — Детекторы Epic, GOG (реестр), Ubisoft, EA, Battle.net (Uninstall), Xbox (`wgs`-находка). *Зависит:* T-05-03, T-02-10.
 - [x] **T-05-05** — `enrich(env, fs)` (возвращает issues детекторов: `pub fn enrich(env: &mut Environment, fs: &dyn FsScanner) -> Vec<ScanIssue>`, §4.1) и интеграция в фазу Environment `sk-engine`. *Зависит:* T-05-04, T-01-06.
-- [ ] **T-05-06** — `translate` + фильтр `when` + `{GAME_DIR}`. *Зависит:* T-05-01, T-02-03.
+- [x] **T-05-06** — `translate` + фильтр `when` + `{GAME_DIR}`. *Зависит:* T-05-01, T-02-03.
 - [ ] **T-05-07** — Сопоставление установленных игр с манифестом (§4.5). *Зависит:* T-05-05, T-05-06.
 - [ ] **T-05-08** — Индекс якорей для неустановленных игр (§4.6). *Зависит:* T-05-06. *Готово, когда:* тест на счётчик `exists`.
 - [ ] **T-05-09** — `GamesCollector` (§4.7): группировка, реестр, cloud-теги, claimed_paths, Reinstallable-находки каталогов, находки лаунчеров (§4.4); ru/en тексты всех ключей `issue.games.*`, `evidence.games.*`, `games.*` (формат ресурсов как в SPEC-04 T-04-11) с тестом покрытия ключей. *Зависит:* T-05-07, T-05-08, T-01-03, T-02-10.
