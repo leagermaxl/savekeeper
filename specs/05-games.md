@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-games` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-04 (токены `{STEAM}`, `{STEAM_USERID}`), SPEC-07, SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-03 (T-05-01: API разбора манифеста, конкретные типы, параллельный разбор, бенч; §5: манифест с 0 игр; T-04-05: специализация `{STEAM_USERID}` в шаблоне находки, §4.7, §5); 2026-10-02 (§6: пути фикстур `fixtures/samples/...` и 20 игр, как в SPEC-12 §4.3; 2026-10-01: §4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
+| Последнее изменение | 2026-10-03 (T-05-03: detect_with_issues, SteamDetector, RegistryReader, детали Steam §4.4, ключи issue §5; T-05-01: API разбора манифеста, конкретные типы, параллельный разбор, бенч; §5: манифест с 0 игр; T-04-05: специализация `{STEAM_USERID}` в шаблоне находки, §4.7, §5); 2026-10-02 (§6: пути фикстур `fixtures/samples/...` и 20 игр, как в SPEC-12 §4.3; 2026-10-01: §4.3: `<game>`, `<storeGameId>` → токены по SPEC-02 §3.2; решение по лицензии манифеста) |
 
 ## 1. Цель
 
@@ -79,10 +79,18 @@ pub enum UpdateOutcome { NotModified, Updated { games: usize }, Failed { reason:
 pub trait LauncherDetector: Send + Sync {
     fn id(&self) -> &'static str;                               // "steam", "epic", "gog", "ubisoft", "ea", "battlenet", "xbox"
     fn detect(&self, fs: &dyn FsScanner, env: &Environment) -> Option<LauncherInfo>;
+    fn detect_with_issues(&self, fs: &dyn FsScanner, env: &Environment) -> (Option<LauncherInfo>, Vec<ScanIssue>); // detect + проблемы по пути (ScanIssue::Info, source "games.<id>", §4.4); по умолчанию (self.detect(..), vec![])
 }
-pub fn enrich(env: &mut Environment, fs: &dyn FsScanner);        // вызывает все детекторы (SPEC-02 §3.3)
+pub struct SteamDetector;                                       // new() — системный реестр; with_registry(Arc<dyn RegistryReader>) — тесты
+pub const STEAM_ID64_BASE: u64 = 76_561_197_960_265_728;
+pub fn enrich(env: &mut Environment, fs: &dyn FsScanner) -> Vec<ScanIssue>; // вызывает все детекторы (SPEC-02 §3.3), возвращает их issues
 
-// Типы для Environment.launchers (определяются здесь, реэкспортируются из sk-core — см. §9)
+// Чтение реестра
+pub trait RegistryReader: Send + Sync { fn string_value(&self, hive: RegHive, key: &str, name: &str) -> Option<String>; } // REG_SZ/REG_EXPAND_SZ, иначе None; только KEY_READ (будет перенесён в sk-core, SPEC-02 T-02-10)
+pub struct SystemRegistry;                                      // вне Windows значений нет
+pub struct MemRegistry;                                         // new(), set_string(); имена без учёта регистра
+
+// Типы для Environment.launchers (определены в `sk-core::env`, SPEC-02 §3.3; `sk-games` их реэкспортирует)
 pub struct LauncherInfo {
     pub id: String,
     pub root: Option<PathBuf>,
@@ -169,6 +177,8 @@ Serde-модель: `GameEntry { files: BTreeMap<String, FileRule>, registry: BT
 | **Battle.net** | `{PROGRAMDATA}\Battle.net\Agent\product.db` (protobuf) — MVP: только `HKLM\...\Uninstall\*` с Publisher «Blizzard Entertainment» | | — | Сохранения в облаке, конфиги в `{DOCUMENTS}` — из манифеста |
 | **Xbox / MS Store** | `{LOCALAPPDATA}\Packages\*` с `SystemAppData\wgs` | — | — | **Сохранения `wgs` хранятся в облаке и зашифрованы по контейнерам.** Создаём находку `xbox.wgs` (`game_save`, confidence 0.5, note «обычно синхронизируются через Xbox Cloud»), без расшифровки |
 
+Steam, детали: корень — первый существующий каталог (или junction/symlink на каталог) из `SteamPath` (`/`→`\`) и `{PROGRAMFILES_X86}\Steam`; нет — лаунчер не найден, без issue. Библиотеки: корень первым, затем пути `libraryfolders.vdf` по возрастанию числового ключа (формат `"N" { "path" "…" }` и старый `"N" "…"`), повторы без учёта регистра отбрасываются; неосновная библиотека на диске, которого нет в `Environment.drives`, пропускается без обращения к ФС; относительные пути библиотек пропускаются. Игры: `appmanifest_<цифры>.acf`; `appid` из файла, иначе из имени файла; `name`, иначе `installdir`; `installdir` — одно имя каталога (не пустое, не `.`/`..`, без `\`, `/`, `:`), иначе файл отбрасывается; один `appid` в нескольких библиотеках — берётся первая. Пользователи: подкаталоги `userdata` с каноническим десятичным именем u32, по возрастанию, `StoreUser { id: id3, alt_id: Some(id64), name: PersonaName }` (`AccountName` не читается). Лимиты: `.vdf` ≤ 4 МиБ, `.acf` ≤ 1 МиБ, вложенность `{` > 64 — файл невалиден.
+
 Результат детекторов → `Environment.launchers`. Ошибки детектора → `ScanIssue::Info` с `source: "games.<launcher>"`.
 
 ### 4.5 Сопоставление установленных игр с манифестом
@@ -211,14 +221,17 @@ Serde-модель: `GameEntry { files: BTreeMap<String, FileRule>, registry: BT
 | Скачанный манифест не парсится | Не заменяем кэш, используем предыдущий, Warning. |
 | Манифест разобран, но 0 игр (пустой/обрезанный ответ) | Как «не парсится»: кэш не заменяем, Warning (T-05-02). |
 | Частично скачанный файл | Пишем во временный `*.tmp`, атомарный rename после успешного парсинга. |
-| Steam установлен, но `libraryfolders.vdf` отсутствует или битый | Только основная библиотека `<root>\steamapps`. Info. |
-| Библиотека Steam на отключённом диске | Пропуск, Info с буквой диска. |
+| Steam установлен, но `libraryfolders.vdf` отсутствует или битый | Только основная библиотека `<root>\steamapps`. Info `issue.games.steam_libraryfolders_unreadable`. |
+| Библиотека Steam на отключённом диске | Пропуск без обращения к ФС, `issue.games.steam_library_unavailable` { reason: drive_missing, drive: <буква> }; каталог библиотеки на имеющемся диске не читается — тот же ключ, reason по ошибке ФС; нет `steamapps` у основной библиотеки — не проблема. |
+| `appmanifest_*.acf` не читается/битый/недопустимый `installdir` | Игра пропускается, `issue.games.steam_appmanifest_unreadable` { reason }. |
 | Несколько Steam-аккаунтов | `{STEAM_USERID}` раскрывается во все; в шаблоне каждой находки токен специализирован в конкретный id3 (§4.7, SPEC-02 §3.2), `FindingId` — от специализированного шаблона. Title получает суффикс имени аккаунта из `loginusers.vdf`. |
 | Сохранения внутри каталога игры (`<base>/saves`) | Находка `game_save` внутри `Reinstallable`-находки каталога. SPEC-09 merge не должен поглотить её родителем (правило «Reinstallable не поглощает»). |
 | Одинаковый путь у двух игр (общий движок, `<winDocuments>/My Games`) | Один FindingId → одна находка, два Evidence и `AppRef` первой игры + тег `multi-game`. |
 | Огромные сохранения (> 2 ГБ: симуляторы, Minecraft-миры) | Создаём, скоринг решает про `default_selected` (SPEC-09). |
 | Игра запущена | Тег `app-running` по процессу из `install_dir` (см. SPEC-04 §4.3 process snapshot). |
 | Манифест содержит путь с `..` | Отбрасываем запись (защита от выхода за корень) + debug-лог. |
+
+Issue Steam: reason ∈ not_found, access_denied, locked, too_large, cloud_only, cancelled, io, invalid, drive_missing; path — `PathTemplate::from_path`; source `games.steam`.
 
 ## 6. Тестирование
 
@@ -235,9 +248,9 @@ Serde-модель: `GameEntry { files: BTreeMap<String, FileRule>, registry: BT
 
 - [ ] **T-05-01** — Serde-модель манифеста §4.2, парсинг полного файла, бенч. *Зависит:* T-01-01. *Готово, когда:* реальный манифест парсится ≤ 3 с.
 - [ ] **T-05-02** — `ManifestStore`: HTTP с ETag, атомарная запись, кэш индекса (postcard), встроенный снапшот (zstd, `build.rs` скачивает или берёт из `third_party/ludusavi/manifest.yaml` в репо). *Зависит:* T-05-01, T-01-04.
-- [ ] **T-05-03** — Детектор Steam (VDF, ACF, userdata, loginusers) + токены `{STEAM}`, `{STEAM_USERID}` в `PathTemplate::resolve`. *Зависит:* T-03-06, T-02-03.
+- [x] **T-05-03** — Детектор Steam (VDF, ACF, userdata, loginusers) + токены `{STEAM}`, `{STEAM_USERID}` в `PathTemplate::resolve`. *Зависит:* T-03-06, T-02-03.
 - [ ] **T-05-04** — Детекторы Epic, GOG (реестр), Ubisoft, EA, Battle.net (Uninstall), Xbox (`wgs`-находка). *Зависит:* T-05-03.
-- [ ] **T-05-05** — `enrich(env)` и интеграция в фазу Environment `sk-engine`. *Зависит:* T-05-04, T-01-06.
+- [ ] **T-05-05** — `enrich(env, fs)` (возвращает issues детекторов: `pub fn enrich(env: &mut Environment, fs: &dyn FsScanner) -> Vec<ScanIssue>`, §4.1) и интеграция в фазу Environment `sk-engine`. *Зависит:* T-05-04, T-01-06.
 - [ ] **T-05-06** — `translate` + фильтр `when` + `{GAME_DIR}`. *Зависит:* T-05-01, T-02-03.
 - [ ] **T-05-07** — Сопоставление установленных игр с манифестом (§4.5). *Зависит:* T-05-05, T-05-06.
 - [ ] **T-05-08** — Индекс якорей для неустановленных игр (§4.6). *Зависит:* T-05-06. *Готово, когда:* тест на счётчик `exists`.
@@ -255,7 +268,7 @@ Serde-модель: `GameEntry { files: BTreeMap<String, FileRule>, registry: BT
 ## 9. Открытые вопросы
 
 - ~~Лицензирование снапшота~~ **Решено (2026-10-01):** проект некоммерческий, поэтому снапшот встраивается на условиях FR-05-11. Перепроверка текста лицензии входит в T-05-11.
-- **Предложение к SPEC-02 §3.3:** типы `LauncherInfo`, `StoreUser`, `InstalledGame` должны жить в `sk-core` (поле `Environment.launchers`), иначе `sk-core` зависит от `sk-games`. Предлагаю перенести их определения в SPEC-02 §3.3 как есть из §4.1.
+- ~~**Предложение к SPEC-02 §3.3:** типы `LauncherInfo`, `StoreUser`, `InstalledGame` должны жить в `sk-core` (поле `Environment.launchers`), иначе `sk-core` зависит от `sk-games`. Предлагаю перенести их определения в SPEC-02 §3.3 как есть из §4.1.~~ **Решено: SPEC-02 §3.3** (типы определены в `sk-core::env`, `sk-games` их реэкспортирует).
 - **Предложение к SPEC-02 §3.2:** `ResolveContext` дополнить `store_game_id: Option<String>` и `game_dir_name: Option<String>` (для `<storeGameId>`, `<game>`), либо подставлять их строкой до `PathTemplate::parse` (текущий план). Нужно зафиксировать одно решение.
 - **Предложение к SPEC-02 §2.2:** `Target::FileSet.include` поддерживает несколько глобов — ок. Но для union нескольких записей манифеста с разными `tags` в одной находке теряется разбиение save/config. Допустимо (категория = save, если есть хоть один save).
 - GOG Galaxy SQLite: нужна ли зависимость `rusqlite` (bundled) ради одного лаунчера? Отложить на P2, реестра достаточно для MVP.
