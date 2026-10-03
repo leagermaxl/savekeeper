@@ -1,0 +1,67 @@
+# Cloud storage clients (SPEC-04 §4.7.8): claims only, no findings. Their
+# local caches and service folders are explained so SPEC-07 does not treat
+# them as unknown. The synced folders themselves are not claimed: their
+# content is in the cloud, SPEC-07 tags it `cloud-synced`.
+schema_version: 1
+rules:
+  # The client, its settings and logs; the synced folder is `{ONEDRIVE}`.
+  - id: onedrive.none
+    app: { id: onedrive, name: Microsoft OneDrive, kind: application, winget: Microsoft.OneDrive }
+    category: reinstallable
+    title_key: rules.onedrive.none
+    conditions:
+      - exists: "{LOCALAPPDATA}\\Microsoft\\OneDrive"
+    claims:
+      - "{LOCALAPPDATA}\\Microsoft\\OneDrive"
+
+  # `{LOCALAPPDATA}\Dropbox` holds the instance databases, `{APPDATA}\Dropbox`
+  # the per-user installation; `.dropbox.cache` inside the synced folder
+  # (`Dropbox`, `Dropbox (Personal)`, `Dropbox (Company)`) is its cache.
+  - id: dropbox.none
+    app: { id: dropbox, name: Dropbox, kind: application, winget: Dropbox.Dropbox }
+    category: reinstallable
+    title_key: rules.dropbox.none
+    conditions:
+      - any_of:
+          - exists: "{LOCALAPPDATA}\\Dropbox"
+          - exists: "{APPDATA}\\Dropbox"
+    claims:
+      - "{LOCALAPPDATA}\\Dropbox"
+      - "{APPDATA}\\Dropbox"
+      - "{HOME}\\Dropbox*\\.dropbox.cache"
+
+  # Google Drive for desktop (DriveFS: content cache and metadata) and the
+  # older Backup and Sync (`Drive`).
+  - id: google-drive.none
+    app: { id: google-drive, name: Google Drive, kind: application, winget: Google.GoogleDrive }
+    category: reinstallable
+    title_key: rules.google_drive.none
+    conditions:
+      - any_of:
+          - exists: "{LOCALAPPDATA}\\Google\\DriveFS"
+          - exists: "{LOCALAPPDATA}\\Google\\Drive"
+    claims:
+      - "{LOCALAPPDATA}\\Google\\DriveFS"
+      - "{LOCALAPPDATA}\\Google\\Drive"
+
+  # iCloud for Windows from the Microsoft Store; the package resolves only
+  # when it is installed.
+  - id: icloud.none
+    app: { id: icloud, name: iCloud, kind: application }
+    category: reinstallable
+    title_key: rules.icloud.none
+    claims:
+      - "{PACKAGE:AppleInc.iCloud}"
+
+  # The client installs per user into Roaming (`YandexDisk2` since 3.0).
+  - id: yandex-disk.none
+    app: { id: yandex-disk, name: Yandex.Disk, kind: application }
+    category: reinstallable
+    title_key: rules.yandex_disk.none
+    conditions:
+      - any_of:
+          - exists: "{APPDATA}\\Yandex\\YandexDisk2"
+          - exists: "{APPDATA}\\Yandex\\YandexDisk"
+    claims:
+      - "{APPDATA}\\Yandex\\YandexDisk2"
+      - "{APPDATA}\\Yandex\\YandexDisk"

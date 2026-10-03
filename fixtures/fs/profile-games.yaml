@@ -1,0 +1,164 @@
+# Games, emulators and cloud clients for the built-in rules of SPEC-04
+# §4.7.8–§4.7.9. Each program has the data worth saving next to the caches,
+# logs, BIOS images and downloads the rules exclude or claim. Steam has two
+# accounts (`{STEAM_USERID}`); only the first one took screenshots. Absent on
+# purpose: yuzu (only Ryujinx), Dolphin's legacy Documents folder,
+# DuckStation's Local folder, Google Backup and Sync, Yandex.Disk. Not here,
+# added by the tests: drive-root folders (`{DRIVE:*}`: portable RetroArch and
+# RPCS3), installed programs and the iCloud Store package.
+# Loaded into MemFs by sk_testkit::mem_fixture.
+launchers:
+  steam: { root: "Program Files (x86)/Steam", users: ["12345678", "87654321"] }
+tree:
+  # === games-extra.yaml ===
+  # --- Steam: per-account config and screenshots ---
+  - path: "{STEAM}/userdata/12345678/config/localconfig.vdf"
+    size: 48 KiB
+    mtime: "-1d"
+  - path: "{STEAM}/userdata/12345678/config/shortcuts.vdf"
+    size: 2 KiB
+  - path: "{STEAM}/userdata/12345678/config/grid/570_p.png"
+    size: 200 KiB
+  - path: "{STEAM}/userdata/12345678/760/remote/570/screenshots/20260901201500_1.jpg"
+    size: 400 KiB
+    repeat: 2
+  - path: "{STEAM}/userdata/12345678/760/remote/570/screenshots/thumbnails/20260901201500_1.jpg"
+    size: 20 KiB
+    repeat: 2
+  - path: "{STEAM}/userdata/12345678/760/screenshots.vdf"
+    size: 1 KiB
+  - path: "{STEAM}/userdata/87654321/config/localconfig.vdf"
+    size: 16 KiB
+  - path: "{STEAM}/steamapps/common/Dota 2 beta/game/bin/win64/dota2.exe"
+    size: 1 MiB
+  # --- Minecraft: Java Edition ---
+  - path: "{APPDATA}/.minecraft/saves/New World/level.dat"
+    size: 4 KiB
+    mtime: "-2d"
+  - path: "{APPDATA}/.minecraft/saves/New World/region/r.0.0.mca"
+    size: 512 KiB
+    repeat: 2
+  - path: "{APPDATA}/.minecraft/options.txt"
+    size: 6 KiB
+  - path: "{APPDATA}/.minecraft/servers.dat"
+    size: 1 KiB
+  - path: "{APPDATA}/.minecraft/resourcepacks/Faithful 32x.zip"
+    size: 2 MiB
+  - path: "{APPDATA}/.minecraft/screenshots/2026-09-01_20.15.00.png"
+    size: 300 KiB
+  - path: "{APPDATA}/.minecraft/launcher_profiles.json"
+    size: 3 KiB
+  - path: "{APPDATA}/.minecraft/logs/latest.log"
+    size: 64 KiB
+  - path: "{APPDATA}/.minecraft/versions/1.21.1/1.21.1.jar"
+    size: 4 MiB
+  - path: "{APPDATA}/.minecraft/libraries/com/mojang/brigadier/1.3.10/brigadier-1.3.10.jar"
+    size: 80 KiB
+  - path: "{APPDATA}/.minecraft/assets/objects/0a/0a1b2c3d4e5f"
+    size: 8 KiB
+    repeat: 3
+  # --- Prism Launcher: one instance; libraries live outside `instances` ---
+  - path: "{APPDATA}/PrismLauncher/instances/Fabulously Optimized/instance.cfg"
+    size: 1 KiB
+  - path: "{APPDATA}/PrismLauncher/instances/Fabulously Optimized/.minecraft/saves/Survival/level.dat"
+    size: 4 KiB
+  - path: "{APPDATA}/PrismLauncher/libraries/net/fabricmc/fabric-loader-0.16.5.jar"
+    size: 1 MiB
+
+  # === emulators.yaml ===
+  # --- RetroArch in Roaming ---
+  - path: "{APPDATA}/RetroArch/retroarch.cfg"
+    size: 100 KiB
+    mtime: "-1d"
+  - path: "{APPDATA}/RetroArch/saves/Super Mario World.srm"
+    size: 2 KiB
+  - path: "{APPDATA}/RetroArch/states/Super Mario World.state1"
+    size: 400 KiB
+  - path: "{APPDATA}/RetroArch/config/Snes9x/Snes9x.cfg"
+    size: 1 KiB
+  - path: "{APPDATA}/RetroArch/cores/snes9x_libretro.dll"
+    size: 4 MiB
+  - path: "{APPDATA}/RetroArch/system/scph5501.bin"
+    size: 512 KiB
+  - path: "{APPDATA}/RetroArch/logs/retroarch.log"
+    size: 8 KiB
+  # --- Dolphin, current layout in Roaming ---
+  - path: "{APPDATA}/Dolphin Emulator/GC/USA/Card A/01-GALE-SuperSmashBros0110290334.gci"
+    size: 64 KiB
+  - path: "{APPDATA}/Dolphin Emulator/Wii/shared2/sys/SYSCONF"
+    size: 16 KiB
+  - path: "{APPDATA}/Dolphin Emulator/StateSaves/GALE01.s01"
+    size: 2 MiB
+  - path: "{APPDATA}/Dolphin Emulator/Config/Dolphin.ini"
+    size: 4 KiB
+  - path: "{APPDATA}/Dolphin Emulator/Cache/GALE01.uidcache"
+    size: 1 MiB
+  - path: "{APPDATA}/Dolphin Emulator/Logs/dolphin.log"
+    size: 8 KiB
+  # --- PCSX2 ---
+  - path: "{DOCUMENTS}/PCSX2/memcards/Mcd001.ps2"
+    size: 8 MiB
+  - path: "{DOCUMENTS}/PCSX2/sstates/SLUS-20946 (A1B2C3D4).01.p2s"
+    size: 3 MiB
+  - path: "{DOCUMENTS}/PCSX2/inis/PCSX2.ini"
+    size: 8 KiB
+  - path: "{DOCUMENTS}/PCSX2/bios/scph39001.bin"
+    size: 4 MiB
+  - path: "{DOCUMENTS}/PCSX2/logs/emulog.txt"
+    size: 16 KiB
+  # --- PPSSPP memory stick ---
+  - path: "{DOCUMENTS}/PPSSPP/PSP/SAVEDATA/ULUS10041DATA00/DATA.BIN"
+    size: 128 KiB
+  - path: "{DOCUMENTS}/PPSSPP/PSP/PPSSPP_STATE/ULUS10041_1.00_0.ppst"
+    size: 2 MiB
+  - path: "{DOCUMENTS}/PPSSPP/PSP/SYSTEM/ppsspp.ini"
+    size: 6 KiB
+  - path: "{DOCUMENTS}/PPSSPP/PSP/SYSTEM/controls.ini"
+    size: 2 KiB
+  - path: "{DOCUMENTS}/PPSSPP/PSP/SYSTEM/CACHE/ULUS10041.vkshadercache"
+    size: 1 MiB
+  # --- Ryujinx: saves and keys; firmware and logs are not saved ---
+  - path: "{APPDATA}/Ryujinx/bis/user/save/0000000000000001/0/save.dat"
+    size: 256 KiB
+  - path: "{APPDATA}/Ryujinx/system/prod.keys"
+    size: 8 KiB
+  - path: "{APPDATA}/Ryujinx/system/title.keys"
+    size: 4 KiB
+  - path: "{APPDATA}/Ryujinx/system/Amiibo.json"
+    size: 1 MiB
+  - path: "{APPDATA}/Ryujinx/bis/system/Contents/registered/firmware.nca"
+    size: 4 MiB
+  - path: "{APPDATA}/Ryujinx/Logs/Ryujinx.log"
+    size: 32 KiB
+  # --- DuckStation in Documents ---
+  - path: "{DOCUMENTS}/DuckStation/memcards/shared_card_1.mcd"
+    size: 128 KiB
+  - path: "{DOCUMENTS}/DuckStation/savestates/SLUS-00594_1.sav"
+    size: 4 MiB
+  - path: "{DOCUMENTS}/DuckStation/settings.ini"
+    size: 12 KiB
+  - path: "{DOCUMENTS}/DuckStation/bios/scph5501.bin"
+    size: 512 KiB
+  - path: "{DOCUMENTS}/DuckStation/cache/gpu_shaders.bin"
+    size: 1 MiB
+  # --- Cemu ---
+  - path: "{APPDATA}/Cemu/mlc01/usr/save/00050000/101c9500/user/80000001/game_data.sav"
+    size: 512 KiB
+  - path: "{APPDATA}/Cemu/settings.xml"
+    size: 8 KiB
+
+  # === cloud-claims.yaml ===
+  - path: "{LOCALAPPDATA}/Microsoft/OneDrive/OneDrive.exe"
+    size: 4 MiB
+  - path: "{LOCALAPPDATA}/Microsoft/OneDrive/settings/Personal/global.ini"
+    size: 1 KiB
+  - path: "{LOCALAPPDATA}/Dropbox/info.json"
+    size: 1 KiB
+  - path: "{LOCALAPPDATA}/Dropbox/instance1/config.dbx"
+    size: 64 KiB
+  - path: "{HOME}/Dropbox/.dropbox.cache/2026-09-30/f_000001"
+    size: 256 KiB
+  - path: "{HOME}/Dropbox/Documents/notes.txt"
+    size: 2 KiB
+  - path: "{LOCALAPPDATA}/Google/DriveFS/104857600000000000000/content_cache/d1/f_000001"
+    size: 1 MiB

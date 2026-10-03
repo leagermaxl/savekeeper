@@ -1,0 +1,51 @@
+# Game data outside the Ludusavi manifest (SPEC-04 §4.7.9, in addition to
+# SPEC-05): Steam per-account data and Minecraft: Java Edition.
+schema_version: 1
+rules:
+  # One finding per Steam account (`{STEAM_USERID}`, FR-04-02):
+  # localconfig.vdf, shortcuts.vdf (non-Steam games), custom library
+  # artwork (`grid`) and controller settings.
+  - id: steam.userdata-config
+    app: { id: steam, name: Steam, kind: application, winget: Valve.Steam }
+    category: game_config
+    title_key: rules.steam.userdata_config
+    targets:
+      - path: "{STEAM}\\userdata\\{STEAM_USERID}\\config"
+
+  # Screenshots taken with F12, per game (`<appid>\screenshots`).
+  - id: steam.screenshots
+    app: { id: steam, name: Steam, kind: application, winget: Valve.Steam }
+    category: user_files
+    title_key: rules.steam.screenshots
+    targets:
+      - path: "{STEAM}\\userdata\\{STEAM_USERID}\\760\\remote"
+
+  - id: minecraft.java
+    app: { id: minecraft, name: "Minecraft: Java Edition", kind: game, winget: Mojang.MinecraftLauncher }
+    category: game_save
+    title_key: rules.minecraft.java
+    conditions:
+      - exists: "{APPDATA}\\.minecraft"
+    targets:
+      - path: "{APPDATA}\\.minecraft"
+        include:
+          - "saves/**"
+          - "options.txt"
+          - "servers.dat"
+          - "resourcepacks/**"
+          - "shaderpacks/**"
+          - "screenshots/**"
+          - "mods/**"
+    # Game versions, libraries and assets are downloaded again by the launcher.
+    claims:
+      - "{APPDATA}\\.minecraft\\versions"
+      - "{APPDATA}\\.minecraft\\libraries"
+      - "{APPDATA}\\.minecraft\\assets"
+
+  # Each instance keeps its own worlds, mods and settings.
+  - id: prismlauncher.instances
+    app: { id: prismlauncher, name: Prism Launcher, kind: application, winget: PrismLauncher.PrismLauncher }
+    category: game_save
+    title_key: rules.prismlauncher.instances
+    targets:
+      - path: "{APPDATA}\\PrismLauncher\\instances"

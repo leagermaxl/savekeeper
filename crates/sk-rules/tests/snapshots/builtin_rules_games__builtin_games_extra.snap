@@ -1,0 +1,237 @@
+---
+source: crates/sk-rules/tests/builtin_rules_games.rs
+expression: snapshot(&out)
+---
+{
+  "claimed_paths": [
+    "[root]/Users/user/AppData/Roaming/.minecraft",
+    "[root]/Users/user/AppData/Roaming/.minecraft/versions",
+    "[root]/Users/user/AppData/Roaming/.minecraft/libraries",
+    "[root]/Users/user/AppData/Roaming/.minecraft/assets",
+    "[root]/Users/user/AppData/Roaming/PrismLauncher/instances",
+    "[root]/Program Files (x86)/Steam/userdata/12345678/760/remote",
+    "[root]/Program Files (x86)/Steam/userdata/12345678/config",
+    "[root]/Program Files (x86)/Steam/userdata/87654321/config"
+  ],
+  "findings": [
+    {
+      "app": {
+        "id": "minecraft",
+        "installed": null,
+        "kind": "game",
+        "name": "Minecraft: Java Edition",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Mojang.MinecraftLauncher"
+        }
+      },
+      "category": "game_save",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "minecraft.java"
+          }
+        }
+      ],
+      "id": "95967ed25ae71916",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [
+          "saves/**",
+          "options.txt",
+          "servers.dat",
+          "resourcepacks/**",
+          "shaderpacks/**",
+          "screenshots/**",
+          "mods/**"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/.minecraft",
+        "root": "{APPDATA}\\.minecraft"
+      },
+      "title": "rules.minecraft.java"
+    },
+    {
+      "app": {
+        "id": "prismlauncher",
+        "installed": null,
+        "kind": "application",
+        "name": "Prism Launcher",
+        "process_names": [],
+        "source_ids": {
+          "winget": "PrismLauncher.PrismLauncher"
+        }
+      },
+      "category": "game_save",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "prismlauncher.instances"
+          }
+        }
+      ],
+      "id": "0748f033f427085c",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/PrismLauncher/instances",
+        "root": "{APPDATA}\\PrismLauncher\\instances"
+      },
+      "title": "rules.prismlauncher.instances"
+    },
+    {
+      "app": {
+        "id": "steam",
+        "installed": null,
+        "kind": "application",
+        "name": "Steam",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Valve.Steam"
+        }
+      },
+      "category": "user_files",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "steam.screenshots"
+          }
+        }
+      ],
+      "id": "153804f8795175f1",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Program Files (x86)/Steam/userdata/12345678/760/remote",
+        "root": "{STEAM}\\userdata\\12345678\\760\\remote"
+      },
+      "title": "rules.steam.screenshots"
+    },
+    {
+      "app": {
+        "id": "steam",
+        "installed": null,
+        "kind": "application",
+        "name": "Steam",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Valve.Steam"
+        }
+      },
+      "category": "game_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "steam.userdata-config"
+          }
+        }
+      ],
+      "id": "64cf6dd1877158dd",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Program Files (x86)/Steam/userdata/12345678/config",
+        "root": "{STEAM}\\userdata\\12345678\\config"
+      },
+      "title": "rules.steam.userdata_config"
+    },
+    {
+      "app": {
+        "id": "steam",
+        "installed": null,
+        "kind": "application",
+        "name": "Steam",
+        "process_names": [],
+        "source_ids": {
+          "winget": "Valve.Steam"
+        }
+      },
+      "category": "game_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "steam.userdata-config"
+          }
+        }
+      ],
+      "id": "8ad828d63d43e111",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Program Files (x86)/Steam/userdata/87654321/config",
+        "root": "{STEAM}\\userdata\\87654321\\config"
+      },
+      "title": "rules.steam.userdata_config"
+    }
+  ],
+  "issues": []
+}

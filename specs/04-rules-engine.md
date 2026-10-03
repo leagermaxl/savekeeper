@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-rules`, каталог `rules/` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-07 (claimed_paths), SPEC-09, SPEC-11 (редактор правил, P4) |
-| Последнее изменение | 2026-10-03 (T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.1: модуль `registry` переезжает в sk-core; T-04-07: пути и include браузеров и dev-правил по реальным раскладкам — Opera One, Ya Passman Data, sessionstore-backups, JetBrains `*20*`, VS `*.0_*`, Windows Terminal без пакета, `vscode.extensions-list` отдельным правилом; чек-лист ручной проверки `specs/checklists/T-04-07.md`; T-04-10: аргументы, вывод и коды выхода `rules validate`; T-04-08: соглашения §4.7 для claims-only правил, process_running, ключей i18n; уточнены пути WhatsApp/Skype/Razer/Outlook/Sticky Notes/PowerToys; T-04-06: API RulesCollector, прогресс, слияние, отмена, T-04-13; T-04-12: from_json issues/args, нормализация, claims конфига; T-04-05: условие срабатывания правила (FR-04-03), reparse-корни targets, специализация мульти-значных токенов, заголовок с `label_key`, семантика `claims` и `glob_root`, API `expand` в §4.1, поля находки, issues `glob_root_truncated` и доступ к реестру для targets в §5); 2026-10-03 (T-04-03/T-04-04: API `RuleSource`/`conditions`/`registry`, семантика условий, `installed.winget` зарезервирован, regex проверяется при компиляции, ключи issue в §5, детали слияния; T-04-02: `RuleDiagnostic.severity`, API `compile`/`diagnostic` в §4.1, `hklm` в §4.2 согласован с §4.4; уточнения по T-04-01: `tags` у target, `registry.recursive` по умолчанию `true`, `file_contains.pattern` — regex, обязательные поля §4.4; 2026-10-02: T-04-07: ручные проверки критериев SPEC-03 §8; T-04-07: ручная проверка Ctrl+C из SPEC-01 §8; 2026-10-01: YAML: `serde-saphyr` вместо `serde_yaml`; `from_json` в схеме v1) |
+| Последнее изменение | 2026-10-03 (T-04-09: таблица cloud-claims, уточнения путей игр и эмуляторов (RetroArch-Win64, DuckStation в LocalAppData, ключи yuzu/Ryujinx, RPCS3 портативный); T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.1: модуль `registry` переезжает в sk-core; T-04-07: пути и include браузеров и dev-правил по реальным раскладкам — Opera One, Ya Passman Data, sessionstore-backups, JetBrains `*20*`, VS `*.0_*`, Windows Terminal без пакета, `vscode.extensions-list` отдельным правилом; чек-лист ручной проверки `specs/checklists/T-04-07.md`; T-04-10: аргументы, вывод и коды выхода `rules validate`; T-04-08: соглашения §4.7 для claims-only правил, process_running, ключей i18n; уточнены пути WhatsApp/Skype/Razer/Outlook/Sticky Notes/PowerToys; T-04-06: API RulesCollector, прогресс, слияние, отмена, T-04-13; T-04-12: from_json issues/args, нормализация, claims конфига; T-04-05: условие срабатывания правила (FR-04-03), reparse-корни targets, специализация мульти-значных токенов, заголовок с `label_key`, семантика `claims` и `glob_root`, API `expand` в §4.1, поля находки, issues `glob_root_truncated` и доступ к реестру для targets в §5); 2026-10-03 (T-04-03/T-04-04: API `RuleSource`/`conditions`/`registry`, семантика условий, `installed.winget` зарезервирован, regex проверяется при компиляции, ключи issue в §5, детали слияния; T-04-02: `RuleDiagnostic.severity`, API `compile`/`diagnostic` в §4.1, `hklm` в §4.2 согласован с §4.4; уточнения по T-04-01: `tags` у target, `registry.recursive` по умолчанию `true`, `file_contains.pattern` — regex, обязательные поля §4.4; 2026-10-02: T-04-07: ручные проверки критериев SPEC-03 §8; T-04-07: ручная проверка Ctrl+C из SPEC-01 §8; 2026-10-01: YAML: `serde-saphyr` вместо `serde_yaml`; `from_json` в схеме v1) |
 
 ## 1. Цель
 
@@ -392,22 +392,34 @@ include/exclude пишутся в YAML при реализации T-04-07..T-04
 | `windows.powertoys` | `{LOCALAPPDATA}\Microsoft\PowerToys` | `app_config`, include `**/*.json`, exclude `**/Logs/**, Updates/**` (переназначения Keyboard Manager, раскладки FancyZones) |
 
 #### 4.7.8 `rules/cloud-claims.yaml` — только `claims`, без находок
-OneDrive, Dropbox, Google Drive, iCloud, Yandex.Disk: локальные кэши/служебные папки (`{LOCALAPPDATA}\Microsoft\OneDrive`, `{LOCALAPPDATA}\Dropbox`, `{LOCALAPPDATA}\Google\DriveFS`) помечаются как объяснённые. Содержимое синхронизируемых папок сохранять не нужно (оно в облаке), но SPEC-07 помечает его тегом `cloud-synced`.
+OneDrive, Dropbox, Google Drive, iCloud, Yandex.Disk: локальные кэши и служебные папки клиентов (таблица ниже) помечаются как объяснённые. Содержимое синхронизируемых папок сохранять не нужно (оно в облаке), но SPEC-07 помечает его тегом `cloud-synced`.
+
+| id | claims |
+|---|---|
+| `onedrive.none` | `{LOCALAPPDATA}\Microsoft\OneDrive` |
+| `dropbox.none` | `{LOCALAPPDATA}\Dropbox`, `{APPDATA}\Dropbox` (установка для пользователя), `{HOME}\Dropbox*\.dropbox.cache` (кэш внутри папок `Dropbox`, `Dropbox (Personal)`, `Dropbox (Company)`) |
+| `google-drive.none` | `{LOCALAPPDATA}\Google\DriveFS`, `{LOCALAPPDATA}\Google\Drive` (старый клиент «Автозагрузка и синхронизация») |
+| `icloud.none` | `{PACKAGE:AppleInc.iCloud}` (iCloud из Microsoft Store, без `conditions`) |
+| `yandex-disk.none` | `{APPDATA}\Yandex\YandexDisk2`, `{APPDATA}\Yandex\YandexDisk` (клиент 3.x и старый) |
+
+Синхронизируемые папки не заявляются.
 
 #### 4.7.9 `rules/games-extra.yaml` и `rules/emulators.yaml` (дополнение к SPEC-05)
+Категория — `game_save`, если не указано иное.
+
 | id | Путь | Категория |
 |---|---|---|
 | `steam.userdata-config` | `{STEAM}\userdata\{STEAM_USERID}\config` | `game_config` (localconfig.vdf, скриншоты-мета, контроллеры) |
 | `steam.screenshots` | `{STEAM}\userdata\{STEAM_USERID}\760\remote` | `user_files` |
 | `minecraft.java` | `{APPDATA}\.minecraft` | `game_save`; include `saves/**, options.txt, servers.dat, resourcepacks/**, shaderpacks/**, screenshots/**, mods/**`; claims `versions, libraries, assets` (reinstallable) |
 | `prismlauncher.instances` | `{APPDATA}\PrismLauncher\instances` | `game_save` |
-| `retroarch.saves` | `{APPDATA}\RetroArch` + `{DRIVE:*}\RetroArch` через `installed` | `game_save`; include `saves/**, states/**, config/**, retroarch.cfg`; claims `cores, system (bios — предупреждение)` |
-| `dolphin.user` | `{DOCUMENTS}\Dolphin Emulator`, `{APPDATA}\Dolphin Emulator` | `game_save`; include `GC/**, Wii/**, StateSaves/**, Config/**` |
+| `retroarch.saves` | `{APPDATA}\RetroArch`, `{DRIVE:*}\RetroArch`, `{DRIVE:*}\RetroArch-Win64` (папка установщика по умолчанию); `conditions`: `any_of` из `exists {APPDATA}\RetroArch` и `installed` (`(?i)^retroarch\b`) — папки в корнях дисков учитываются, только если RetroArch установлен или есть его папка в Roaming | `game_save`; include `saves/**, states/**, config/**, retroarch.cfg`; claims `cores`, `system` в `{APPDATA}\RetroArch` и `{DRIVE:*}\RetroArch*`; BIOS из `system` не сохраняются — `notes_key` |
+| `dolphin.user` | `{DOCUMENTS}\Dolphin Emulator`, `{APPDATA}\Dolphin Emulator` | `game_save`; include `GC/**, Wii/**, StateSaves/**, Config/**`; два target'а (`label_key` `documents`, `appdata`): Documents — если папка уже есть (старые версии), иначе Roaming |
 | `pcsx2.user` | `{DOCUMENTS}\PCSX2` | `memcards/**, sstates/**, inis/**` |
-| `ppsspp.user` | `{DOCUMENTS}\PPSSPP\PSP\SAVEDATA`, `...\PPSSPP_STATE`, `...\SYSTEM` | |
-| `yuzu-ryujinx.user` | `{APPDATA}\yuzu\nand\user\save`, `{APPDATA}\Ryujinx\bis\user\save` | keys → sensitivity high, предупреждение |
-| `duckstation.user` | `{DOCUMENTS}\DuckStation` | `memcards/**, savestates/**, settings.ini` |
-| `rpcs3.user` | `{GAME_DIR}` — через `installed`, `dev_hdd0\home\*\savedata` | |
+| `ppsspp.user` | `{DOCUMENTS}\PPSSPP\PSP\SAVEDATA`, `...\PPSSPP_STATE`, `...\SYSTEM` | `SYSTEM` — target с `category: game_config`, exclude `CACHE/**` (кэш шейдеров) |
+| `yuzu-ryujinx.user` | `{APPDATA}\yuzu\nand\user\save`, `{APPDATA}\Ryujinx\bis\user\save` | ключи — target'ы `{APPDATA}\yuzu\keys` и `{APPDATA}\Ryujinx\system` (include `*.keys`) с `category: credentials`, sensitivity high; предупреждение — `notes_key` (ключи — дамп с собственной консоли пользователя) |
+| `duckstation.user` | `{DOCUMENTS}\DuckStation` (старые версии и существующие установки), `{LOCALAPPDATA}\DuckStation` (новые версии, если папки в Documents нет) | include `memcards/**, savestates/**, settings.ini` |
+| `rpcs3.user` | `{DRIVE:*}\*rpcs3*\dev_hdd0\home\*\savedata` (glob_root: портативная папка с `rpcs3` в имени в корне фиксированного диска, находка на каждого пользователя эмулятора) | `{GAME_DIR}` в правилах недоступен (в `ResolveContext` правил только `steam_user_ids`, §4.5), установщика у RPCS3 нет; RPCS3 в других папках — SPEC-07 |
 | `cemu.user` | `{APPDATA}\Cemu\mlc01\usr\save` | |
 
 Итого в стартовой базе ≈ 70 правил. Минимум для закрытия спеки — все правила из таблиц §4.7.1–§4.7.9.
@@ -453,7 +465,7 @@ OneDrive, Dropbox, Google Drive, iCloud, Yandex.Disk: локальные кэш�
 - [x] **T-04-13** — Подключение `RulesCollector` в `sk-engine`: `ScanPipeline::new` регистрирует его, правила загружаются `RuleSet::load(true, rules_dir)` в начале каждого `run` (пользовательские правила подхватываются без перезапуска), issues загрузки (`source: "rules"`) идут в отчёт и `Event::Issue`; `sk-cli scan` передаёт `DataDir::rules()`. *Зависит:* T-04-06, T-01-06, T-01-07. *Готово, когда:* интеграционный тест `sk-engine` с `MemFs` + `rules.d` во временной папке даёт находки правил и issue битого файла.
 - [x] **T-04-07** — YAML-правила §4.7.1–§4.7.2 (браузеры, dev, включая `unityhub.projects`). *Зависит:* T-04-02, T-04-12, T-04-13. *Готово, когда:* проверены вручную на Windows-машине разработчика (чек-лист — `specs/checklists/T-04-07.md`, протокол — в PR); ручная проверка критерия SPEC-01 §8: Ctrl+C во время `savekeeper-cli scan` по реальному профилю завершает процесс за ≤ 1 с с кодом 2 (перенесено из SPEC-03 T-03-04: первый скан, который идёт по реальным файлам); ручная проверка критериев SPEC-03 §8 на том же скане: OneDrive-папка «только онлайн» после скана остаётся с облачным значком (файлы не гидрированы), junction'ы профиля (`Application Data` и т.д.) не дают двойного счёта размеров. *Проверено* 2026-10-03 пользователем по чек-листу: всё совпало с ожидаемым; пункт OneDrive «только онлайн» не проверялся (OneDrive отключён на машине разработчика), закрыт по решению пользователя.
 - [x] **T-04-08** — YAML-правила §4.7.3–§4.7.7 (включая `obsidian.vaults`). *Зависит:* T-04-02, T-04-12.
-- [ ] **T-04-09** — YAML-правила §4.7.8–§4.7.9. *Зависит:* T-04-02, T-05-03 (токены Steam).
+- [x] **T-04-09** — YAML-правила §4.7.8–§4.7.9. *Зависит:* T-04-02, T-05-03 (токены Steam).
 - [x] **T-04-10** — CLI `rules validate` + вывод диагностики. *Зависит:* T-04-02, T-01-07.
 - [ ] **T-04-11** — i18n-ключи для всех `title_key`/`notes_key` (ru, en) в `app/src/i18n/*.json` (генерация списка ключей тестом). *Зависит:* T-04-07..09.
 

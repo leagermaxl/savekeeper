@@ -1,0 +1,126 @@
+# Emulators (SPEC-04 §4.7.9, in addition to SPEC-05): in-game saves, save
+# states, memory cards and settings. BIOS images, firmware and cores are not
+# saved: cores download again, BIOS images and keys must be dumped from the
+# user's own console.
+schema_version: 1
+rules:
+  # RetroArch keeps its data next to the program when retroarch.cfg is
+  # there (the installer default `C:\RetroArch-Win64`, a portable copy in
+  # `C:\RetroArch`), otherwise in Roaming. The drive folders count only when
+  # RetroArch is installed or its Roaming folder exists.
+  - id: retroarch.saves
+    app: { id: retroarch, name: RetroArch, kind: application }
+    category: game_save
+    title_key: rules.retroarch.saves
+    conditions:
+      - any_of:
+          - exists: "{APPDATA}\\RetroArch"
+          - installed: { display_name_regex: "(?i)^retroarch\\b" }
+    targets:
+      - path: "{APPDATA}\\RetroArch"
+        include: ["saves/**", "states/**", "config/**", "retroarch.cfg"]
+        label_key: rules.retroarch.label_appdata
+      - path: "{DRIVE:*}\\RetroArch"
+        include: ["saves/**", "states/**", "config/**", "retroarch.cfg"]
+        label_key: rules.retroarch.label_install
+      - path: "{DRIVE:*}\\RetroArch-Win64"
+        include: ["saves/**", "states/**", "config/**", "retroarch.cfg"]
+        label_key: rules.retroarch.label_install
+    # Cores download again; BIOS images in `system` are not saved (note).
+    claims:
+      - "{APPDATA}\\RetroArch\\cores"
+      - "{APPDATA}\\RetroArch\\system"
+      - "{DRIVE:*}\\RetroArch*\\cores"
+      - "{DRIVE:*}\\RetroArch*\\system"
+    notes_key: rules.retroarch.notes
+
+  # Dolphin uses `Documents\Dolphin Emulator` if it exists (older versions),
+  # otherwise Roaming.
+  - id: dolphin.user
+    app: { id: dolphin, name: Dolphin Emulator, kind: application }
+    category: game_save
+    title_key: rules.dolphin.user
+    targets:
+      - path: "{DOCUMENTS}\\Dolphin Emulator"
+        include: ["GC/**", "Wii/**", "StateSaves/**", "Config/**"]
+        label_key: rules.dolphin.label_documents
+      - path: "{APPDATA}\\Dolphin Emulator"
+        include: ["GC/**", "Wii/**", "StateSaves/**", "Config/**"]
+        label_key: rules.dolphin.label_appdata
+
+  - id: pcsx2.user
+    app: { id: pcsx2, name: PCSX2, kind: application }
+    category: game_save
+    title_key: rules.pcsx2.user
+    targets:
+      - path: "{DOCUMENTS}\\PCSX2"
+        include: ["memcards/**", "sstates/**", "inis/**"]
+
+  # The memory stick of an installed PPSSPP.
+  - id: ppsspp.user
+    app: { id: ppsspp, name: PPSSPP, kind: application }
+    category: game_save
+    title_key: rules.ppsspp.user
+    targets:
+      - path: "{DOCUMENTS}\\PPSSPP\\PSP\\SAVEDATA"
+        label_key: rules.ppsspp.label_savedata
+      - path: "{DOCUMENTS}\\PPSSPP\\PSP\\PPSSPP_STATE"
+        label_key: rules.ppsspp.label_states
+      - path: "{DOCUMENTS}\\PPSSPP\\PSP\\SYSTEM"
+        category: game_config
+        exclude: ["CACHE/**"]
+        label_key: rules.ppsspp.label_system
+
+  # Switch emulators: save data plus the console keys (prod.keys,
+  # title.keys) the user dumped; the keys are sensitive (note).
+  - id: yuzu-ryujinx.user
+    app: { id: yuzu-ryujinx, name: yuzu / Ryujinx, kind: application }
+    category: game_save
+    title_key: rules.yuzu_ryujinx.user
+    targets:
+      - path: "{APPDATA}\\yuzu\\nand\\user\\save"
+        label_key: rules.yuzu_ryujinx.label_yuzu_saves
+      - path: "{APPDATA}\\yuzu\\keys"
+        category: credentials
+        sensitivity: high
+        label_key: rules.yuzu_ryujinx.label_yuzu_keys
+      - path: "{APPDATA}\\Ryujinx\\bis\\user\\save"
+        label_key: rules.yuzu_ryujinx.label_ryujinx_saves
+      - path: "{APPDATA}\\Ryujinx\\system"
+        include: ["*.keys"]
+        category: credentials
+        sensitivity: high
+        label_key: rules.yuzu_ryujinx.label_ryujinx_keys
+    notes_key: rules.yuzu_ryujinx.notes
+
+  # Documents is the classic user folder; newer builds use Local when
+  # Documents\DuckStation does not exist.
+  - id: duckstation.user
+    app: { id: duckstation, name: DuckStation, kind: application }
+    category: game_save
+    title_key: rules.duckstation.user
+    targets:
+      - path: "{DOCUMENTS}\\DuckStation"
+        include: ["memcards/**", "savestates/**", "settings.ini"]
+        label_key: rules.duckstation.label_documents
+      - path: "{LOCALAPPDATA}\\DuckStation"
+        include: ["memcards/**", "savestates/**", "settings.ini"]
+        label_key: rules.duckstation.label_local
+
+  # RPCS3 is portable (an archive without an installer): its virtual HDD is
+  # next to the program. Folders with `rpcs3` in the name at a drive root,
+  # one finding per user profile of the emulator (`00000001`).
+  - id: rpcs3.user
+    app: { id: rpcs3, name: RPCS3, kind: application }
+    category: game_save
+    title_key: rules.rpcs3.user
+    targets:
+      - path: "{DRIVE:*}\\*rpcs3*\\dev_hdd0\\home\\*\\savedata"
+        glob_root: true
+
+  - id: cemu.user
+    app: { id: cemu, name: Cemu, kind: application }
+    category: game_save
+    title_key: rules.cemu.user
+    targets:
+      - path: "{APPDATA}\\Cemu\\mlc01\\usr\\save"

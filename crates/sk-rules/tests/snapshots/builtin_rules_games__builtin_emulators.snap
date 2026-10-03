@@ -1,0 +1,445 @@
+---
+source: crates/sk-rules/tests/builtin_rules_games.rs
+expression: snapshot(&out)
+---
+{
+  "claimed_paths": [
+    "[root]/Users/user/AppData/Roaming/Cemu/mlc01/usr/save",
+    "[root]/Users/user/AppData/Roaming/Dolphin Emulator",
+    "[root]/Users/user/Documents/DuckStation",
+    "[root]/Users/user/Documents/PCSX2",
+    "[root]/Users/user/Documents/PPSSPP/PSP/SAVEDATA",
+    "[root]/Users/user/Documents/PPSSPP/PSP/PPSSPP_STATE",
+    "[root]/Users/user/Documents/PPSSPP/PSP/SYSTEM",
+    "[root]/Users/user/AppData/Roaming/RetroArch",
+    "[root]/Users/user/AppData/Roaming/RetroArch/cores",
+    "[root]/Users/user/AppData/Roaming/RetroArch/system",
+    "[root]/Users/user/AppData/Roaming/Ryujinx/bis/user/save",
+    "[root]/Users/user/AppData/Roaming/Ryujinx/system"
+  ],
+  "findings": [
+    {
+      "app": {
+        "id": "cemu",
+        "installed": null,
+        "kind": "application",
+        "name": "Cemu",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "game_save",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "cemu.user"
+          }
+        }
+      ],
+      "id": "6c188be6433f7ad2",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/Cemu/mlc01/usr/save",
+        "root": "{APPDATA}\\Cemu\\mlc01\\usr\\save"
+      },
+      "title": "rules.cemu.user"
+    },
+    {
+      "app": {
+        "id": "dolphin",
+        "installed": null,
+        "kind": "application",
+        "name": "Dolphin Emulator",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "game_save",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "dolphin.user"
+          }
+        }
+      ],
+      "id": "46a4a86d65e503df",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [
+          "GC/**",
+          "Wii/**",
+          "StateSaves/**",
+          "Config/**"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/Dolphin Emulator",
+        "root": "{APPDATA}\\Dolphin Emulator"
+      },
+      "title": "rules.dolphin.user — rules.dolphin.label_appdata"
+    },
+    {
+      "app": {
+        "id": "duckstation",
+        "installed": null,
+        "kind": "application",
+        "name": "DuckStation",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "game_save",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "duckstation.user"
+          }
+        }
+      ],
+      "id": "9b98328565034336",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [
+          "memcards/**",
+          "savestates/**",
+          "settings.ini"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/Documents/DuckStation",
+        "root": "{DOCUMENTS}\\DuckStation"
+      },
+      "title": "rules.duckstation.user — rules.duckstation.label_documents"
+    },
+    {
+      "app": {
+        "id": "pcsx2",
+        "installed": null,
+        "kind": "application",
+        "name": "PCSX2",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "game_save",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "pcsx2.user"
+          }
+        }
+      ],
+      "id": "614c1018867ad989",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [
+          "memcards/**",
+          "sstates/**",
+          "inis/**"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/Documents/PCSX2",
+        "root": "{DOCUMENTS}\\PCSX2"
+      },
+      "title": "rules.pcsx2.user"
+    },
+    {
+      "app": {
+        "id": "ppsspp",
+        "installed": null,
+        "kind": "application",
+        "name": "PPSSPP",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "game_save",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "ppsspp.user"
+          }
+        }
+      ],
+      "id": "e4abdb8e3a46c13d",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/Documents/PPSSPP/PSP/SAVEDATA",
+        "root": "{DOCUMENTS}\\PPSSPP\\PSP\\SAVEDATA"
+      },
+      "title": "rules.ppsspp.user — rules.ppsspp.label_savedata"
+    },
+    {
+      "app": {
+        "id": "ppsspp",
+        "installed": null,
+        "kind": "application",
+        "name": "PPSSPP",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "game_save",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "ppsspp.user"
+          }
+        }
+      ],
+      "id": "5c4f8f473b7afd80",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/Documents/PPSSPP/PSP/PPSSPP_STATE",
+        "root": "{DOCUMENTS}\\PPSSPP\\PSP\\PPSSPP_STATE"
+      },
+      "title": "rules.ppsspp.user — rules.ppsspp.label_states"
+    },
+    {
+      "app": {
+        "id": "ppsspp",
+        "installed": null,
+        "kind": "application",
+        "name": "PPSSPP",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "game_config",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "ppsspp.user"
+          }
+        }
+      ],
+      "id": "7716382cc6439c71",
+      "notes_key": null,
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [
+          "CACHE/**"
+        ],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/Documents/PPSSPP/PSP/SYSTEM",
+        "root": "{DOCUMENTS}\\PPSSPP\\PSP\\SYSTEM"
+      },
+      "title": "rules.ppsspp.user — rules.ppsspp.label_system"
+    },
+    {
+      "app": {
+        "id": "retroarch",
+        "installed": null,
+        "kind": "application",
+        "name": "RetroArch",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "game_save",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "retroarch.saves"
+          }
+        }
+      ],
+      "id": "8194a004a884cc65",
+      "notes_key": "rules.retroarch.notes",
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [
+          "saves/**",
+          "states/**",
+          "config/**",
+          "retroarch.cfg"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/RetroArch",
+        "root": "{APPDATA}\\RetroArch"
+      },
+      "title": "rules.retroarch.saves — rules.retroarch.label_appdata"
+    },
+    {
+      "app": {
+        "id": "yuzu-ryujinx",
+        "installed": null,
+        "kind": "application",
+        "name": "yuzu / Ryujinx",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "game_save",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "yuzu-ryujinx.user"
+          }
+        }
+      ],
+      "id": "6cce99a3c135d538",
+      "notes_key": "rules.yuzu_ryujinx.notes",
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "none",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/Ryujinx/bis/user/save",
+        "root": "{APPDATA}\\Ryujinx\\bis\\user\\save"
+      },
+      "title": "rules.yuzu_ryujinx.user — rules.yuzu_ryujinx.label_ryujinx_saves"
+    },
+    {
+      "app": {
+        "id": "yuzu-ryujinx",
+        "installed": null,
+        "kind": "application",
+        "name": "yuzu / Ryujinx",
+        "process_names": [],
+        "source_ids": {}
+      },
+      "category": "credentials",
+      "children": [],
+      "default_selected": false,
+      "evidence": [
+        {
+          "confidence": 0.8999999761581421,
+          "importance": null,
+          "message_args": {},
+          "message_key": "evidence.rule_match",
+          "source": {
+            "kind": "rule",
+            "rule_id": "yuzu-ryujinx.user"
+          }
+        }
+      ],
+      "id": "10313afbc9f11796",
+      "notes_key": "rules.yuzu_ryujinx.notes",
+      "requires_elevation": false,
+      "score": null,
+      "sensitivity": "high",
+      "stats": null,
+      "tags": [],
+      "target": {
+        "exclude": [],
+        "include": [
+          "*.keys"
+        ],
+        "kind": "file_set",
+        "resolved": "[root]/Users/user/AppData/Roaming/Ryujinx/system",
+        "root": "{APPDATA}\\Ryujinx\\system"
+      },
+      "title": "rules.yuzu_ryujinx.user — rules.yuzu_ryujinx.label_ryujinx_keys"
+    }
+  ],
+  "issues": []
+}

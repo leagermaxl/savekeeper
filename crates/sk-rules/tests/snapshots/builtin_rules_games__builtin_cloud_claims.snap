@@ -1,0 +1,17 @@
+---
+source: crates/sk-rules/tests/builtin_rules_games.rs
+expression: snapshot(&out)
+---
+{
+  "claimed_paths": [
+    "[root]/Users/user/AppData/Local/Dropbox",
+    "[root]/Users/user/AppData/Roaming/Dropbox",
+    "[root]/Users/user/Dropbox/.dropbox.cache",
+    "[root]/Users/user/AppData/Local/Google/DriveFS",
+    "[root]/Users/user/AppData/Local/Google/Drive",
+    "[root]/Users/user/AppData/Local/Packages/AppleInc.iCloud_nzyj5cx40ttqa",
+    "[root]/Users/user/AppData/Local/Microsoft/OneDrive"
+  ],
+  "findings": [],
+  "issues": []
+}
