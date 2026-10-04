@@ -1,17 +1,34 @@
 //! Cache of generated fixture profiles in `target/fixtures-cache` (SPEC-12 §4.3).
 //!
-//! A profile is generated once per content key into `<name>-<key>` and then
-//! copied. Generation goes to a temporary folder next to it that is renamed
-//! into place, so concurrent test processes never see a partial profile: the
-//! loser of a race discards its copy.
+//! A profile is generated once per content key and then copied. A cache entry
+//! is a folder `<name>-<key>` with the generated profile in `tree/` and the
+//! marker file `.complete`. Generation goes to a temporary folder next to it;
+//! the marker is written last and the folder is then renamed into place, so
+//! concurrent test processes never see a partial profile: the loser of a race
+//! discards its copy.
+//!
+//! An entry without the marker is never used: CI caches of `target/` (e.g.
+//! `Swatinem/rust-cache`) may restore it as a skeleton of empty folders. Such a
+//! folder is left alone (nothing here deletes it) and the next slot
+//! `<name>-<key>-1`, `-2`, … is used instead.
 
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::fixture::ProfileSpec;
 
-/// Changes whenever the generator produces different files for the same description.
-const GENERATOR_VERSION: &str = "sk-testkit fixtures v1";
+/// Changes whenever the generator produces different files for the same
+/// description or the layout of a cache entry changes.
+const GENERATOR_VERSION: &str = "sk-testkit fixtures v2";
+
+/// Marker file of a complete cache entry, written after generation.
+const COMPLETE: &str = ".complete";
+
+/// Subfolder of a cache entry with the generated profile.
+const TREE: &str = "tree";
+
+/// Slots `<name>-<key>[-<n>]` tried before giving up on the cache.
+const MAX_SLOTS: usize = 100;
 
 /// Content key of a profile: a hash of the generator version, the description
 /// and the samples it uses.
@@ -42,35 +59,89 @@ pub(crate) fn get_or_create(
     key: &str,
     generate: impl FnOnce(&Path) -> Result<(), String>,
 ) -> Result<Option<PathBuf>, String> {
-    let cache = cache_dir();
-    let done = cache.join(format!("{name}-{key}"));
-    if done.is_dir() {
-        return Ok(Some(done));
+    get_or_create_in(&cache_dir(), name, key, generate)
+}
+
+/// [`get_or_create`] with the cache in `cache`.
+fn get_or_create_in(
+    cache: &Path,
+    name: &str,
+    key: &str,
+    generate: impl FnOnce(&Path) -> Result<(), String>,
+) -> Result<Option<PathBuf>, String> {
+    // The first complete slot before the first free one is reused.
+    let mut index = 0;
+    loop {
+        if index == MAX_SLOTS {
+            return Ok(None);
+        }
+        let slot = slot(cache, name, key, index);
+        if is_complete(&slot) {
+            return Ok(Some(slot.join(TREE)));
+        }
+        if !exists(&slot) {
+            break;
+        }
+        index += 1;
     }
-    if fs::create_dir_all(&cache).is_err() {
+    if fs::create_dir_all(cache).is_err() {
         return Ok(None);
     }
     let Ok(tmp) = tempfile::Builder::new()
         .prefix(&format!(".tmp-{name}-"))
-        .tempdir_in(&cache)
+        .tempdir_in(cache)
     else {
         return Ok(None);
     };
-    generate(tmp.path())?;
-    match fs::rename(tmp.path(), &done) {
-        Ok(()) => {
-            // Already moved: nothing to delete.
-            let _ = tmp.keep();
-            Ok(Some(done))
-        }
-        // Another process won the race; `tmp` is deleted on drop.
-        Err(_) if done.is_dir() => Ok(Some(done)),
-        Err(e) => Err(format!(
-            "cannot move {} to {}: {e}",
-            tmp.path().display(),
-            done.display()
-        )),
+    let tree = tmp.path().join(TREE);
+    if fs::create_dir(&tree).is_err() {
+        return Ok(None);
     }
+    generate(&tree)?;
+    if fs::write(tmp.path().join(COMPLETE), GENERATOR_VERSION).is_err() {
+        return Ok(None);
+    }
+    while index < MAX_SLOTS {
+        let slot = slot(cache, name, key, index);
+        match fs::rename(tmp.path(), &slot) {
+            Ok(()) => {
+                // Already moved: nothing to delete.
+                let _ = tmp.keep();
+                return Ok(Some(slot.join(TREE)));
+            }
+            // Another process won the race; `tmp` is deleted on drop.
+            Err(_) if is_complete(&slot) => return Ok(Some(slot.join(TREE))),
+            // An incomplete folder took the slot meanwhile: try the next one.
+            Err(_) if exists(&slot) => index += 1,
+            Err(e) => {
+                return Err(format!(
+                    "cannot move {} to {}: {e}",
+                    tmp.path().display(),
+                    slot.display()
+                ))
+            }
+        }
+    }
+    Ok(None)
+}
+
+/// `<cache>/<name>-<key>`, then `<cache>/<name>-<key>-<index>`.
+fn slot(cache: &Path, name: &str, key: &str, index: usize) -> PathBuf {
+    if index == 0 {
+        cache.join(format!("{name}-{key}"))
+    } else {
+        cache.join(format!("{name}-{key}-{index}"))
+    }
+}
+
+/// A cache entry with its marker and generated tree.
+fn is_complete(slot: &Path) -> bool {
+    slot.join(COMPLETE).is_file() && slot.join(TREE).is_dir()
+}
+
+/// Whether anything (even a broken link) occupies `path`.
+fn exists(path: &Path) -> bool {
+    fs::symlink_metadata(path).is_ok()
 }
 
 /// `<target>/fixtures-cache`; `<target>` is an absolute `CARGO_TARGET_DIR`
@@ -86,4 +157,102 @@ fn cache_dir() -> PathBuf {
                 .join("target")
         });
     target.join("fixtures-cache")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn write_f(dir: &Path) -> Result<(), String> {
+        fs::write(dir.join("f"), "x").map_err(|e| e.to_string())
+    }
+
+    fn read(path: impl AsRef<Path>) -> String {
+        fs::read_to_string(path).unwrap()
+    }
+
+    #[test]
+    fn generates_once_and_reuses_a_complete_entry() {
+        let cache = tempfile::TempDir::new().unwrap();
+        let mut calls = 0;
+        let first = get_or_create_in(cache.path(), "p", "k", |dir| {
+            calls += 1;
+            write_f(dir)
+        })
+        .unwrap()
+        .unwrap();
+        assert_eq!(first, cache.path().join("p-k").join(TREE));
+        assert_eq!(read(first.join("f")), "x");
+        assert!(cache.path().join("p-k").join(COMPLETE).is_file());
+        let second = get_or_create_in(cache.path(), "p", "k", |_| {
+            calls += 1;
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(second.as_deref(), Some(first.as_path()));
+        assert_eq!(calls, 1);
+        // No temporary folders are left behind.
+        let names: Vec<_> = fs::read_dir(cache.path())
+            .unwrap()
+            .map(|e| e.unwrap().file_name())
+            .collect();
+        assert_eq!(names, ["p-k"]);
+    }
+
+    #[test]
+    fn generation_errors_are_returned() {
+        let cache = tempfile::TempDir::new().unwrap();
+        let failed = get_or_create_in(cache.path(), "p", "k", |_| Err("boom".to_owned()));
+        assert_eq!(failed, Err("boom".to_owned()));
+        assert!(!exists(&cache.path().join("p-k")));
+    }
+
+    #[test]
+    fn skeletons_without_the_marker_are_not_reused() {
+        // What a CI cache of `target/` restores: folders without their files.
+        let cache = tempfile::TempDir::new().unwrap();
+        let skeleton = cache.path().join("p-k");
+        fs::create_dir_all(skeleton.join(TREE).join("Users/user")).unwrap();
+        fs::create_dir_all(cache.path().join("p-k-1").join("Users")).unwrap();
+        let got = get_or_create_in(cache.path(), "p", "k", write_f)
+            .unwrap()
+            .unwrap();
+        assert_eq!(got, cache.path().join("p-k-2").join(TREE));
+        assert_eq!(read(got.join("f")), "x");
+        // The skeletons are left untouched.
+        assert!(skeleton.join(TREE).join("Users/user").is_dir());
+        assert!(!skeleton.join(COMPLETE).exists());
+        // The complete entry is reused from now on.
+        let again = get_or_create_in(cache.path(), "p", "k", |_| Err("regenerated".into()));
+        assert_eq!(again, Ok(Some(got)));
+    }
+
+    #[test]
+    fn a_complete_entry_after_a_skeleton_is_reused() {
+        let cache = tempfile::TempDir::new().unwrap();
+        fs::create_dir_all(cache.path().join("p-k").join(TREE)).unwrap();
+        let complete = cache.path().join("p-k-1");
+        fs::create_dir_all(complete.join(TREE)).unwrap();
+        write_f(&complete.join(TREE)).unwrap();
+        fs::write(complete.join(COMPLETE), "").unwrap();
+        let got = get_or_create_in(cache.path(), "p", "k", |_| Err("regenerated".into()));
+        assert_eq!(got, Ok(Some(complete.join(TREE))));
+    }
+
+    #[test]
+    fn losing_a_race_uses_the_winner() {
+        let cache = tempfile::TempDir::new().unwrap();
+        let got = get_or_create_in(cache.path(), "p", "k", |dir| {
+            // Another process finishes the same entry during our generation.
+            let winner = cache.path().join("p-k");
+            fs::create_dir_all(winner.join(TREE)).unwrap();
+            fs::write(winner.join(TREE).join("f"), "winner").unwrap();
+            fs::write(winner.join(COMPLETE), "").unwrap();
+            write_f(dir)
+        })
+        .unwrap()
+        .unwrap();
+        assert_eq!(got, cache.path().join("p-k").join(TREE));
+        assert_eq!(read(got.join("f")), "winner");
+    }
 }

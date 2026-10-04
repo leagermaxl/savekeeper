@@ -1,6 +1,6 @@
 use std::fs;
 use std::path::Path;
-use std::time::{Duration, SystemTime};
+use std::time::SystemTime;
 
 use super::*;
 use crate::{tree_hash, FakeProfile};
@@ -211,34 +211,4 @@ fn materialize_profile_creates_the_destination() {
     assert_eq!(env, Environment::fake(&dest));
     assert!(dest.join("Users/user/AppData/Roaming").is_dir());
     assert!(tree_hash(&dest).is_empty());
-}
-
-#[test]
-fn cache_generates_once() {
-    let name = "unit-cache-test";
-    let key = format!(
-        "{:x}",
-        SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap_or(Duration::ZERO)
-            .as_nanos()
-    );
-    let mut calls = 0;
-    let first = cache::get_or_create(name, &key, |dir| {
-        calls += 1;
-        fs::write(dir.join("f"), "x").map_err(|e| e.to_string())
-    })
-    .unwrap()
-    .expect("cache is available in the workspace target folder");
-    assert_eq!(read(first.join("f")), "x");
-    let second = cache::get_or_create(name, &key, |_| {
-        calls += 1;
-        Ok(())
-    })
-    .unwrap();
-    assert_eq!(second.as_deref(), Some(first.as_path()));
-    assert_eq!(calls, 1);
-    let failed = cache::get_or_create(name, &format!("{key}-err"), |_| Err("boom".to_owned()));
-    assert_eq!(failed, Err("boom".to_owned()));
-    fs::remove_dir_all(&first).unwrap();
 }

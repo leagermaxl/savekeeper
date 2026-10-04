@@ -65,7 +65,12 @@ jobs:
           path: target/fixtures-cache
           key: fixtures-${{ runner.os }}-${{ hashFiles('fixtures/**', 'crates/sk-testkit/src/**') }}
       # Validates the profiles and fills target/fixtures-cache for FakeProfile::load.
-      - run: cargo xtask fixtures
+      # rust-cache can restore target/fixtures and target/fixtures-cache as skeletons of
+      # empty folders (files stripped, markers included): xtask treats a file-less
+      # --out as empty, and the cache ignores entries without their `.complete` marker.
+      # The materialized copies go to the runner temp folder, which no cache restores;
+      # nothing in CI reads them, the step only validates profiles and fills the cache.
+      - run: cargo xtask fixtures --out "${{ runner.temp }}/fixtures"
       - run: cargo test --workspace ${{ matrix.exclude }} --locked
 
   msrv:

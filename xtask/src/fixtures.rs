@@ -84,19 +84,17 @@ pub fn materialize(names: &[String], out: &Path) -> anyhow::Result<Vec<(String, 
 
 /// Creates `out` with the marker, or checks that an existing non-empty `out`
 /// was made by this command.
+///
+/// A folder with only empty subfolders counts as empty: a CI cache of `target/`
+/// (`Swatinem/rust-cache`) may restore earlier output as such a skeleton,
+/// without the marker.
 fn prepare_out(out: &Path) -> anyhow::Result<()> {
     let marker = out.join(MARKER);
-    if out.exists() && !marker.exists() {
-        let not_empty = fs::read_dir(out)
-            .with_context(|| format!("cannot read {}", out.display()))?
-            .next()
-            .is_some();
-        if not_empty {
-            bail!(
-                "{} is not empty and was not created by `cargo xtask fixtures`; choose another --out",
-                out.display()
-            );
-        }
+    if out.exists() && !marker.exists() && contains_files(out)? {
+        bail!(
+            "{} is not empty and was not created by `cargo xtask fixtures`; choose another --out",
+            out.display()
+        );
     }
     fs::create_dir_all(out).with_context(|| format!("cannot create {}", out.display()))?;
     fs::write(
@@ -104,6 +102,22 @@ fn prepare_out(out: &Path) -> anyhow::Result<()> {
         "Created by `cargo xtask fixtures` (SPEC-12 §4.3).\n",
     )
     .with_context(|| format!("cannot write {}", marker.display()))
+}
+
+/// Whether `dir` or any folder below it holds anything but folders
+/// (links are not followed and count as files).
+fn contains_files(dir: &Path) -> anyhow::Result<bool> {
+    for entry in fs::read_dir(dir).with_context(|| format!("cannot read {}", dir.display()))? {
+        let entry = entry.with_context(|| format!("cannot read {}", dir.display()))?;
+        let path = entry.path();
+        let file_type = entry
+            .file_type()
+            .with_context(|| format!("cannot stat {}", path.display()))?;
+        if !file_type.is_dir() || contains_files(&path)? {
+            return Ok(true);
+        }
+    }
+    Ok(false)
 }
 
 #[cfg(test)]
@@ -149,5 +163,40 @@ mod tests {
         }
         let err = materialize(&["no-such-profile".to_owned()], &out).unwrap_err();
         assert!(err.to_string().contains("cannot read fixture"), "{err}");
+    }
+
+    #[test]
+    fn accepts_a_skeleton_of_empty_folders() {
+        // What a CI cache of `target/` restores: the folders of an earlier
+        // output without any files, the marker included.
+        let dir = tempfile::TempDir::new().unwrap();
+        let out = dir.path().join("fixtures");
+        fs::create_dir_all(out.join("empty/Users/user/AppData/Roaming")).unwrap();
+        fs::create_dir_all(out.join("gamer/Users/user/Saved Games")).unwrap();
+        assert!(!contains_files(&out).unwrap());
+        let names = vec!["empty".to_owned()];
+        assert_eq!(
+            materialize(&names, &out).unwrap(),
+            [("empty".to_owned(), 0)]
+        );
+        assert!(out.join(MARKER).is_file());
+        assert!(out.join("empty/Users/user/AppData/Roaming").is_dir());
+        assert!(out.join("gamer/Users/user/Saved Games").is_dir());
+    }
+
+    #[test]
+    fn refuses_a_file_deep_in_empty_folders() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let out = dir.path().join("fixtures");
+        let file = out.join("a/b/c/mine.txt");
+        fs::create_dir_all(file.parent().unwrap()).unwrap();
+        fs::create_dir_all(out.join("d/e")).unwrap();
+        fs::write(&file, "x").unwrap();
+        assert!(contains_files(&out).unwrap());
+        let err = materialize(&["empty".to_owned()], &out).unwrap_err();
+        assert!(err.to_string().contains("not created by"), "{err}");
+        assert!(file.is_file());
+        assert!(!out.join(MARKER).exists());
+        assert!(!out.join("empty").exists());
     }
 }
