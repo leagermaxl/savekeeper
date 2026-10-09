@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-system` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-04 (`installed` условие), SPEC-09, SPEC-10 (выполнение экспортов), SPEC-13, SPEC-14 (elevation-хелпер) |
-| Последнее изменение | 2026-10-10 (T-06-06: детали `export_registry`, `registry-user`, `env-vars` в §4.3); 2026-10-10 (T-06-05: детали `winget`/`programs` в §4.3); 2026-10-09 (T-06-04: конструкторы `SystemCollector` в §4.1; §4.8 приведён к принятому в §9 `system.disabled_exporters`); 2026-10-04 (T-06-02: API `Cmd`/`CmdOutput` в §4.1, FFI в `sk-core::win::process`, cp437 и `truncated` в §4.6; статус in-progress — T-06-01); 2026-10-03 (T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.4: чтение Uninstall через `RegistryReader`, T-06-03 зависит от T-02-10); 2026-10-01 (решение по OEM-ключу) |
+| Последнее изменение | 2026-10-10 (решения по итогам T-06-03..07: detect `wifi` по папке профилей §4.3/§5; исключение FR-06-01 для `winget`; `ExportContext.config` и `enrich_with_registry` в §4.1; расширенный фильтр MSIX §4.4; `env-vars` и T-06-10 через `RegistryReader::values` (SPEC-02 §3.4); задачи T-06-14..16; i18n ключей sk-system в T-06-11); 2026-10-10 (T-06-06: детали `export_registry`, `registry-user`, `env-vars` в §4.3); 2026-10-10 (T-06-05: детали `winget`/`programs` в §4.3); 2026-10-09 (T-06-04: конструкторы `SystemCollector` в §4.1; §4.8 приведён к принятому в §9 `system.disabled_exporters`); 2026-10-04 (T-06-02: API `Cmd`/`CmdOutput` в §4.1, FFI в `sk-core::win::process`, cp437 и `truncated` в §4.6; статус in-progress — T-06-01); 2026-10-03 (T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.4: чтение Uninstall через `RegistryReader`, T-06-03 зависит от T-02-10); 2026-10-01 (решение по OEM-ключу) |
 
 ## 1. Цель
 
@@ -37,7 +37,7 @@ Wi-Fi, драйверы, шрифты, hosts, переменные окруже�
 ## 3. Требования
 
 ### 3.1 Функциональные
-- **FR-06-01** — Каждый экспортёр реализует `detect()` (быстро, ≤ 500 мс, без побочных эффектов) и `plan()` (находка `Target::SystemExport`).
+- **FR-06-01** — Каждый экспортёр реализует `detect()` (быстро, ≤ 500 мс, без побочных эффектов; исключение — `winget`: `winget --version` с таймаутом 2 с из-за холодного старта алиаса App Installer) и `plan()` (находка `Target::SystemExport`).
 - **FR-06-02** — `run()` пишет результат **только** в переданный `target_dir` (P1) и возвращает список созданных файлов с хэшами.
 - **FR-06-03** — Экспортёры, которым нужен админ, возвращают `Availability::NeedsElevation`, их находки получают `requires_elevation: true`. При бэкапе без прав они выполняются через хелпер (SPEC-14) или пропускаются с понятным сообщением.
 - **FR-06-04** — Все внешние процессы запускаются с `CREATE_NO_WINDOW`, с таймаутом (по умолчанию 60 с, для драйверов 600 с), с отменой (kill дерева через Job Object) и с корректным декодированием вывода (§4.6).
@@ -75,6 +75,7 @@ pub struct ExportContext<'a> {
     pub cancel: &'a CancellationToken,
     pub events: &'a EventSink,
     pub elevated: bool,                                 // выполняемся ли в хелпере с правами
+    pub config: &'a SystemConfig,                       // sk_core::config, секция `system` (SPEC-01 §4.8.2): `winget_timeout_s` и др.
 }
 
 pub struct ExportResult {
@@ -98,7 +99,8 @@ impl SystemCollector {
 }
 impl Collector for SystemCollector { /* id() = "system" */ }
 
-pub fn enrich(env: &mut Environment);                   // installed_programs (§4.4)
+pub fn enrich(env: &mut Environment);                   // installed_programs (§4.4), реестр — SystemRegistry
+pub fn enrich_with_registry(env: &mut Environment, registry: &dyn RegistryReader); // то же с заданным реестром (sk-engine, тесты на MemRegistry)
 
 /// Экспорт ветки реестра для Target::Registry (используется SPEC-10 и для правил SPEC-04).
 pub async fn export_registry(hive: RegHive, key: &str, out_file: &Path, cancel: &CancellationToken) -> Result<ExportedFile, ExportError>;
@@ -145,12 +147,12 @@ sequenceDiagram
 
 | id | Категория / sensitivity | detect | run (что делает) | Результат в `system/<id>/` | Права |
 |---|---|---|---|---|---|
-| `winget` | system_settings / none | `winget.exe` в `{LOCALAPPDATA}\Microsoft\WindowsApps` или PATH; `winget --version` ≥ 1.4 | `winget export -o <dir>\winget.json --include-versions --accept-source-agreements --disable-interactivity` (таймаут 180 с) | `winget.json` | нет |
+| `winget` | system_settings / none | `winget.exe` в `{LOCALAPPDATA}\Microsoft\WindowsApps` или PATH; `winget --version` ≥ 1.4 | `winget export -o <dir>\winget.json --include-versions --accept-source-agreements --disable-interactivity` (таймаут `ExportContext.config.winget_timeout_s`, по умолчанию 180 с) | `winget.json` | нет |
 | `programs` | system_settings / none | всегда | Из `Environment.installed_programs` | `programs.csv`, `programs.html` (+ колонка «есть в winget.json») | нет |
-| `wifi` | system_settings / **high** если `include_keys` | `netsh wlan show interfaces` код 0 **или** наличие `{PROGRAMDATA}\Microsoft\Wlansvc\Profiles\Interfaces\*` | `netsh wlan export profile folder="<dir>" [key=clear]` | `Wi-Fi-<SSID>.xml` ×N | нет (без ключей), `key=clear` работает для текущего пользователя, но для некоторых профилей нужен админ → warning |
+| `wifi` | system_settings / **high** если `include_keys` | Есть `*.xml` в `{PROGRAMDATA}\Microsoft\Wlansvc\Profiles\Interfaces\<GUID>\` (папка читается группой Users). `netsh wlan show interfaces` (только код возврата) — лишь если папка есть, но не читается. Пустая или отсутствующая папка → `Unavailable { "system.wifi.no_profiles" }` (`netsh` возвращает 0 и без адаптера, пока служба WlanSvc запущена) | `netsh wlan export profile folder="<dir>" [key=clear]` | `Wi-Fi-<SSID>.xml` ×N | нет (без ключей), `key=clear` работает для текущего пользователя, но для некоторых профилей нужен админ → warning |
 | `drivers` | system_settings / none | всегда на Windows; `estimated_bytes` = сумма `{WINDIR}\System32\DriverStore\FileRepository\oem*` через `pnputil /enum-drivers` count × ~5 МБ | `pnputil /export-driver * "<dir>"` (таймаут 600 с) | `oem*.inf` + файлы | **админ** |
 | `registry-user` | system_settings / low | всегда | `reg export` веток: `HKCU\Control Panel\Keyboard`, `HKCU\Control Panel\Mouse`, `HKCU\Control Panel\International`, `HKCU\Keyboard Layout`, `HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced`, `HKCU\Console`, `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` | `*.reg` ×N | нет |
-| `env-vars` | system_settings / low | всегда | Чтение `HKCU\Environment` через `winreg` → JSON + `reg export`. Системные (`HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment`) → JSON только для справки | `user-env.json`, `user-env.reg`, `system-env.json` | нет |
+| `env-vars` | system_settings / low | всегда | Чтение `HKCU\Environment` через `RegistryReader::values` (SPEC-02 §3.4; до T-02-11 — `winreg` в `sk-system::win`) → JSON + `reg export`. Системные (`HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment`) → JSON только для справки | `user-env.json`, `user-env.reg`, `system-env.json` | нет |
 | `fonts` | system_settings / none | `{LOCALAPPDATA}\Microsoft\Windows\Fonts` непуст **или** `HKCU\Software\Microsoft\Windows NT\CurrentVersion\Fonts` непуст | Копирование шрифтов пользователя + `reg export` HKCU Fonts. Системные шрифты не из поставки Windows (`{WINDIR}\Fonts`, не подписанные Microsoft по списку имён) → только список `system-fonts-nonstandard.txt` | `user/*.ttf|otf`, `fonts.reg`, `.txt` | нет |
 | `hosts` | system_settings / none | `{WINDIR}\System32\drivers\etc\hosts` отличается от дефолта (есть непустые строки без `#`) | Копирование | `hosts` | нет |
 | `scheduled-tasks` | system_settings / low | `schtasks /query /fo csv /nh` → задачи вне `\Microsoft\` | `schtasks /query /xml /tn <name>` для каждой пользовательской | `tasks/<name>.xml` | нет (часть задач скрыта без админа → info) |
@@ -165,14 +167,14 @@ sequenceDiagram
 
 Детали `winget` и `programs` (T-06-05): `winget --version` в `detect` выполняется с таймаутом 2 с (холодный старт алиаса App Installer); таймаут или ошибка → `system.winget.missing`, версия < 1.4 → `system.winget.outdated`. Колонка «в winget» в `programs` берётся из соседнего `<target_dir>/../winget/winget.json` (порядок `registry()`: `winget` раньше `programs`); файла нет → колонка пустая, файл не читается → warning `issue.system.winget_json_unreadable`. Сопоставление эвристическое: имя из `PackageIdentifier` (часть после издателя) совпадает с подряд идущими словами `DisplayName`. `programs.csv` — RFC 4180 с BOM, колонки на английском, включая `in_winget` и `winget_id`; тексты `programs.html` (ru/en) встроены в sk-system, язык — `env.os.ui_language`. Код winget ≠ 0 при записанном файле → warning `issue.system.winget_export_exit_code`.
 
-Детали `export_registry`, `registry-user`, `env-vars` (T-06-06): имя файла `slug(key).reg` (строчные буквы и цифры, прочие последовательности → `-`, пустой slug → `key`; совпадения → `-2`, `-3`…). Наличие ключа проверяется `RegistryReader::key_state` до запуска `reg.exe` и после кода ≠ 0; `Missing` → `NotAvailable`, вывод `reg.exe` не разбирается (NFR-06-02). `ExportedFile.rel_path` у `export_registry` — имя `out_file`; `reg.exe` ищется через `SystemRoot`/`windir` (в сигнатуре нет `Environment`), вне Windows → `NotAvailable`. Экспортёры с несколькими файлами: ошибка одной части → warning (`issue.system.registry_key_missing` {key}, `issue.system.registry_export_failed` {key, error}, `issue.system.registry_read_failed` {key, error}), остальные части выполняются; не записано ни одного файла → первая ошибка; отмена прерывает сразу. Значения `HKCU\Environment` перечисляются через `winreg` (`sk-system::win`, только `KEY_READ`), т.к. `RegistryReader` не перечисляет значения и раскрывает `REG_EXPAND_SZ`. Формат `user-env.json`/`system-env.json`: `{ "key": "HKCU\Environment", "variables": [{ "name", "type": "REG_SZ"|"REG_EXPAND_SZ"|…, "value" }] }`, сортировка по имени без учёта регистра, `REG_EXPAND_SZ` не раскрывается, `value` — строка, массив (`MULTI_SZ`), число (`DWORD`/`QWORD`) или `null`.
+Детали `export_registry`, `registry-user`, `env-vars` (T-06-06): имя файла `slug(key).reg` (строчные буквы и цифры, прочие последовательности → `-`, пустой slug → `key`; совпадения → `-2`, `-3`…). Наличие ключа проверяется `RegistryReader::key_state` до запуска `reg.exe` и после кода ≠ 0; `Missing` → `NotAvailable`, вывод `reg.exe` не разбирается (NFR-06-02). `ExportedFile.rel_path` у `export_registry` — имя `out_file`; `reg.exe` ищется через `SystemRoot`/`windir` (в сигнатуре нет `Environment`), вне Windows → `NotAvailable`. Экспортёры с несколькими файлами: ошибка одной части → warning (`issue.system.registry_key_missing` {key}, `issue.system.registry_export_failed` {key, error}, `issue.system.registry_read_failed` {key, error}), остальные части выполняются; не записано ни одного файла → первая ошибка; отмена прерывает сразу. Значения `HKCU\Environment` перечисляются через `winreg` (`sk-system::win`, только `KEY_READ`), т.к. `RegistryReader` не перечислял значения; T-02-11 переносит перечисление в `sk-core::registry` (`RegistryReader::values`, сырые значения) и удаляет `sk-system::win`. Формат `user-env.json`/`system-env.json`: `{ "key": "HKCU\Environment", "variables": [{ "name", "type": "REG_SZ"|"REG_EXPAND_SZ"|…, "value" }] }`, сортировка по имени без учёта регистра, `REG_EXPAND_SZ` не раскрывается, `value` — строка, массив (`MULTI_SZ`), число (`DWORD`/`QWORD`) или `null`.
 
 ### 4.4 Installed programs (`enrich`)
 Источники (объединение, дедуп по `(DisplayName, Publisher)` lowercase):
 - `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*`
 - `HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*`
 - `HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\*`
-- MSIX/Store-пакеты: `Get-AppxPackage` дорог → вместо него перечисление `HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\Repository\Packages\*` (имя PFN, без системных `Microsoft.Windows.*`, `*.NET.*`, `VCLibs`).
+- MSIX/Store-пакеты: `Get-AppxPackage` дорог → вместо него перечисление `HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\Repository\Packages\*` (имя PFN, без системных и фреймворк-пакетов: `Microsoft.Windows.*`, `*.NET.*`, `VCLibs`, `Microsoft.UI.Xaml.*`, `Microsoft.WindowsAppRuntime.*`, `Windows.*`, `MicrosoftWindows.*`, а также пакеты с PublisherId `cw5n1h2txyewy`; сравнение без учёта регистра).
 
 Фильтр: пропускаем `SystemComponent = 1`, записи с `ParentKeyName` (обновления), `ReleaseType ∈ {Update, Hotfix, Security Update}`, без `DisplayName`.
 
@@ -194,7 +196,7 @@ pub struct InstalledProgram {
 - Предпочтительно `reg.exe export "<HIVE>\<key>" "<file>" /y`. Формат `.reg` (UTF-16LE с BOM) — стандартный, восстанавливается двойным кликом.
 - Имя файла: `slug(key).reg`, коллизии получают суффикс `-2`.
 - Ключ не существует → `ExportError::NotAvailable` (не ошибка бэкапа, warning).
-- Альтернатива без процесса (если `reg.exe` заблокирован политикой): собственный сериализатор через `winreg` в формат `Windows Registry Editor Version 5.00` — желательно, T-06-10.
+- Альтернатива без процесса (если `reg.exe` заблокирован политикой): собственный сериализатор через `RegistryReader::values` (SPEC-02 §3.4) в формат `Windows Registry Editor Version 5.00` — желательно, T-06-10.
 
 ### 4.6 Запуск процессов (`Cmd`)
 1. `tokio::process::Command` с `creation_flags(CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP)`.
@@ -228,7 +230,8 @@ pub struct InstalledProgram {
 | winget не установлен (LTSC, старые Win10) | `Unavailable { reason_key: "system.winget.missing" }`. `programs` всё равно работает. Чек-лист: «установите App Installer». |
 | winget требует принять соглашения / первый запуск | `--accept-source-agreements --disable-interactivity`. При коде ≠ 0 и пустом файле → warning. |
 | winget export пропустил пакеты («not available from any source») | Нормально. `programs.html` показывает всё, колонка «в winget». |
-| Wi-Fi-адаптера нет (ПК по кабелю) | `detect` по `Profiles\Interfaces` → профилей нет → Unavailable. |
+| Wi-Fi-адаптера нет (ПК по кабелю) | `detect` по `Profiles\Interfaces` → профилей нет → Unavailable. Код 0 от `netsh wlan show interfaces` признаком адаптера не считается. |
+| Профили удалённого адаптера остались в `Profiles\Interfaces` | `detect` → Available, но `netsh` без интерфейса ничего не экспортирует → `run` → `NotAvailable` → warning при бэкапе. |
 | Групповая политика запрещает `reg.exe` | Fallback-сериализатор (T-06-10) или warning. |
 | Нет прав на драйверы | NeedsElevation. Без согласия на UAC → находка пропускается при бэкапе, пункт чек-листа. |
 | UAC отклонён пользователем | `ExportError::NeedsElevation` → warning, бэкап продолжается. |
@@ -260,10 +263,13 @@ pub struct InstalledProgram {
 - [ ] **T-06-07** — Экспортёр `wifi` (с параметром `include_keys`, sensitivity). *Зависит:* T-06-02.
 - [ ] **T-06-08** — Экспортёры `fonts`, `hosts`, `scheduled-tasks`, `powershell-modules`. *Зависит:* T-06-02.
 - [ ] **T-06-09** — Экспортёры `drivers` (NeedsElevation), `printers`, `disks-info`, `windows-info` (WMI через `wmi` crate). *Зависит:* T-06-02.
-- [ ] **T-06-10** — Fallback-сериализатор `.reg` через `winreg` (желательно). *Зависит:* T-06-06.
-- [ ] **T-06-11** — `checklist` + `licensing-hints.yaml` (≥ 30 программ) + i18n ru/en. *Зависит:* T-06-03, T-06-09.
+- [ ] **T-06-10** — Fallback-сериализатор `.reg` через `RegistryReader::values` (SPEC-02 §3.4) (желательно). *Зависит:* T-06-06, T-02-11.
+- [ ] **T-06-11** — `checklist` + `licensing-hints.yaml` (≥ 30 программ) + i18n ru/en. В i18n входят тексты всех ключей, которые выдаёт sk-system (`system.*`, `issue.system.*`, `evidence.system_export`), в `app/src/i18n/<lang>/`, и тест `sk-system/tests/i18n_keys.rs` по образцу `sk-games/tests/i18n_keys.rs` (SPEC-11 §4.7). *Зависит:* T-06-03, T-06-09.
 - [ ] **T-06-12** — Интеграция с elevation-хелпером через `sk-core::win::elevation::ElevatedTask` (SPEC-14 §4). Соответствие: `drivers` → `ElevatedTask::ExportDrivers { out_dir }`. Прочие экспортёры админских прав не требуют; частично-админские (`disks-info`, `wifi` с ключами) при отсутствии прав деградируют с warning, а не просят UAC. Новый тип задачи добавляется только одновременной правкой SPEC-06 и SPEC-14. *Зависит:* T-06-01, T-14-05.
 - [ ] **T-06-13** — Экспортёр `git-bundle` (§4.3). *Зависит:* T-06-01, T-07-10. *Готово, когда:* Windows-тест на временном репозитории с незапушенным коммитом и untracked-файлом: bundle клонируется, файлы на месте.
+- [ ] **T-06-14** — Подключение sk-system к движку (SPEC-01 §4.4): в фазе `Environment` после `sk_games::enrich_with_registry` — `sk_system::enrich_with_registry` в `spawn_blocking` с реестром из `ScanPipeline::with_system_registry` (без вызова — `SystemRegistry`), всегда, независимо от `CollectorToggles.system` (от `installed_programs` зависят условия `installed` правил SPEC-04); паника → `installed_programs` пустой, `ScanIssue { Error, source: "system", "collector.panicked", { error } }`. Встроенный коллектор `system` (`SystemCollector::new()`) регистрируется в `ScanPipeline::new`, `with_collector` с id `system` его заменяет. *Зависит:* T-06-03, T-06-04. *Готово, когда:* тест sk-engine на `with_environment` + `MemRegistry`: `installed_programs` в отчёте заполнен, правило с условием `installed` срабатывает; при `collectors.system = false` находок `system` нет, а `installed_programs` заполнен; замена коллектора через `with_collector`.
+- [ ] **T-06-15** — `ExportContext.config: &SystemConfig` (§4.1); `winget` берёт таймаут `winget export` из `config.winget_timeout_s`. *Зависит:* T-06-05. *Готово, когда:* unit-тест: таймаут из конфига доходит до `Cmd` (фейковый runner), существующие тесты экспортёров обновлены.
+- [ ] **T-06-16** — Расширенный фильтр MSIX в `enrich` (§4.4): `Microsoft.UI.Xaml.*`, `Microsoft.WindowsAppRuntime.*`, `Windows.*`, `MicrosoftWindows.*`, PublisherId `cw5n1h2txyewy`. *Зависит:* T-06-03. *Готово, когда:* unit-тесты на фикстуре для каждого нового правила; ручной прогон `installed_programs_of_this_machine` — в списке нет перечисленных пакетов.
 
 ## 8. Критерии приёмки
 
@@ -277,7 +283,7 @@ pub struct InstalledProgram {
 
 - **OEM-ключ Windows из BIOS** (`SoftwareLicensingService.OA3xOriginalProductKey` через WMI): полезен владельцам старых ноутбуков, но это извлечение ключа, что противоречит FR-06-05. **Решено (2026-10-01):** не извлекать. Показываем только факт наличия (`OA3xOriginalProductKey != ""`) в `windows.json` и в чек-листе.
 - **Предложение к SPEC-02 §3.3:** тип `InstalledProgram` (§4.4) определить в `sk-core` как часть `Environment` (сейчас там упомянут без определения).
-- **Предложение к SPEC-02 §2.1 / SPEC-10:** у находки `SystemExport` нужны редактируемые параметры (`include_keys`). Нужен ли отдельный тип `ExportParamsSchema` для UI (JSON-schema параметров экспортёра)? Предложение: метод `fn params_schema(&self) -> Option<ParamsSchema>` в трейте + отображение в SPEC-11.
+- **Предложение к SPEC-02 §2.1 / SPEC-10:** у находки `SystemExport` нужны редактируемые параметры (`include_keys`). Нужен ли отдельный тип `ExportParamsSchema` для UI (JSON-schema параметров экспортёра)? Предложение: метод `fn params_schema(&self) -> Option<ParamsSchema>` в трейте + отображение в SPEC-11. Решить вместе: при `include_keys = true`, выбранном пользователем, находка `wifi` должна стать `high` (FR-06-06), а `plan()` этого выбора не видит (`wifi::sensitivity(params)` сейчас `pub(crate)`); `FindingId::for_target` включает `params`, поэтому смена параметра меняет id находки (T-06-07).
 - ~~Предложение к SPEC-01 §4.8.2: `system.disabled_exporters`, `system.winget_timeout_s`~~. **Принято** (SPEC-01 §4.8.2, таймаут по умолчанию 180 с).
 - Экспорт ассоциаций файлов по умолчанию (`dism /online /export-defaultappassociations`) требует админа и плохо восстанавливается на Win11. Включить как `NeedsElevation`-экспортёр или только в чек-лист? Предложение: только чек-лист.
 - Нужен ли экспорт WSL (`wsl --export`)? Это SPEC-18 (бэклог), здесь только detect → пункт чек-листа «найдено N WSL-дистрибутивов».

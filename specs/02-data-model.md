@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-core` |
 | Зависит от | SPEC-00 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-10-03 (T-02-10: `normalize_key`, корень вне Windows; общий RegistryReader и PathTemplate::specialize в sk-core; §3.2: `specialize`; §3.4: реестр только для чтения; T-04-05: §3.2, §2.7 — специализация мульти-значных токенов в шаблоне находки до расчёта `FindingId`); 2026-10-02 (§4.1: `Marker::ALL`; §6: `from_env`, `from_json`, `ReportError`, правила снапшота окружения; §2.7: API `FindingId::for_target`, уточнения формулы; §4.2: API `sk-core::privacy`, правила замен, `machine_name`; §3.1–§3.3: синтаксис шаблонов, `Token`, `TemplateError`, правила `resolve`/`from_path`, токены `{STORE_GAME_ID}`/`{GAME_DIR_NAME}` в таблице, `Environment.store_packages` для `{PACKAGE:…}`; §3.3: `Environment::known_folder`, `KnownFolder::ALL/token/from_token`; §3.1, §3.3: OneDrive-корни заполняет `detect()`, `EnvError`, раскладка `fake`, правила для дисков и процессов, состав T-02-05; §5: API `sk-core::path` и `PathSet`; §8, T-02-09: снапшот контракта — TS-декларации вместо JSON Schema, `u64` → `number`; T-02-09: `xtask bindings`, зависит от T-11-01; определены `OsInfo`, `KnownFolder`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `CollectorToggles`, `LlmMode`; обязательные Known Folders; состав и зависимости T-02-01/05/08) |
+| Последнее изменение | 2026-10-10 (§3.4: `RegistryReader::values`, `RegData`, `RegValue`, `MemRegistry::set_value` — сырые значения ключа для sk-system, задача T-02-11); 2026-10-03 (T-02-10: `normalize_key`, корень вне Windows; общий RegistryReader и PathTemplate::specialize в sk-core; §3.2: `specialize`; §3.4: реестр только для чтения; T-04-05: §3.2, §2.7 — специализация мульти-значных токенов в шаблоне находки до расчёта `FindingId`); 2026-10-02 (§4.1: `Marker::ALL`; §6: `from_env`, `from_json`, `ReportError`, правила снапшота окружения; §2.7: API `FindingId::for_target`, уточнения формулы; §4.2: API `sk-core::privacy`, правила замен, `machine_name`; §3.1–§3.3: синтаксис шаблонов, `Token`, `TemplateError`, правила `resolve`/`from_path`, токены `{STORE_GAME_ID}`/`{GAME_DIR_NAME}` в таблице, `Environment.store_packages` для `{PACKAGE:…}`; §3.3: `Environment::known_folder`, `KnownFolder::ALL/token/from_token`; §3.1, §3.3: OneDrive-корни заполняет `detect()`, `EnvError`, раскладка `fake`, правила для дисков и процессов, состав T-02-05; §5: API `sk-core::path` и `PathSet`; §8, T-02-09: снапшот контракта — TS-декларации вместо JSON Schema, `u64` → `number`; T-02-09: `xtask bindings`, зависит от T-11-01; определены `OsInfo`, `KnownFolder`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `CollectorToggles`, `LlmMode`; обязательные Known Folders; состав и зависимости T-02-01/05/08) |
 
 ## 1. Цель
 
@@ -369,7 +369,7 @@ pub enum EnvError {
 
 ### 3.4 Реестр (только чтение)
 
-Общий доступ к реестру для фичевых крейтов: `sk-rules` (`registry_exists`, registry-targets, SPEC-04), `sk-games` (детекторы лаунчеров, SPEC-05 §4.4), `sk-system` (`enrich`, SPEC-06 §4.4). Трейт позволяет тестировать их на любой ОС. Ключи открываются только для чтения (`KEY_READ`, принцип P1); записи в реестр в `sk-core` нет. Вводится в T-02-10 вместо `sk-rules::registry` (`RegistryProbe`) и `sk-games::registry` (`RegistryReader` только со `string_value`).
+Общий доступ к реестру для фичевых крейтов: `sk-rules` (`registry_exists`, registry-targets, SPEC-04), `sk-games` (детекторы лаунчеров, SPEC-05 §4.4), `sk-system` (`enrich`, SPEC-06 §4.4; `env-vars` и `.reg`-сериализатор, SPEC-06 §4.3/§4.5). Трейт позволяет тестировать их на любой ОС. Ключи открываются только для чтения (`KEY_READ`, принцип P1); записи в реестр в `sk-core` нет. Вводится в T-02-10 вместо `sk-rules::registry` (`RegistryProbe`) и `sk-games::registry` (`RegistryReader` только со `string_value`).
 
 ```rust
 // sk-core::registry
@@ -381,7 +381,22 @@ pub trait RegistryReader: Send + Sync {
     fn string_value(&self, hive: RegHive, key: &str, name: &str) -> Option<String>;
     fn dword_value(&self, hive: RegHive, key: &str, name: &str) -> Option<u32>;
     fn subkeys(&self, hive: RegHive, key: &str) -> Vec<String>;
+    fn values(&self, hive: RegHive, key: &str) -> Option<Vec<RegValue>>; // все значения ключа, сырые
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RegData {
+    String(String),                     // REG_SZ
+    ExpandString(String),               // REG_EXPAND_SZ как хранится, без раскрытия
+    MultiString(Vec<String>),           // REG_MULTI_SZ
+    Dword(u32),                         // REG_DWORD
+    Qword(u64),                         // REG_QWORD
+    Binary(Vec<u8>),                    // REG_BINARY
+    Other { kind: u32, bytes: Vec<u8> }, // прочие типы (REG_NONE, REG_DWORD_BIG_ENDIAN, …): номер типа и сырые байты
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RegValue { pub name: String, pub data: RegData } // name "" — значение по умолчанию
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct SystemRegistry;   // реестр этой машины через sk-core::win::registry; вне Windows — Missing (в т.ч. для корня) / None / пусто
@@ -395,6 +410,7 @@ impl MemRegistry {
     pub fn add_denied_key(&mut self, hive: RegHive, key: &str) -> &mut Self;  // ключ без права чтения, родители читаемы
     pub fn set_string(&mut self, hive: RegHive, key: &str, name: &str, value: &str) -> &mut Self; // + ключ и родители
     pub fn set_dword(&mut self, hive: RegHive, key: &str, name: &str, value: u32) -> &mut Self;   // + ключ и родители
+    pub fn set_value(&mut self, hive: RegHive, key: &str, name: &str, data: RegData) -> &mut Self; // любой тип; + ключ и родители
 }
 ```
 
@@ -404,6 +420,7 @@ impl MemRegistry {
 - `dword_value`: только `REG_DWORD` (`RRF_RT_REG_DWORD`), иначе `None`.
 - `subkeys`: имена прямых подключей; нет ключа или доступа → пустой список. Порядок у `SystemRegistry` — порядок `RegEnumKeyExW`, у `MemRegistry` — по алфавиту без учёта регистра; кому нужен стабильный порядок, сортирует сам.
 - `MemRegistry`: имена ключей и значений сравниваются без учёта регистра, `subkeys` отдаёт имя в регистре первого добавления. Значение типизировано: `set_string` не читается через `dword_value` и наоборот. У ключа из `add_denied_key` значения и подключи не читаются (`None` / пусто), как у реального ключа без права чтения.
+- `values`: все значения ключа без раскрытия `REG_EXPAND_SZ`; строки — до первого NUL, у `REG_MULTI_SZ` пустой хвост отбрасывается. Нет ключа или доступа → `None` (причину даёт `key_state`). Значение, которое не удалось прочитать (удалено между перечислением и чтением), пропускается. Порядок у `SystemRegistry` — порядок `RegEnumValueW`, у `MemRegistry` — по алфавиту без учёта регистра. В `MemRegistry` значения из `set_string`/`set_dword` видны в `values` как `String`/`Dword`, а значения из `set_value` — в `string_value` (`String`; `ExpandString` возвращается как есть, без раскрытия) и `dword_value` (`Dword`).
 - Реализация: `sk-core::registry` — кроссплатформенный модуль (трейт, фейк, нормализация ключа). FFI — в `sk-core::win::registry` (существующие `string`, `dword`, `subkeys` и новый `key_state`), для других ОС — заглушка. `Environment::detect()` (OneDrive, `OsInfo`) по-прежнему вызывает `win::registry` напрямую.
 
 ## 4. FolderSummary
@@ -610,6 +627,7 @@ impl LauncherSnapshot { pub fn from_launcher(launcher: &LauncherInfo, env: &Envi
 - [x] **T-02-08** — `ScanReport`, `EnvironmentSnapshot` (+ `from_env`), `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `Totals`, `CategoryTotals` + версионирование (`SCHEMA_VERSION`, `from_json`, `ReportError`). *Зависит:* T-02-01, T-02-03, T-02-05, T-02-07.
 - [ ] **T-02-09** — `cargo xtask bindings` (SPEC-12 §4.9): экспорт TS-типов `sk-core` через specta в `app/src/bindings.ts`. В SPEC-11 T-11-02 тот же экспорт дополняется командами и событиями `tauri-specta` (один генератор, один файл). `u64`/`i64` экспортируются как `number` (`BigIntExportBehavior::Number`): размеры и счётчики не превышают 2^53. *Зависит:* T-02-08, T-11-01 (`app/` и `tsconfig` для проверки), T-12-01. *Готово, когда:* файл генерируется и компилируется `tsc`, insta-снапшот TS-деклараций типов `sk-core` зафиксирован.
 - [x] **T-02-10** — `sk-core::registry` (§3.4) и `PathTemplate::specialize` (§3.2). Миграция: sk-rules (`RegistryProbe` → `RegistryReader`, `KeyState` из sk-core, удалить `sk-rules::win` и зависимость `winreg`, `specialize` из sk-core вместо приватной в `expand_paths`) и sk-games (удалить свои `registry.rs`, `win.rs`, `winreg`; `SteamDetector::with_registry(Arc<dyn RegistryReader>)`); реэкспорты `KeyState`/`RegistryProbe`/`RegistryReader`/`SystemRegistry`/`MemRegistry` из sk-rules и sk-games убираются, потребители (`sk-engine::ScanPipeline::with_rules_registry(Arc<dyn RegistryReader>)`, `sk-cli`, тесты) импортируют из `sk_core::registry`. Поведение и тесты SPEC-04/SPEC-05 не меняются (кроме того, что `REG_EXPAND_SZ` теперь раскрывается, §3.4). *Зависит:* T-02-03, T-04-13, T-05-03. *Готово, когда:* в workspace одна реализация реестра и одна специализация шаблонов; `cargo test --workspace` зелёный; unit-тесты `MemRegistry` и `specialize` (порядок, пустые значения, шаблон без токенов); Windows-тест `SystemRegistry` на временном ключе HKCU (`sk_testkit::RegTestKey`, SPEC-12 §4.2; в `sk-core/tests/` через dev-зависимость `sk-testkit`): все четыре метода, `REG_EXPAND_SZ` раскрыт, значение другого типа → `None`, отсутствующий ключ → `Missing`.
+- [ ] **T-02-11** — `RegistryReader::values`, `RegData`, `RegValue`, `MemRegistry::set_value` (§3.4); FFI перечисления значений в `sk-core::win::registry` (`RegEnumValueW`, `KEY_READ`). Миграция sk-system: `env-vars` читает значения через `RegistryReader::values` (реестр подменяется `MemRegistry` в тестах), удаляются `sk-system::reg_values`, `sk-system::win` и зависимость `winreg` у sk-system (SPEC-01 §4.2). Вывод и поведение `env-vars` не меняются. *Зависит:* T-02-10, SPEC-06 T-06-06. *Готово, когда:* unit-тесты `MemRegistry::values` (порядок, все типы, `Missing`/`AccessDenied` → `None`, перекрёстная видимость с `set_string`/`set_dword`/`string_value`/`dword_value`); Windows-тест `SystemRegistry::values` на временном ключе HKCU (`sk_testkit::RegTestKey`): `REG_SZ`, `REG_EXPAND_SZ` не раскрыт, `REG_MULTI_SZ`, `REG_DWORD`, `REG_QWORD`, `REG_BINARY`, отсутствующий ключ → `None`; тесты `env-vars` зелёные; в workspace нет других чтений реестра, кроме `sk-core::win::registry`.
 
 ## 10. Критерии приёмки
 

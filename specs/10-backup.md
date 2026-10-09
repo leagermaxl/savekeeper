@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-backup` (оркестрация — `sk-engine::BackupJob`) |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03, SPEC-06, SPEC-09 |
 | Используется в | SPEC-11, SPEC-13, SPEC-14 |
-| Последнее изменение | 2026-10-01 (пример `environment` в манифесте по SPEC-02 §6; закрыт вопрос по `EnvironmentSnapshot`) |
+| Последнее изменение | 2026-10-10 (имя файла экспорта winget — `winget.json`, как в SPEC-06 §4.3); 2026-10-01 (пример `environment` в манифесте по SPEC-02 §6; закрыт вопрос по `EnvironmentSnapshot`) |
 
 ## 1. Цель
 
@@ -155,7 +155,7 @@ SaveKeeper-DESKTOP-01-20260928-1430.zip      (или папка с тем же �
 │   └── 5c1e.. .reg          # <FindingId>.reg, UTF-16LE с BOM (формат reg.exe export)
 ├── system/
 │   ├── winget/
-│   │   └── winget-export.json
+│   │   └── winget.json
 │   ├── wifi/
 │   │   └── Wi-Fi-HomeNet.xml
 │   └── <exporter_id>/...    # то, что вернул ExportRunner
@@ -263,7 +263,7 @@ flowchart TD
       "finding_id": "e0c47a1f9b8d2233",
       "exporter_id": "winget",
       "params": {},
-      "files": [{ "archive_path": "system/winget/winget-export.json", "size": 18211, "blake3": "…" }],
+      "files": [{ "archive_path": "system/winget/winget.json", "size": 18211, "blake3": "…" }],
       "status": "complete",             // complete | failed | elevation_denied | unavailable
       "elevated": false
     }

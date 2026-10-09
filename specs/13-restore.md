@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-restore` (оркестрация — `sk-engine::RestoreJob`), экран в `app/` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-06, SPEC-10, SPEC-11, SPEC-14 |
 | Используется в | — |
-| Последнее изменение | 2026-10-03 (T-04-05: §4.2 — шаблон содержит конкретный id3 Steam); 2026-10-01 (закрыт вопрос по `environment.drives`: SPEC-02 §6) |
+| Последнее изменение | 2026-10-10 (FR-13-10: файл `winget.json`, как в SPEC-06 §4.3); 2026-10-03 (T-04-05: §4.2 — шаблон содержит конкретный id3 Steam); 2026-10-01 (закрыт вопрос по `environment.drives`: SPEC-02 §6) |
 
 ## 1. Цель
 
@@ -48,7 +48,7 @@
 - **FR-13-07** — Стратегии (глобально + переопределение на находку): `skip` (по умолчанию), `overwrite` (старый файл переносится в `.savekeeper-restore-backup/<timestamp>/`), `rename` (восстанавливаемый как `name (restored).ext`), `newer_wins` (по mtime).
 - **FR-13-08** — Выборочность: по находкам (чекбоксы как в SPEC-11 Results), с поиском.
 - **FR-13-09** — Реестр: перед `reg import` текущее состояние ветки экспортируется в `restore-backup/<timestamp>/registry/<id>.reg`. Импорт — `reg.exe import <file>`. HKLM-ветки не импортируются никогда (в бэкапе HKLM нет, но проверяем).
-- **FR-13-10** — Программы: показывается список из `winget-export.json` с чекбоксами. `winget import --import-file <filtered.json> --accept-package-agreements --accept-source-agreements --disable-interactivity` запускается только после явного согласия. Пакеты без источника winget попадают в отчёт как «установить вручную» (ссылки текстом).
+- **FR-13-10** — Программы: показывается список из `winget.json` с чекбоксами. `winget import --import-file <filtered.json> --accept-package-agreements --accept-source-agreements --disable-interactivity` запускается только после явного согласия. Пакеты без источника winget попадают в отчёт как «установить вручную» (ссылки текстом).
 - **FR-13-11** — Wi-Fi: `netsh wlan add profile filename="<xml>" user=current` для каждого выбранного профиля. Требуется служба WLAN (`wlansvc`). Если адаптера нет — `unavailable`.
 - **FR-13-12** — Драйверы: `pnputil /add-driver "<dir>\*.inf" /subdirs /install` через elevation-хелпер (SPEC-14 §4.5). Отказ UAC = `elevation_denied`.
 - **FR-13-13** — Порядок применения: (1) программы (winget) — опционально и первыми, потому что установщики создают свои папки конфигов, которые затем перезаписываются восстановлением; (2) файлы; (3) реестр; (4) Wi-Fi; (5) драйверы. Пользователь может запустить шаги по отдельности.
