@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-system` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-04 (`installed` условие), SPEC-09, SPEC-10 (выполнение экспортов), SPEC-13, SPEC-14 (elevation-хелпер) |
-| Последнее изменение | 2026-10-04 (T-06-02: API `Cmd`/`CmdOutput` в §4.1, FFI в `sk-core::win::process`, cp437 и `truncated` в §4.6; статус in-progress — T-06-01); 2026-10-03 (T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.4: чтение Uninstall через `RegistryReader`, T-06-03 зависит от T-02-10); 2026-10-01 (решение по OEM-ключу) |
+| Последнее изменение | 2026-10-09 (T-06-04: конструкторы `SystemCollector` в §4.1; §4.8 приведён к принятому в §9 `system.disabled_exporters`); 2026-10-04 (T-06-02: API `Cmd`/`CmdOutput` в §4.1, FFI в `sk-core::win::process`, cp437 и `truncated` в §4.6; статус in-progress — T-06-01); 2026-10-03 (T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.4: чтение Uninstall через `RegistryReader`, T-06-03 зависит от T-02-10); 2026-10-01 (решение по OEM-ключу) |
 
 ## 1. Цель
 
@@ -92,6 +92,10 @@ pub fn registry() -> Vec<Arc<dyn SystemExporter>>;       // все экспор�
 pub fn exporter(id: &str) -> Option<Arc<dyn SystemExporter>>;
 
 pub struct SystemCollector { exporters: Vec<Arc<dyn SystemExporter>> }
+impl SystemCollector {
+    pub fn new() -> Self;                                 // exporters = registry(); также Default
+    pub fn with_exporters(exporters: Vec<Arc<dyn SystemExporter>>) -> Self; // тесты, подмена набора
+}
 impl Collector for SystemCollector { /* id() = "system" */ }
 
 pub fn enrich(env: &mut Environment);                   // installed_programs (§4.4)
@@ -211,7 +215,7 @@ pub struct InstalledProgram {
 - **Драйверы:** «экспорт требует прав администратора» (если не выполнен).
 
 ### 4.8 Конфигурация
-Отдельных ключей в конфиге v1 нет. Включение/выключение коллектора через `ScanOptions.collectors.system`, параметры экспортёров через выбор в UI. Возможное будущее: `system.disabled_exporters: []` (Открытые вопросы).
+Ключи `system.disabled_exporters` и `system.winget_timeout_s` (SPEC-01 §4.8.2, решение §9). `SystemCollector` пропускает экспортёры, чьи id перечислены в `disabled_exporters`. Включение/выключение коллектора целиком — через `ScanOptions.collectors.system`, параметры экспортёров — через выбор в UI.
 
 ## 5. Ошибки и граничные случаи
 
@@ -246,7 +250,7 @@ pub struct InstalledProgram {
 - [x] **T-06-01** — Трейт `SystemExporter`, `Availability`, `ExportContext`, `ExportResult`, `registry()`. *Зависит:* T-02-01. *Готово, когда:* компилируется, документация.
 - [x] **T-06-02** — `Cmd` + `CmdRunner`: `CREATE_NO_WINDOW`, Job Object, таймаут, отмена, OEM-декодирование, лимиты вывода. *Зависит:* T-06-01. *Готово, когда:* Windows-тест таймаута и unit-тест декодирования.
 - [x] **T-06-03** — `enrich`: installed programs (4 источника, фильтры, дедуп). *Зависит:* T-02-05, T-02-10. *Готово, когда:* unit на фикстуре + ручная сверка с «Приложения и возможности».
-- [ ] **T-06-04** — `SystemCollector` (detect+plan параллельно, ≤ 3 с). *Зависит:* T-06-01, T-01-03.
+- [x] **T-06-04** — `SystemCollector` (detect+plan параллельно, ≤ 3 с). *Зависит:* T-06-01, T-01-03.
 - [ ] **T-06-05** — Экспортёры `programs`, `winget`. *Зависит:* T-06-02, T-06-03.
 - [ ] **T-06-06** — `export_registry` + экспортёры `registry-user`, `env-vars`. *Зависит:* T-06-02.
 - [ ] **T-06-07** — Экспортёр `wifi` (с параметром `include_keys`, sensitivity). *Зависит:* T-06-02.

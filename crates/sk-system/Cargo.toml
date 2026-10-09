@@ -17,8 +17,9 @@ encoding_rs.workspace = true
 serde_json.workspace = true
 sk-core.workspace = true
 thiserror.workspace = true
-# `Cmd`: child processes with timeout and cancellation (SPEC-06 §4.6).
-tokio = { workspace = true, features = ["io-util", "macros", "process", "time"] }
+# `Cmd`: child processes with timeout and cancellation (SPEC-06 §4.6);
+# `rt`: `SystemCollector` runs `detect` in blocking tasks (SPEC-06 T-06-04).
+tokio = { workspace = true, features = ["io-util", "macros", "process", "rt", "time"] }
 # `Cmd` logs the command, exit code and time (SPEC-06 §4.6).
 tracing.workspace = true
 
