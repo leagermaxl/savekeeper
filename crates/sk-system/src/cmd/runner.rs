@@ -9,7 +9,6 @@ use crate::error::ExportError;
 /// Runs external commands for exporters; replaced by [`FakeCmdRunner`] in tests so that
 /// exporters can be tested without Windows.
 #[async_trait]
-#[allow(dead_code)] // used by the exporters (T-06-05 and later)
 pub(crate) trait CmdRunner: Send + Sync {
     /// Runs `cmd` to completion, as [`Cmd::run`] does.
     async fn run(&self, cmd: Cmd, cancel: &CancellationToken) -> Result<CmdOutput, ExportError>;
@@ -17,7 +16,6 @@ pub(crate) trait CmdRunner: Send + Sync {
 
 /// The real runner: [`Cmd::run`].
 #[derive(Debug, Clone, Copy, Default)]
-#[allow(dead_code)] // used by the exporters (T-06-05 and later)
 pub(crate) struct SystemCmdRunner;
 
 #[async_trait]
@@ -25,6 +23,28 @@ impl CmdRunner for SystemCmdRunner {
     async fn run(&self, cmd: Cmd, cancel: &CancellationToken) -> Result<CmdOutput, ExportError> {
         cmd.run(cancel).await
     }
+}
+
+/// Runs `cmd` with `runner` from synchronous code, such as
+/// [`SystemExporter::detect`](crate::SystemExporter::detect).
+///
+/// The command runs on a current-thread runtime in a separate thread, so this works both
+/// inside and outside a Tokio runtime (`detect` is called from `spawn_blocking`).
+pub(crate) fn run_blocking(runner: &dyn CmdRunner, cmd: Cmd) -> Result<CmdOutput, ExportError> {
+    std::thread::scope(|scope| {
+        let worker = std::thread::Builder::new()
+            .name("sk-system-cmd".to_owned())
+            .spawn_scoped(scope, move || {
+                let runtime = tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()?;
+                runtime.block_on(runner.run(cmd, &CancellationToken::new()))
+            })?;
+        match worker.join() {
+            Ok(result) => result,
+            Err(panic) => std::panic::resume_unwind(panic),
+        }
+    })
 }
 
 #[cfg(test)]

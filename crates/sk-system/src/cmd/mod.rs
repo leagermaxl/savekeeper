@@ -26,8 +26,7 @@ use crate::error::ExportError;
 pub use decode::OutputEncoding;
 #[cfg(test)]
 pub(crate) use runner::FakeCmdRunner;
-#[allow(unused_imports)] // used by the exporters (T-06-05 and later)
-pub(crate) use runner::{CmdRunner, SystemCmdRunner};
+pub(crate) use runner::{run_blocking, CmdRunner, SystemCmdRunner};
 
 /// Default timeout of a process (FR-06-04).
 pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);

@@ -15,6 +15,7 @@ mod cmd;
 mod collector;
 mod error;
 mod exporter;
+mod exporters;
 mod installed;
 mod registry;
 

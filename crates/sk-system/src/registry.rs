@@ -3,6 +3,7 @@
 use std::sync::Arc;
 
 use crate::exporter::SystemExporter;
+use crate::exporters;
 
 /// All exporters of SPEC-06 §4.3, in catalogue order.
 ///
@@ -10,7 +11,7 @@ use crate::exporter::SystemExporter;
 /// [`detect`](SystemExporter::detect) returns `Unavailable { reason_key: "system.not_windows" }`
 /// (SPEC-06 §5). Exporters are added here by the tasks that implement them (T-06-05..T-06-13).
 pub fn registry() -> Vec<Arc<dyn SystemExporter>> {
-    Vec::new()
+    exporters::all()
 }
 
 /// The exporter with the given [`id`](SystemExporter::id), if it exists.

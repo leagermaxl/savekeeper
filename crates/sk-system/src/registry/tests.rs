@@ -76,6 +76,13 @@ fn registry_ids_are_unique_and_resolvable() {
 }
 
 #[test]
+fn registry_lists_exporters_in_catalogue_order() {
+    let ids: Vec<&'static str> = registry().iter().map(|e| e.id()).collect();
+    // `winget` before `programs`: `programs` reads `winget.json` (SPEC-06 §4.3).
+    assert_eq!(ids, ["winget", "programs"]);
+}
+
+#[test]
 fn unknown_exporter_is_none() {
     assert!(exporter("no-such-exporter").is_none());
 }

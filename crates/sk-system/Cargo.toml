@@ -11,6 +11,8 @@ publish.workspace = true
 [dependencies]
 # `SystemExporter::run` is async (SPEC-06 §4.1).
 async-trait.workspace = true
+# Hashes of exported files, `ExportedFile.blake3` (SPEC-06 §4.1, FR-06-02).
+blake3.workspace = true
 # OEM code page decoding of console tool output (SPEC-06 §4.6).
 encoding_rs.workspace = true
 # Exporter parameters `params` (SPEC-06 §4.3).
@@ -24,6 +26,8 @@ tokio = { workspace = true, features = ["io-util", "macros", "process", "rt", "t
 tracing.workspace = true
 
 [dev-dependencies]
+# Target folders of exporter tests, created under `target/tmp` (not the system temp dir).
+tempfile.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "sync"] }
 
 [lints]
