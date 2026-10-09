@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-system` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03 |
 | Используется в | SPEC-04 (`installed` условие), SPEC-09, SPEC-10 (выполнение экспортов), SPEC-13, SPEC-14 (elevation-хелпер) |
-| Последнее изменение | 2026-10-10 (T-06-05: детали `winget`/`programs` в §4.3); 2026-10-09 (T-06-04: конструкторы `SystemCollector` в §4.1; §4.8 приведён к принятому в §9 `system.disabled_exporters`); 2026-10-04 (T-06-02: API `Cmd`/`CmdOutput` в §4.1, FFI в `sk-core::win::process`, cp437 и `truncated` в §4.6; статус in-progress — T-06-01); 2026-10-03 (T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.4: чтение Uninstall через `RegistryReader`, T-06-03 зависит от T-02-10); 2026-10-01 (решение по OEM-ключу) |
+| Последнее изменение | 2026-10-10 (T-06-06: детали `export_registry`, `registry-user`, `env-vars` в §4.3); 2026-10-10 (T-06-05: детали `winget`/`programs` в §4.3); 2026-10-09 (T-06-04: конструкторы `SystemCollector` в §4.1; §4.8 приведён к принятому в §9 `system.disabled_exporters`); 2026-10-04 (T-06-02: API `Cmd`/`CmdOutput` в §4.1, FFI в `sk-core::win::process`, cp437 и `truncated` в §4.6; статус in-progress — T-06-01); 2026-10-03 (T-02-10: общий RegistryReader и PathTemplate::specialize в sk-core; §4.4: чтение Uninstall через `RegistryReader`, T-06-03 зависит от T-02-10); 2026-10-01 (решение по OEM-ключу) |
 
 ## 1. Цель
 
@@ -165,6 +165,8 @@ sequenceDiagram
 
 Детали `winget` и `programs` (T-06-05): `winget --version` в `detect` выполняется с таймаутом 2 с (холодный старт алиаса App Installer); таймаут или ошибка → `system.winget.missing`, версия < 1.4 → `system.winget.outdated`. Колонка «в winget» в `programs` берётся из соседнего `<target_dir>/../winget/winget.json` (порядок `registry()`: `winget` раньше `programs`); файла нет → колонка пустая, файл не читается → warning `issue.system.winget_json_unreadable`. Сопоставление эвристическое: имя из `PackageIdentifier` (часть после издателя) совпадает с подряд идущими словами `DisplayName`. `programs.csv` — RFC 4180 с BOM, колонки на английском, включая `in_winget` и `winget_id`; тексты `programs.html` (ru/en) встроены в sk-system, язык — `env.os.ui_language`. Код winget ≠ 0 при записанном файле → warning `issue.system.winget_export_exit_code`.
 
+Детали `export_registry`, `registry-user`, `env-vars` (T-06-06): имя файла `slug(key).reg` (строчные буквы и цифры, прочие последовательности → `-`, пустой slug → `key`; совпадения → `-2`, `-3`…). Наличие ключа проверяется `RegistryReader::key_state` до запуска `reg.exe` и после кода ≠ 0; `Missing` → `NotAvailable`, вывод `reg.exe` не разбирается (NFR-06-02). `ExportedFile.rel_path` у `export_registry` — имя `out_file`; `reg.exe` ищется через `SystemRoot`/`windir` (в сигнатуре нет `Environment`), вне Windows → `NotAvailable`. Экспортёры с несколькими файлами: ошибка одной части → warning (`issue.system.registry_key_missing` {key}, `issue.system.registry_export_failed` {key, error}, `issue.system.registry_read_failed` {key, error}), остальные части выполняются; не записано ни одного файла → первая ошибка; отмена прерывает сразу. Значения `HKCU\Environment` перечисляются через `winreg` (`sk-system::win`, только `KEY_READ`), т.к. `RegistryReader` не перечисляет значения и раскрывает `REG_EXPAND_SZ`. Формат `user-env.json`/`system-env.json`: `{ "key": "HKCU\Environment", "variables": [{ "name", "type": "REG_SZ"|"REG_EXPAND_SZ"|…, "value" }] }`, сортировка по имени без учёта регистра, `REG_EXPAND_SZ` не раскрывается, `value` — строка, массив (`MULTI_SZ`), число (`DWORD`/`QWORD`) или `null`.
+
 ### 4.4 Installed programs (`enrich`)
 Источники (объединение, дедуп по `(DisplayName, Publisher)` lowercase):
 - `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*`
@@ -254,7 +256,7 @@ pub struct InstalledProgram {
 - [x] **T-06-03** — `enrich`: installed programs (4 источника, фильтры, дедуп). *Зависит:* T-02-05, T-02-10. *Готово, когда:* unit на фикстуре + ручная сверка с «Приложения и возможности».
 - [x] **T-06-04** — `SystemCollector` (detect+plan параллельно, ≤ 3 с). *Зависит:* T-06-01, T-01-03.
 - [x] **T-06-05** — Экспортёры `programs`, `winget`. *Зависит:* T-06-02, T-06-03.
-- [ ] **T-06-06** — `export_registry` + экспортёры `registry-user`, `env-vars`. *Зависит:* T-06-02.
+- [x] **T-06-06** — `export_registry` + экспортёры `registry-user`, `env-vars`. *Зависит:* T-06-02.
 - [ ] **T-06-07** — Экспортёр `wifi` (с параметром `include_keys`, sensitivity). *Зависит:* T-06-02.
 - [ ] **T-06-08** — Экспортёры `fonts`, `hosts`, `scheduled-tasks`, `powershell-modules`. *Зависит:* T-06-02.
 - [ ] **T-06-09** — Экспортёры `drivers` (NeedsElevation), `printers`, `disks-info`, `windows-info` (WMI через `wmi` crate). *Зависит:* T-06-02.

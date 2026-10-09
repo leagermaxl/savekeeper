@@ -6,6 +6,7 @@
 //! target directory (principle P1). [`registry`] lists all exporters of SPEC-06 §4.3.
 //! [`SystemCollector`] runs detection and planning of all exporters in the scan.
 //! [`enrich`] fills `Environment.installed_programs` in the Environment phase (§4.4).
+//! [`export_registry`] exports a registry branch to a `.reg` file (§4.5).
 //!
 //! [`detect`]: SystemExporter::detect
 //! [`plan`]: SystemExporter::plan
@@ -17,7 +18,11 @@ mod error;
 mod exporter;
 mod exporters;
 mod installed;
+mod reg_export;
+mod reg_values;
 mod registry;
+#[cfg(windows)]
+mod win;
 
 pub use cmd::{Cmd, CmdOutput, OutputEncoding, DEFAULT_TIMEOUT, OUTPUT_LIMIT};
 pub use collector::SystemCollector;
@@ -26,4 +31,5 @@ pub use exporter::{
     Availability, ExportContext, ExportResult, ExportedFile, RestoreHint, SystemExporter,
 };
 pub use installed::enrich;
+pub use reg_export::export_registry;
 pub use registry::{exporter, registry};

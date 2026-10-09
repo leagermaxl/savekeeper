@@ -6,7 +6,7 @@ use sk_core::model::{AppKind, Category, EvidenceSource, FindingId, Sensitivity, 
 use sk_core::CancellationToken;
 
 use super::*;
-use crate::cmd::FakeCmdRunner;
+use crate::cmd::{CmdOutput, FakeCmdRunner};
 use crate::exporters::test_util::{files_under, run_export, temp_dir};
 
 /// A fake machine under `root` with `winget.exe` in `{LOCALAPPDATA}\Microsoft\WindowsApps`.

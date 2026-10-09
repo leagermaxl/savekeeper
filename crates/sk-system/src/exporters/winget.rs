@@ -11,8 +11,8 @@ use async_trait::async_trait;
 use sk_core::env::{Environment, KnownFolder};
 use sk_core::model::{Category, Finding, Sensitivity};
 
-use super::{describe_file, plan_finding, unavailable, warning, Plan, NOT_WINDOWS};
-use crate::cmd::{run_blocking, Cmd, CmdOutput, CmdRunner, OutputEncoding, SystemCmdRunner};
+use super::{describe_file, failure_text, plan_finding, unavailable, warning, Plan, NOT_WINDOWS};
+use crate::cmd::{run_blocking, Cmd, CmdRunner, OutputEncoding, SystemCmdRunner};
 use crate::error::ExportError;
 use crate::exporter::{Availability, ExportContext, ExportResult, RestoreHint, SystemExporter};
 
@@ -50,9 +50,6 @@ const EXPORT_TIMEOUT: Duration = Duration::from_secs(180);
 /// Size estimate of `winget.json`: fixed part plus a part per installed program.
 const ESTIMATE_BASE_BYTES: u64 = 512;
 const ESTIMATE_BYTES_PER_PROGRAM: u64 = 120;
-
-/// Longest process output kept in [`ExportError::ProcessFailed`].
-const FAILURE_TEXT_CHARS: usize = 2000;
 
 /// `winget export` into `winget.json`.
 pub(crate) struct WingetExporter {
@@ -275,16 +272,6 @@ fn leading_number(part: &str) -> Option<u32> {
         .find(|c: char| !c.is_ascii_digit())
         .unwrap_or(part.len());
     part[..end].parse().ok()
-}
-
-/// What winget said about a failure: stderr, else stdout (winget reports errors there),
-/// cut to [`FAILURE_TEXT_CHARS`].
-fn failure_text(output: &CmdOutput) -> String {
-    let text = match output.stderr.trim() {
-        "" => output.stdout.trim(),
-        stderr => stderr,
-    };
-    text.chars().take(FAILURE_TEXT_CHARS).collect()
 }
 
 #[cfg(test)]

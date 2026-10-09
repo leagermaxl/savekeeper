@@ -2929,6 +2929,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
+ "winreg",
 ]
 
 [[package]]
