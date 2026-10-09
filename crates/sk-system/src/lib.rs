@@ -4,6 +4,7 @@
 //! availability and [`plan`] a `Target::SystemExport` finding; the export itself
 //! ([`run`]) is executed by the backup (SPEC-10) and writes only into the given
 //! target directory (principle P1). [`registry`] lists all exporters of SPEC-06 §4.3.
+//! [`enrich`] fills `Environment.installed_programs` in the Environment phase (§4.4).
 //!
 //! [`detect`]: SystemExporter::detect
 //! [`plan`]: SystemExporter::plan
@@ -12,6 +13,7 @@
 mod cmd;
 mod error;
 mod exporter;
+mod installed;
 mod registry;
 
 pub use cmd::{Cmd, CmdOutput, OutputEncoding, DEFAULT_TIMEOUT, OUTPUT_LIMIT};
@@ -19,4 +21,5 @@ pub use error::ExportError;
 pub use exporter::{
     Availability, ExportContext, ExportResult, ExportedFile, RestoreHint, SystemExporter,
 };
+pub use installed::enrich;
 pub use registry::{exporter, registry};

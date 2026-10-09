@@ -1,0 +1,198 @@
+{
+  "_comment": "Registry dump for sk-system enrich tests (SPEC-06 §4.4). Strings are REG_SZ, numbers REG_DWORD; denied keys cannot be read.",
+  "keys": [
+    {
+      "hive": "hklm",
+      "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\7-Zip",
+      "values": {
+        "DisplayName": "7-Zip 24.08 (x64)",
+        "Publisher": "Igor Pavlov",
+        "DisplayVersion": "24.08",
+        "InstallLocation": "C:\\Program Files\\7-Zip\\",
+        "InstallDate": "20240812",
+        "EstimatedSize": 5911,
+        "UninstallString": "\"C:\\Program Files\\7-Zip\\Uninstall.exe\""
+      }
+    },
+    {
+      "hive": "hklm",
+      "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{0D3E6E2B-5A5B-4C4D-9E1A-2F3B4C5D6E7F}",
+      "values": {
+        "DisplayName": "Microsoft Visual C++ 2022 X64 Minimum Runtime - 14.40.33810",
+        "Publisher": "Microsoft Corporation",
+        "SystemComponent": 1
+      }
+    },
+    {
+      "hive": "hklm",
+      "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Git_is1",
+      "values": {
+        "DisplayName": "Git",
+        "Publisher": "The Git Development Community",
+        "DisplayVersion": "2.46.0",
+        "InstallLocation": "\"C:\\Program Files\\Git\\\"",
+        "SystemComponent": 0
+      }
+    },
+    {
+      "hive": "hklm",
+      "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\KB5005565",
+      "values": {
+        "DisplayName": "Update for Windows (KB5005565)",
+        "ParentKeyName": "OperatingSystem"
+      }
+    },
+    {
+      "hive": "hklm",
+      "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Office-KB4011574",
+      "values": {
+        "DisplayName": "Security Update for Microsoft Office (KB4011574)",
+        "ReleaseType": "Security Update"
+      }
+    },
+    {
+      "hive": "hklm",
+      "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Hotfix-KB123",
+      "values": {
+        "DisplayName": "Hotfix for Something (KB123)",
+        "ReleaseType": "hotfix"
+      }
+    },
+    {
+      "hive": "hklm",
+      "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Update-KB456",
+      "values": {
+        "DisplayName": "Update for Something (KB456)",
+        "ReleaseType": "Update"
+      }
+    },
+    {
+      "hive": "hklm",
+      "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\VLC media player",
+      "values": {
+        "DisplayName": "  VLC media player  ",
+        "Publisher": "VideoLAN",
+        "DisplayVersion": "3.0.21",
+        "ReleaseType": "Product",
+        "InstallLocation": "   "
+      }
+    },
+    {
+      "hive": "hklm",
+      "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\NoDisplayName",
+      "values": {
+        "Publisher": "Nobody",
+        "DisplayVersion": "1.0"
+      }
+    },
+    {
+      "hive": "hklm",
+      "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\BlankDisplayName",
+      "values": {
+        "DisplayName": "   ",
+        "Publisher": "Nobody"
+      }
+    },
+    {
+      "hive": "hklm",
+      "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Connection Manager",
+      "values": {}
+    },
+    {
+      "hive": "hklm",
+      "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Locked",
+      "denied": true
+    },
+    {
+      "hive": "hklm",
+      "key": "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\7-Zip",
+      "values": {
+        "DisplayName": "7-ZIP 24.08 (X64)",
+        "Publisher": "IGOR PAVLOV",
+        "DisplayVersion": "24.08"
+      }
+    },
+    {
+      "hive": "hklm",
+      "key": "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam",
+      "values": {
+        "DisplayName": "Steam",
+        "Publisher": "Valve Corporation",
+        "DisplayVersion": "2.10.91.91",
+        "InstallLocation": "C:\\Program Files (x86)\\Steam"
+      }
+    },
+    {
+      "hive": "hklm",
+      "key": "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Notepad++",
+      "values": {
+        "DisplayName": "Notepad++ (32-bit x86)",
+        "Publisher": "Notepad++ Team",
+        "DisplayVersion": "8.6.9"
+      }
+    },
+    {
+      "hive": "hkcu",
+      "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Discord",
+      "values": {
+        "DisplayName": "Discord",
+        "Publisher": "Discord Inc.",
+        "DisplayVersion": "1.0.9163",
+        "InstallLocation": "C:\\Users\\user\\AppData\\Local\\Discord",
+        "InstallDate": "20240901",
+        "EstimatedSize": 103424
+      }
+    },
+    {
+      "hive": "hkcu",
+      "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam",
+      "values": {
+        "DisplayName": "steam",
+        "Publisher": "valve corporation"
+      }
+    },
+    {
+      "hive": "hkcu",
+      "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Notepad++ portable",
+      "values": {
+        "DisplayName": "Notepad++ (32-bit x86)"
+      }
+    },
+    {
+      "hive": "hkcu",
+      "key": "Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages\\SpotifyAB.SpotifyMusic_1.303.264.0_x64__zpdnekdrzrea0",
+      "values": {
+        "DisplayName": "@{SpotifyAB.SpotifyMusic_1.303.264.0_x64__zpdnekdrzrea0?ms-resource://SpotifyAB.SpotifyMusic/resources/DisplayName}",
+        "PackageID": "SpotifyAB.SpotifyMusic_1.303.264.0_x64__zpdnekdrzrea0",
+        "PackageRootFolder": "C:\\Program Files\\WindowsApps\\SpotifyAB.SpotifyMusic_1.303.264.0_x64__zpdnekdrzrea0"
+      }
+    },
+    {
+      "hive": "hkcu",
+      "key": "Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages\\Microsoft.Windows.Photos_2026.11090.22001.0_x64__8wekyb3d8bbwe",
+      "values": {
+        "PackageRootFolder": "C:\\Program Files\\WindowsApps\\Microsoft.Windows.Photos_2026.11090.22001.0_x64__8wekyb3d8bbwe"
+      }
+    },
+    {
+      "hive": "hkcu",
+      "key": "Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages\\Microsoft.NET.Native.Framework.2.2_2.2.29512.0_x64__8wekyb3d8bbwe",
+      "values": {}
+    },
+    {
+      "hive": "hkcu",
+      "key": "Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages\\Microsoft.VCLibs.140.00.UWPDesktop_14.0.33728.0_x64__8wekyb3d8bbwe",
+      "values": {}
+    },
+    {
+      "hive": "hkcu",
+      "key": "Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages\\Microsoft.UI.Xaml.2.8_8.2501.31001.0_x64__8wekyb3d8bbwe",
+      "values": {}
+    },
+    {
+      "hive": "hkcu",
+      "key": "Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages\\Microsoft.UI.Xaml.2.8_8.2501.31001.0_x86__8wekyb3d8bbwe",
+      "values": {}
+    }
+  ]
+}
