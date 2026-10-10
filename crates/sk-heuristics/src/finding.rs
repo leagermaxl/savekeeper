@@ -22,7 +22,7 @@ mod tests;
 /// (SPEC-07 §5); the UI translates each part of a title separated by ` — `.
 pub(crate) const TITLE_UNRECOGNIZED: &str = "heuristic.title.unrecognized";
 /// Separator of the title parts (SPEC-11 §4.7).
-const TITLE_SEPARATOR: &str = " — ";
+pub(crate) const TITLE_SEPARATOR: &str = " — ";
 /// A candidate larger than this gets the tag `huge` (SPEC-07 §5): 50 GiB.
 const HUGE_BYTES: u64 = 50 * 1024 * 1024 * 1024;
 /// Smallest token Jaccard similarity of a name and an installed program.

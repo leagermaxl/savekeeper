@@ -1,0 +1,152 @@
+# H-WEB profiles (SPEC-07 §4.6, T-07-06): an Electron app with every row of
+# the §4.6 table and data outside it, a Chromium-based app with `User Data`
+# and two profiles (one synchronized), a Chromium profile directly in its
+# application folder, a browser the rules claim, a folder with Chromium caches
+# only and a folder that is no profile.
+# Loaded into MemFs by sk_testkit::mem_fixture.
+tree:
+  # === Electron app: {APPDATA}\Chatter ===
+  # --- application data ---
+  - path: "{APPDATA}/Chatter/Local Storage/leveldb/000003.log"
+    size: 4 KiB
+    mtime: "-1d"
+  - path: "{APPDATA}/Chatter/IndexedDB/app_chatter_0.indexeddb.leveldb/000005.ldb"
+    size: 64 KiB
+    mtime: "-2d"
+  - path: "{APPDATA}/Chatter/Session Storage/000003.log"
+    size: 1 KiB
+    mtime: "-1d"
+  - path: "{APPDATA}/Chatter/databases/Databases.db"
+    size: 12 KiB
+    mtime: "-9d"
+  # --- settings ---
+  - path: "{APPDATA}/Chatter/Preferences"
+    content: "{\"spellcheck\":{\"dictionaries\":[\"en-US\"]}}"
+    mtime: "-3d"
+  - path: "{APPDATA}/Chatter/Local State"
+    size: 2 KiB
+    mtime: "-1d"
+  - path: "{APPDATA}/Chatter/settings.json"
+    content: "{\"theme\":\"dark\"}"
+    mtime: "-1d"
+  - path: "{APPDATA}/Chatter/config.json"
+    content: "{\"autoUpdate\":true}"
+    mtime: "-4d"
+  - path: "{APPDATA}/Chatter/window-state.json"
+    content: "{\"width\":1200}"
+    mtime: "-1d"
+  # --- credentials ---
+  - path: "{APPDATA}/Chatter/Cookies"
+    size: 20 KiB
+    mtime: "-1d"
+  - path: "{APPDATA}/Chatter/Network/Cookies"
+    size: 20 KiB
+    mtime: "-1d"
+  # --- caches ---
+  - path: "{APPDATA}/Chatter/Cache/Cache_Data/f_000001"
+    size: 16 KiB
+    repeat: 10
+    mtime: "-1d"
+  - path: "{APPDATA}/Chatter/Code Cache/js/index"
+    size: 24
+    mtime: "-5d"
+  - path: "{APPDATA}/Chatter/GPUCache/data_0"
+    size: 8 KiB
+  - path: "{APPDATA}/Chatter/DawnCache/data_0"
+    size: 8 KiB
+  - path: "{APPDATA}/Chatter/GrShaderCache/data_0"
+    size: 8 KiB
+  - path: "{APPDATA}/Chatter/ShaderCache/data_0"
+    size: 8 KiB
+  - path: "{APPDATA}/Chatter/Service Worker/CacheStorage/0a1b/index"
+    size: 4 KiB
+  - path: "{APPDATA}/Chatter/Service Worker/Database/000003.log"
+    size: 2 KiB
+    mtime: "-7d"
+  - path: "{APPDATA}/Chatter/Crashpad/settings.dat"
+    size: 1 KiB
+  - path: "{APPDATA}/Chatter/blob_storage"
+    dir: true
+  - path: "{APPDATA}/Chatter/logs/main.log"
+    size: 32 KiB
+  # --- extensions without a sync manifest: saved ---
+  - path: "{APPDATA}/Chatter/extensions/theme-pack/manifest.json"
+    size: 1 KiB
+    mtime: "-30d"
+  # --- data outside the table: saved ---
+  - path: "{APPDATA}/Chatter/sql/db.sqlite"
+    size: 2 MiB
+    mtime: "-1d"
+
+  # === Chromium-based app: {LOCALAPPDATA}\Chromite\User Data ===
+  - path: "{LOCALAPPDATA}/Chromite/Application/chromite.exe"
+    size: 200 MiB
+    mtime: "-40d"
+  - path: "{LOCALAPPDATA}/Chromite/User Data/Local State"
+    size: 8 KiB
+    mtime: "-1d"
+  - path: "{LOCALAPPDATA}/Chromite/User Data/GrShaderCache/data_0"
+    size: 64 KiB
+  - path: "{LOCALAPPDATA}/Chromite/User Data/Crashpad/settings.dat"
+    size: 1 KiB
+  # --- Default: synchronized, its extensions are excluded ---
+  - path: "{LOCALAPPDATA}/Chromite/User Data/Default/Preferences"
+    size: 32 KiB
+    mtime: "-1d"
+  - path: "{LOCALAPPDATA}/Chromite/User Data/Default/Bookmarks"
+    size: 16 KiB
+    mtime: "-2d"
+  - path: "{LOCALAPPDATA}/Chromite/User Data/Default/Login Data"
+    size: 40 KiB
+    mtime: "-2d"
+  - path: "{LOCALAPPDATA}/Chromite/User Data/Default/Web Data"
+    size: 80 KiB
+    mtime: "-2d"
+  - path: "{LOCALAPPDATA}/Chromite/User Data/Default/Extensions/abcdefgh/1.0_0/manifest.json"
+    size: 2 KiB
+    mtime: "-20d"
+  - path: "{LOCALAPPDATA}/Chromite/User Data/Default/Sync Data/LevelDB/CURRENT"
+    content: "MANIFEST-000001\n"
+    mtime: "-1d"
+  - path: "{LOCALAPPDATA}/Chromite/User Data/Default/Cache/Cache_Data/data_0"
+    size: 256 KiB
+  - path: "{LOCALAPPDATA}/Chromite/User Data/Default/Code Cache/js/index"
+    size: 24
+  # --- Profile 1: not synchronized, its extensions are saved ---
+  - path: "{LOCALAPPDATA}/Chromite/User Data/Profile 1/Preferences"
+    size: 16 KiB
+    mtime: "-3d"
+  - path: "{LOCALAPPDATA}/Chromite/User Data/Profile 1/Extensions/ijklmnop/2.1_0/manifest.json"
+    size: 2 KiB
+    mtime: "-20d"
+
+  # === Chromium profile directly in the application folder ===
+  - path: "{APPDATA}/WebShell/Preferences"
+    size: 4 KiB
+    mtime: "-2d"
+  - path: "{APPDATA}/WebShell/History"
+    size: 128 KiB
+    mtime: "-2d"
+  - path: "{APPDATA}/WebShell/Cache/data_0"
+    size: 64 KiB
+
+  # === Browser covered by the rules: claimed in the test ===
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Local State"
+    size: 8 KiB
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Default/Preferences"
+    size: 32 KiB
+  - path: "{LOCALAPPDATA}/Google/Chrome/User Data/Default/Cookies"
+    size: 20 KiB
+
+  # === Chromium caches only: left to H-UNK ===
+  - path: "{LOCALAPPDATA}/Updater/Cache/data_0"
+    size: 64 KiB
+  - path: "{LOCALAPPDATA}/Updater/GPUCache/data_0"
+    size: 8 KiB
+  - path: "{LOCALAPPDATA}/Updater/Code Cache/js/index"
+    size: 24
+
+  # === No profile ===
+  - path: "{APPDATA}/Notepad4/settings.ini"
+    size: 3 KiB
+    mtime: "-5d"

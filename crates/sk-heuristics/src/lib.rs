@@ -14,6 +14,7 @@ mod junk;
 mod unk;
 mod unk_zones;
 mod verdict;
+mod web;
 
 pub use classify::{classify_by_markers, classify_by_markers_with};
 pub use collector::HeuristicsCollector;

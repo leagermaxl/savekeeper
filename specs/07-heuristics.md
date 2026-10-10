@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-heuristics` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03, SPEC-04, SPEC-05 |
 | Используется в | SPEC-08, SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-10 (T-07-05: `HeuristicContext.excludes` §4.1, уточнения зон §4.2.1, UWP §4.2.3, частичного покрытия и `installed` §4.2.4, `heuristic.read_failed` §5); 2026-10-10 (T-07-04: `classify_by_markers_with` §4.1, уточнения правил §4.7); 2026-10-10 (T-07-03: `junk_verdict_with_siblings` §4.1/§4.5, приоритет строк, определение игровой библиотеки и игнор широких корней §4.5, ключи `heuristic.junk.*`); 2026-10-10 (T-07-02: форматы `vendors.txt` §4.2.2 и `extensions.yaml` §4.3.2, issue `heuristic.data_invalid` §5); 2026-10-01 (`HeuristicsConfig` — в `sk-core::config`) |
+| Последнее изменение | 2026-10-10 (T-07-06: уточнения H-WEB §4.6 — кандидаты, include всей папки, exclude, `Sync Data`, учётные данные через `notes_key`, ключи `heuristic.web.*`/`heuristic.title.app_data`; §6); 2026-10-10 (T-07-05: `HeuristicContext.excludes` §4.1, уточнения зон §4.2.1, UWP §4.2.3, частичного покрытия и `installed` §4.2.4, `heuristic.read_failed` §5); 2026-10-10 (T-07-04: `classify_by_markers_with` §4.1, уточнения правил §4.7); 2026-10-10 (T-07-03: `junk_verdict_with_siblings` §4.1/§4.5, приоритет строк, определение игровой библиотеки и игнор широких корней §4.5, ключи `heuristic.junk.*`); 2026-10-10 (T-07-02: форматы `vendors.txt` §4.2.2 и `extensions.yaml` §4.3.2, issue `heuristic.data_invalid` §5); 2026-10-01 (`HeuristicsConfig` — в `sk-core::config`) |
 
 ## 1. Цель
 
@@ -318,6 +318,8 @@ pub struct GitState {
 confidence 0.8. `title = "<AppName> — данные приложения"`. Полноценные браузеры (Chrome, Edge,
 Firefox, Brave, Opera) покрываются правилами SPEC-04, и H-WEB их не трогает, так как они в `claimed`.
 
+Уточнения (T-07-06): кандидаты — кандидаты H-UNK вида «папка» (§4.2.1–§4.2.2, включая `{PROGRAMDATA}` без фильтра свежести; UWP-пакеты и dot-файлы — нет), не покрытые `claimed`, и их подпапка `User Data` (не ссылка, не исключена глобально, не в `claimed`). Детект — по маркерам сводки глубины 2; `ChromiumProfile` важнее `ElectronApp`; `reason_key` — `heuristic.web.chromium` / `heuristic.web.electron`. Корень профиля — папка с маркером. Папка, все записи корня которой — кэш-строки таблицы, профилем не считается (остаётся H-UNK). `include` пуст (вся папка): строки «include» сохраняются вместе с данными вне таблицы (`sql\`, `attachments\`) — корень уходит в `claimed`, и невключённое не увидела бы ни одна эвристика. `exclude`: кэш-строки как `**/<имя>` (корень и любая глубина: `User Data\<профиль>`, `Partitions\<имя>`), затем `Extensions` при манифесте синхронизации, затем верхние потомки из `claimed` (относительные пути как в §4.2.4, без порога остатка). Манифест синхронизации — папка `Sync Data` рядом с `Extensions`; `Extensions`/`Sync Data` и учётные данные ищутся в корне профиля и в каждой его некэшевой подпапке. Учётные данные → `sensitivity = High`, тег `browser-credentials`, `notes_key = "heuristic.dpapi_bound"` (не ScanIssue). `title` = `<имя папки-кандидата> — heuristic.title.app_data` (суффикс GUID/хэш и −0.1 к confidence по §5), `message_args = { app }`, теги — из маркеров сводки. Ошибки чтения H-WEB сообщает только при выключенном H-UNK; нечитаемый кандидат не попадает в `claimed`. Если H-WEB взял `User Data`, H-UNK создаёт находку на остаток папки приложения по §4.2.4.
+
 ### 4.7 Классификация по маркерам
 
 `classify_by_markers` — упорядоченный список правил, первое совпадение побеждает:
@@ -396,7 +398,7 @@ fn make_finding(root: &Path, v: &MarkerVerdict, s: &FolderSummary, h: &'static s
   - `junk_verdict`: все имена §4.5, регистронезависимость, `target` без `Cargo.toml` → не мусор.
   - Кластеризация §4.3.3: дерево `D:\Work\{ClientA,ClientB}\*.docx` → один кластер `D:\Work`. Дерево с доминирующим ребёнком → спуск. Корень диска → никогда. `max_candidates` → issue.
   - H-UNK: вендорный контейнер `Adobe\*` → кандидаты второго уровня. Частичное покрытие → exclude. UWP-пакет с `wgs` → GameSave.
-  - H-WEB: профиль Electron-фикстуры → include/exclude ровно по таблице.
+  - H-WEB: Electron-фикстура → `include` пуст, `exclude` = кэш-строки таблицы; Chromium-фикстура (`User Data` с профилями, синхронизируемые расширения, учётные данные); вместе с H-UNK — без `Unknown` и без дублей.
   - Детерминизм: два прогона дают одинаковый JSON (insta-снапшот).
 - **Git** (кроссплатформенно, репозитории создаются в tempdir через `gix`/`git` CLI в тесте): no-remote, dirty, untracked, unpushed, stash, clean, gitlink worktree, повреждённый HEAD → issue. Проверяется, что mtime файлов в `.git` не меняется после анализа (NFR-07-05).
 - **Windows-only**: реальный `Environment::detect()` + скан `{LOCALAPPDATA}` без паник. Каждая top-level папка представлена ровно одной находкой или покрыта `claimed` (FR-07-02).
@@ -409,12 +411,12 @@ fn make_finding(root: &Path, v: &MarkerVerdict, s: &FolderSummary, h: &'static s
 - [x] **T-07-03** — `junk_verdict` (§4.5). *Зависит:* T-07-01. *Готово, когда:* тесты §6.
 - [x] **T-07-04** — `classify_by_markers` (§4.7) с конфигурируемыми порогами. *Зависит:* T-07-03, T-02-07. *Готово, когда:* таблица ≥ 25 кейсов зелёная.
 - [x] **T-07-05** — H-UNK: зоны, вендоры, UWP, частичное покрытие, `make_finding`, сбор `unknown`. *Зависит:* T-07-04, SPEC-03 `summarize`. *Готово, когда:* тесты H-UNK + FR-07-02 на фикстуре.
-- [ ] **T-07-06** — H-WEB. *Зависит:* T-07-01. *Готово, когда:* тест на Electron- и Chromium-фикстуре.
+- [x] **T-07-06** — H-WEB. *Зависит:* T-07-01. *Готово, когда:* тест на Electron- и Chromium-фикстуре.
 - [ ] **T-07-07** — Общий обход корней (§4.3.1) с исключениями и агрегацией по директориям. *Зависит:* SPEC-03 `walk`. *Готово, когда:* агрегаты совпадают с эталоном на фикстуре.
 - [ ] **T-07-08** — H-USR: кластеризация §4.3.3, одиночные ценные файлы, лимиты. *Зависит:* T-07-07, T-07-02.
 - [ ] **T-07-09** — H-GIT: поиск репозиториев, `GitState` через gix (только чтение), классификация §4.4.3, exclude тяжёлых каталогов. *Зависит:* T-07-07. *Готово, когда:* git-тесты §6 + проверка неизменности `.git`.
 - [ ] **T-07-10** — Дочерняя находка `git-bundle` (§4.4.4) + согласование экспортёра с SPEC-06. *Зависит:* T-07-09.
-- [ ] **T-07-11** — Ключи i18n `heuristic.*` (ru, en) в общем каталоге UI (SPEC-11), включая `heuristic.junk.*` (§4.5), `heuristic.data_invalid`, `heuristic.read_failed` (§5), `heuristic.dotfile` (§4.2.1), `heuristic.uwp_saves`, `heuristic.uwp_package` (§4.2.3), `heuristic.title.unrecognized` (суффикс заголовка для GUID/хэш-имён, §5). *Зависит:* T-07-04.
+- [ ] **T-07-11** — Ключи i18n `heuristic.*` (ru, en) в общем каталоге UI (SPEC-11), включая `heuristic.junk.*` (§4.5), `heuristic.data_invalid`, `heuristic.read_failed` (§5), `heuristic.dotfile` (§4.2.1), `heuristic.uwp_saves`, `heuristic.uwp_package` (§4.2.3), `heuristic.title.unrecognized` (суффикс заголовка для GUID/хэш-имён, §5), `heuristic.web.electron`, `heuristic.web.chromium`, `heuristic.title.app_data`, `heuristic.dpapi_bound` (§4.6). *Зависит:* T-07-04.
 - [ ] **T-07-12** — Windows-интеграционный тест и бенчмарк H-USR. *Зависит:* T-07-05, T-07-08.
 
 ## 8. Критерии приёмки

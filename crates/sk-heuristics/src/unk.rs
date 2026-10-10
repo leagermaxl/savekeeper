@@ -348,7 +348,7 @@ fn truncated_stats() -> TargetStats {
 
 /// The paths that do not lie under another one of them, in the given order
 /// (parents come before their children).
-fn topmost(paths: Vec<&Path>) -> Vec<PathBuf> {
+pub(crate) fn topmost(paths: Vec<&Path>) -> Vec<PathBuf> {
     let mut out: Vec<PathBuf> = Vec::new();
     for path in paths {
         if !out.iter().any(|top| starts_with_ci(path, top)) {
@@ -360,7 +360,7 @@ fn topmost(paths: Vec<&Path>) -> Vec<PathBuf> {
 
 /// `path` relative to `root` as a glob with `/` separators; glob characters
 /// in names are escaped. `path` lies under `root`.
-fn relative_glob(path: &Path, root: &Path) -> String {
+pub(crate) fn relative_glob(path: &Path, root: &Path) -> String {
     let parts: Vec<String> = path
         .components()
         .skip(root.components().count())
