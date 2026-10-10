@@ -18,6 +18,7 @@ use sk_core::template::PathTemplate;
 use sk_core::CancellationToken;
 use sk_engine::{ScanOptions, ScanPipeline};
 use sk_scan::MemFs;
+use sk_system::SystemCollector;
 use tokio::sync::mpsc::unbounded_channel;
 
 const LIBRARYFOLDERS_KEY: &str = "issue.games.steam_libraryfolders_unreadable";
@@ -94,6 +95,8 @@ fn pipeline(fs: MemFs, probe: Arc<Probe>) -> ScanPipeline {
         .with_scanner(Arc::new(fs))
         .with_rules_registry(Arc::new(MemRegistry::new()))
         .with_games_registry(Arc::new(MemRegistry::new()))
+        .with_system_registry(Arc::new(MemRegistry::new()))
+        .with_collector(Arc::new(SystemCollector::with_exporters(Vec::new())))
         .with_collector(probe)
 }
 

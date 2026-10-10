@@ -19,6 +19,7 @@ use sk_core::registry::MemRegistry;
 use sk_core::CancellationToken;
 use sk_engine::{ScanOptions, ScanPipeline};
 use sk_scan::MemFs;
+use sk_system::SystemCollector;
 use tokio::sync::mpsc::unbounded_channel;
 
 fn env() -> Environment {
@@ -65,6 +66,9 @@ fn pipeline(rules_dir: &Path) -> ScanPipeline {
         .with_rules_dir(rules_dir.to_path_buf())
         .with_rules_registry(Arc::new(MemRegistry::new()))
         .with_games_registry(Arc::new(MemRegistry::new()))
+        .with_system_registry(Arc::new(MemRegistry::new()))
+        // No system exports: only the rules give findings here.
+        .with_collector(Arc::new(SystemCollector::with_exporters(Vec::new())))
 }
 
 async fn run(pipeline: &ScanPipeline, opts: ScanOptions) -> (ScanReport, Vec<Event>) {

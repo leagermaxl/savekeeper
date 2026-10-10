@@ -3,6 +3,7 @@
 mod builtin;
 mod environment;
 mod games;
+mod system;
 
 use std::collections::{BTreeMap, HashMap};
 use std::future::Future;
@@ -31,8 +32,9 @@ use tokio::task::{JoinError, JoinSet};
 use uuid::Uuid;
 
 use crate::reports;
-use crate::rules::{BuiltinRules, RULES_ID};
-use games::{BuiltinGames, GAMES_ID};
+use crate::rules::BuiltinRules;
+use games::BuiltinGames;
+use system::BuiltinSystem;
 
 /// What to scan.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -63,13 +65,16 @@ pub struct ScanPipeline {
     /// Registry of the launcher detectors and of the games collector;
     /// `None`: `SystemRegistry`.
     games_registry: Option<Arc<dyn RegistryReader>>,
+    /// The `system` collector and the registry of the installed programs.
+    system: BuiltinSystem,
     app_version: String,
 }
 
 impl ScanPipeline {
     /// A pipeline with the built-in collectors for `config`: `rules`
     /// (SPEC-04), with the built-in rules only until [`Self::with_rules_dir`],
-    /// and `games` (SPEC-05) once [`Self::with_data_dir`] is called.
+    /// `system` (SPEC-06), and `games` (SPEC-05) once [`Self::with_data_dir`]
+    /// is called.
     pub fn new(config: Arc<Config>) -> Self {
         Self {
             config,
@@ -81,20 +86,9 @@ impl ScanPipeline {
             rules: BuiltinRules::default(),
             games: BuiltinGames::default(),
             games_registry: None,
+            system: BuiltinSystem::default(),
             app_version: env!("CARGO_PKG_VERSION").to_owned(),
         }
-    }
-
-    /// Adds a collector. A collector with the id `rules` or `games`
-    /// replaces the built-in collector with that id.
-    pub fn with_collector(mut self, collector: Arc<dyn Collector>) -> Self {
-        match collector.id() {
-            RULES_ID => self.rules.enabled = false,
-            GAMES_ID => self.games.enabled = false,
-            _ => {}
-        }
-        self.collectors.push(collector);
-        self
     }
 
     /// Adds a post-collector.

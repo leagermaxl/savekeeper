@@ -21,6 +21,7 @@ use sk_core::template::PathTemplate;
 use sk_core::CancellationToken;
 use sk_engine::{ScanOptions, ScanPipeline};
 use sk_scan::{MemFs, ReparseKind};
+use sk_system::SystemCollector;
 use tokio::sync::mpsc::unbounded_channel;
 
 fn env() -> Environment {
@@ -97,6 +98,8 @@ async fn measure_phase_fills_stats_and_reports_issues() {
         .with_environment(env())
         .with_scanner(scanner())
         .with_games_registry(Arc::new(MemRegistry::new()))
+        .with_system_registry(Arc::new(MemRegistry::new()))
+        .with_collector(Arc::new(SystemCollector::with_exporters(Vec::new())))
         .with_collector(Arc::new(Rules));
     let (tx, mut rx) = unbounded_channel();
     let report = pipeline
@@ -173,6 +176,8 @@ async fn bad_exclude_globs_fall_back_to_builtin() {
         .with_environment(env())
         .with_scanner(scanner())
         .with_games_registry(Arc::new(MemRegistry::new()))
+        .with_system_registry(Arc::new(MemRegistry::new()))
+        .with_collector(Arc::new(SystemCollector::with_exporters(Vec::new())))
         .with_collector(Arc::new(Rules));
     let (tx, _rx) = unbounded_channel();
     let report = pipeline
@@ -199,6 +204,8 @@ async fn run_with_depth(config_depth: u32, scan_depth: Option<u32>) -> (u64, Opt
         .with_environment(env())
         .with_scanner(scanner())
         .with_games_registry(Arc::new(MemRegistry::new()))
+        .with_system_registry(Arc::new(MemRegistry::new()))
+        .with_collector(Arc::new(SystemCollector::with_exporters(Vec::new())))
         .with_collector(Arc::new(Rules));
     let (tx, _rx) = unbounded_channel();
     let opts = ScanOptions {

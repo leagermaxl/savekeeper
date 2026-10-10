@@ -5,7 +5,8 @@
 //! ([`run`]) is executed by the backup (SPEC-10) and writes only into the given
 //! target directory (principle P1). [`registry`] lists all exporters of SPEC-06 §4.3.
 //! [`SystemCollector`] runs detection and planning of all exporters in the scan.
-//! [`enrich`] fills `Environment.installed_programs` in the Environment phase (§4.4).
+//! [`enrich`] (or [`enrich_with_registry`]) fills `Environment.installed_programs` in the
+//! Environment phase (§4.4).
 //! [`export_registry`] exports a registry branch to a `.reg` file (§4.5).
 //!
 //! [`detect`]: SystemExporter::detect
@@ -28,6 +29,6 @@ pub use error::ExportError;
 pub use exporter::{
     Availability, ExportContext, ExportResult, ExportedFile, RestoreHint, SystemExporter,
 };
-pub use installed::enrich;
+pub use installed::{enrich, enrich_with_registry};
 pub use reg_export::export_registry;
 pub use registry::{exporter, registry};

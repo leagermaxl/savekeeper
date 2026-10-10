@@ -23,6 +23,7 @@ use sk_core::registry::MemRegistry;
 use sk_core::template::PathTemplate;
 use sk_core::CancellationToken;
 use sk_engine::{EngineError, ScanOptions, ScanPipeline};
+use sk_system::SystemCollector;
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
 
 fn env() -> Environment {
@@ -150,15 +151,23 @@ fn drain(rx: &mut UnboundedReceiver<Event>) -> Vec<Event> {
     out
 }
 
-/// The built-in rules and the launcher detectors run on the fake environment
-/// with an empty registry, so that nothing of this machine's registry gets
-/// into the reports.
-fn pipeline() -> ScanPipeline {
+/// The built-in rules, the launcher detectors and the installed programs
+/// run on the fake environment with an empty registry, so that nothing of
+/// this machine's registry gets into the reports. The built-in `system`
+/// collector stays: tests replace it.
+fn base_pipeline() -> ScanPipeline {
     ScanPipeline::new(Arc::new(Config::default()))
         .with_environment(env())
         .with_rules_registry(Arc::new(MemRegistry::new()))
         .with_games_registry(Arc::new(MemRegistry::new()))
+        .with_system_registry(Arc::new(MemRegistry::new()))
         .with_app_version("test".to_owned())
+}
+
+/// [`base_pipeline`] without system exports, so that no exporter probes
+/// this machine.
+fn pipeline() -> ScanPipeline {
+    base_pipeline().with_collector(Arc::new(SystemCollector::with_exporters(Vec::new())))
 }
 
 #[tokio::test]
@@ -173,7 +182,7 @@ async fn runs_phases_and_isolates_failures() {
             vec!["Code"],
         ),
     );
-    let pipeline = pipeline()
+    let pipeline = base_pipeline()
         .with_collector(rules)
         .with_collector(Fake::new("system", Behavior::Fail))
         .with_collector(Fake::new("games", Behavior::Panic))

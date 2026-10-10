@@ -27,6 +27,7 @@ use sk_core::registry::{KeyState, MemRegistry, RegValue, RegistryReader};
 use sk_core::CancellationToken;
 use sk_engine::{ScanOptions, ScanPipeline};
 use sk_scan::MemFs;
+use sk_system::SystemCollector;
 use sk_testkit::materialize_profile;
 use tempfile::TempDir;
 use tokio::sync::mpsc::unbounded_channel;
@@ -71,6 +72,8 @@ fn pipeline(config: Config, env: Environment) -> ScanPipeline {
         .with_environment(env)
         .with_rules_registry(Arc::new(MemRegistry::new()))
         .with_games_registry(Arc::new(MemRegistry::new()))
+        .with_system_registry(Arc::new(MemRegistry::new()))
+        .with_collector(Arc::new(SystemCollector::with_exporters(Vec::new())))
 }
 
 /// An empty fake profile in memory.

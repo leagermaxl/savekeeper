@@ -5,7 +5,7 @@ use sk_core::env::{Environment, InstalledProgram, ProgramSource};
 use sk_core::model::RegHive;
 use sk_core::registry::{MemRegistry, SystemRegistry};
 
-use super::{enrich_with, installed_programs, is_system_package, location, MSIX_PACKAGES};
+use super::{enrich_with_registry, installed_programs, is_system_package, location, MSIX_PACKAGES};
 
 /// Registry dump of SPEC-06 §6 «фикстура JSON-дампа ключей».
 const FIXTURE: &str = include_str!("../../../../fixtures/samples/system/uninstall-keys.json");
@@ -185,11 +185,11 @@ fn enrich_replaces_previous_programs_and_is_repeatable() {
         source: ProgramSource::Hkcu,
         uninstall_key: "Stale".into(),
     });
-    enrich_with(&mut env, &registry);
+    enrich_with_registry(&mut env, &registry);
     let first = env.installed_programs.clone();
     assert!(first.iter().all(|p| p.name != "Stale"));
     assert_eq!(first.len(), 9);
-    enrich_with(&mut env, &registry);
+    enrich_with_registry(&mut env, &registry);
     assert_eq!(env.installed_programs, first);
 }
 

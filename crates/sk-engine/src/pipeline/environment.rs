@@ -1,7 +1,9 @@
 //! The `Environment` phase (SPEC-01 §4.4): `Environment::detect()` (or the
 //! environment of `with_environment`), then the game launchers of SPEC-05
 //! (`sk_games::enrich`, T-05-05) into `Environment.launchers`, while the
-//! manifest of the `games` collector loads (T-05-15).
+//! manifest of the `games` collector loads (T-05-15), and the installed
+//! programs of SPEC-06 (`sk_system::enrich_with_registry`, T-06-14) into
+//! `Environment.installed_programs`.
 
 use std::sync::Arc;
 
@@ -33,8 +35,10 @@ impl ScanPipeline {
     /// The environment of this run with its launchers, the scanner for it,
     /// and the built-in games collector (if switched on by `toggles`), whose
     /// manifest load starts first and runs alongside the detection with the
-    /// collectors' token `cancel` (SPEC-05 T-05-15, NFR-05-01). The detector
-    /// issues go to the report and to the events.
+    /// collectors' token `cancel` (SPEC-05 T-05-15, NFR-05-01), and its
+    /// installed programs (always, whatever `toggles.system`). The detector
+    /// issues, then the issue of a panicking program enricher, go to the
+    /// report and to the events.
     pub(super) async fn environment(
         &self,
         toggles: &CollectorToggles,
@@ -56,7 +60,8 @@ impl ScanPipeline {
             None => Arc::new(SystemRegistry),
         };
         let (env, issues) = enrich(env, Arc::clone(&scanner), registry).await;
-        for issue in issues {
+        let (env, system_issue) = self.enrich_system(env).await;
+        for issue in issues.into_iter().chain(system_issue) {
             acc.push_issue(issue, run);
         }
         Ok((env, scanner, games))

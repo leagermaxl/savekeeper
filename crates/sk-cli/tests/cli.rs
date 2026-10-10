@@ -79,7 +79,8 @@ impl Cli {
 fn scan_out_writes_a_valid_report() {
     let cli = Cli::new();
     cli.disable_builtin_rules();
-    cli.cmd(&["scan", "--out", "r.json", "--no-games"])
+    // Without `--no-system` the system exports of this machine would be found.
+    cli.cmd(&["scan", "--out", "r.json", "--no-games", "--no-system"])
         .assert()
         .code(0)
         .stdout("");
@@ -90,7 +91,8 @@ fn scan_out_writes_a_valid_report() {
     assert!(report.findings.is_empty());
     assert!(report.issues.is_empty());
     assert!(!report.options.collectors.games);
-    assert!(report.options.collectors.system);
+    assert!(!report.options.collectors.system);
+    assert!(report.options.collectors.rules);
 
     // Portable mode: config, log and saved report next to the program.
     assert!(cli.path().join("savekeeper.config.json").is_file());
@@ -106,9 +108,9 @@ fn scan_prints_the_report_without_out() {
     let cli = Cli::new();
     cli.disable_builtin_rules();
     // Without `--no-games` the games of this machine would be found, and the
-    // manifest downloaded.
+    // manifest downloaded; without `--no-system`, its system exports.
     let output = cli
-        .cmd(&["scan", "--pretty", "--no-games"])
+        .cmd(&["scan", "--pretty", "--no-games", "--no-system"])
         .assert()
         .code(0);
     let stdout = String::from_utf8(output.get_output().stdout.clone()).unwrap();

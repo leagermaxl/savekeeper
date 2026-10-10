@@ -156,7 +156,8 @@ mod tests {
     }
 
     /// The built-in rules run on an empty fake profile and an empty
-    /// registry, so that nothing of this machine gets into the reports.
+    /// registry, and the system exports are replaced by [`NoExports`], so
+    /// that nothing of this machine gets into the reports.
     fn pipeline() -> ScanPipeline {
         let root = Path::new(if cfg!(windows) { r"C:\fake" } else { "/fake" });
         ScanPipeline::new(Arc::new(Config::default()))
@@ -164,6 +165,26 @@ mod tests {
             .with_scanner(Arc::new(MemFs::new()))
             .with_rules_registry(Arc::new(MemRegistry::new()))
             .with_games_registry(Arc::new(MemRegistry::new()))
+            .with_system_registry(Arc::new(MemRegistry::new()))
+            .with_collector(Arc::new(NoExports))
+    }
+
+    /// A `system` collector without exports.
+    struct NoExports;
+
+    #[async_trait]
+    impl Collector for NoExports {
+        fn id(&self) -> &'static str {
+            "system"
+        }
+
+        fn display_key(&self) -> &'static str {
+            "collector.system"
+        }
+
+        async fn collect(&self, _ctx: &CollectContext) -> Result<CollectOutput, CollectorError> {
+            Ok(CollectOutput::default())
+        }
     }
 
     /// Runs until cancelled.

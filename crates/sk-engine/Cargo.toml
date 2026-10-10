@@ -19,6 +19,8 @@ sk-core.workspace = true
 sk-games.workspace = true
 sk-rules.workspace = true
 sk-scan.workspace = true
+# `system` collector and `installed_programs` of the Environment phase (SPEC-06 T-06-14).
+sk-system.workspace = true
 time = { workspace = true, features = ["parsing"] }
 tokio = { workspace = true, features = ["macros", "rt", "sync"] }
 uuid = { workspace = true, features = ["v4"] }

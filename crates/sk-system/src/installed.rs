@@ -43,11 +43,12 @@ const UPDATE_RELEASE_TYPES: [&str; 3] = ["update", "hotfix", "security update"];
 /// call gives the same result. Missing or unreadable keys only give fewer programs;
 /// outside Windows the list is empty. Only reads the registry (principle P1).
 pub fn enrich(env: &mut Environment) {
-    enrich_with(env, &SystemRegistry);
+    enrich_with_registry(env, &SystemRegistry);
 }
 
-/// [`enrich`] with the registry `registry` (`MemRegistry` in tests).
-pub(crate) fn enrich_with(env: &mut Environment, registry: &dyn RegistryReader) {
+/// [`enrich`] with the registry `registry`: `sk-engine` passes the registry of
+/// `ScanPipeline::with_system_registry` (`MemRegistry` in tests, SPEC-06 T-06-14).
+pub fn enrich_with_registry(env: &mut Environment, registry: &dyn RegistryReader) {
     env.installed_programs = installed_programs(registry);
     tracing::debug!(
         count = env.installed_programs.len(),
