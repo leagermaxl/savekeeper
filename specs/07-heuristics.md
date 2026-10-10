@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-heuristics` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03, SPEC-04, SPEC-05 |
 | Используется в | SPEC-08, SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-10 (T-07-02: форматы `vendors.txt` §4.2.2 и `extensions.yaml` §4.3.2, issue `heuristic.data_invalid` §5); 2026-10-01 (`HeuristicsConfig` — в `sk-core::config`) |
+| Последнее изменение | 2026-10-10 (T-07-03: `junk_verdict_with_siblings` §4.1/§4.5, приоритет строк, определение игровой библиотеки и игнор широких корней §4.5, ключи `heuristic.junk.*`); 2026-10-10 (T-07-02: форматы `vendors.txt` §4.2.2 и `extensions.yaml` §4.3.2, issue `heuristic.data_invalid` §5); 2026-10-01 (`HeuristicsConfig` — в `sk-core::config`) |
 
 ## 1. Цель
 
@@ -99,6 +99,11 @@ pub struct HeuristicOutput {
 
 /// Классификация по маркерам (§4.7). Чистая функция, покрыта таблицей тестов.
 pub fn classify_by_markers(s: &FolderSummary, env: &Environment) -> MarkerVerdict;
+
+/// H-JUNK (§4.5) только по summary: строки «target рядом с Cargo.toml» и «bin/obj рядом с *.csproj» здесь не срабатывают.
+pub fn junk_verdict(s: &FolderSummary, env: &Environment) -> Option<MarkerVerdict>;
+/// То же, когда известен листинг родителя: `siblings` — имена остальных записей родительской папки.
+pub fn junk_verdict_with_siblings<S: AsRef<str>>(s: &FolderSummary, env: &Environment, siblings: &[S]) -> Option<MarkerVerdict>;
 
 pub struct MarkerVerdict {
     pub category: Category,
@@ -269,6 +274,8 @@ pub struct GitState {
 Работает над кандидатами H-UNK и H-USR (вызывается как функция `junk_verdict(&FolderSummary, &Environment) -> Option<MarkerVerdict>` до `classify_by_markers`) и
 над подпапками уже найденных находок (генерирует `exclude`).
 
+`FolderSummary` не содержит сведений о соседях папки, поэтому условия «рядом» (`Cargo.toml`, `*.csproj`) проверяются только в `junk_verdict_with_siblings`; H-USR и генерация `exclude` передают имена записей родителя. Имена сравниваются без учёта регистра с последними сегментами пути (шаблона и каждого его резолва) целиком.
+
 | Признак | Результат | Confidence |
 |---|---|---|
 | Имя совпадает (без учёта регистра) с `cache`, `caches`, `cache2`, `gpucache`, `code cache`, `shadercache`, `dxcache`, `glcache`, `temp`, `tmp`, `crashdumps`, `crashpad`, `logs`, `log`, `blob_storage`, `service worker\cachestorage`, `webcache` | `Cache` | 0.9 |
@@ -278,6 +285,10 @@ pub struct GitState {
 | `HasExecutables`, нет `ConfigLike`/`SqliteFiles`, mtime всех файлов ≈ одинаковый (разброс < 1 час) | `Reinstallable` | 0.7 |
 | Папка лаунчера или игровой библиотеки | `Reinstallable` | 0.95 |
 | Имя совпадает с известным «скачиваемым контентом»: `Steam\steamapps\shadercache`, `NVIDIA\DXCache`, `Package Cache`, `Downloaded Installations`, `SquirrelTemp`, `*\Updates`, `*\update` | `Cache` | 0.9 |
+
+Если совпало несколько строк, побеждает строка с наибольшим confidence, при равенстве — по порядку таблицы. «Папка лаунчера» — `LauncherInfo.root`; «игровая библиотека» — `install_dir` игры, папка с последними сегментами `steamapps\common` или общий родитель `install_dir` не менее двух разных известных игр (родитель единственной игры библиотекой не считается — в нём могут быть пользовательские файлы). Сравнение на равенство: подпапки (например `userdata`) под строку не попадают. `InstallLocation` и папки лаунчеров/игр без именованного компонента, а также равные известной папке или содержащие её (`C:\`, `C:\Users`, `{HOME}`, `{PROGRAMFILES}`, `{LOCALAPPDATA}` …), игнорируются.
+
+Ключи причин (`reason_key`) по строкам таблицы: 1 — `heuristic.junk.cache_name`, 2 — `heuristic.junk.cache_like`, 3 — `heuristic.junk.restorable`, 4 — `heuristic.junk.installed_program`, 5 — `heuristic.junk.uniform_binaries`, 6 — `heuristic.junk.launcher`, 7 — `heuristic.junk.downloadable`.
 
 Маленькие файлы-исключения, найденные внутри «мусора» (например `settings.json` в папке
 `logs`), не спасают папку: сохранение конфигов — задача правил SPEC-04.
@@ -385,7 +396,7 @@ fn make_finding(root: &Path, v: &MarkerVerdict, s: &FolderSummary, h: &'static s
 
 - [x] **T-07-01** — Каркас `sk-heuristics`: `HeuristicsCollector`, трейт `Heuristic`, `HeuristicContext`, порядок выполнения и накопление `claimed`, реэкспорт `HeuristicsConfig` (тип и дефолты §4.9 реализуются в SPEC-01 T-01-04). *Зависит:* T-01-03, T-01-04. *Готово, когда:* коллектор с пустыми эвристиками встроен в `ScanPipeline` и проходит интеграционный тест.
 - [x] **T-07-02** — Данные: `vendors.txt`, `extensions.yaml` + загрузчик (include_bytes, валидация при старте). *Готово, когда:* unit-тест: все группы парсятся, нет дублей расширений.
-- [ ] **T-07-03** — `junk_verdict` (§4.5). *Зависит:* T-07-01. *Готово, когда:* тесты §6.
+- [x] **T-07-03** — `junk_verdict` (§4.5). *Зависит:* T-07-01. *Готово, когда:* тесты §6.
 - [ ] **T-07-04** — `classify_by_markers` (§4.7) с конфигурируемыми порогами. *Зависит:* T-07-03, T-02-07. *Готово, когда:* таблица ≥ 25 кейсов зелёная.
 - [ ] **T-07-05** — H-UNK: зоны, вендоры, UWP, частичное покрытие, `make_finding`, сбор `unknown`. *Зависит:* T-07-04, SPEC-03 `summarize`. *Готово, когда:* тесты H-UNK + FR-07-02 на фикстуре.
 - [ ] **T-07-06** — H-WEB. *Зависит:* T-07-01. *Готово, когда:* тест на Electron- и Chromium-фикстуре.
@@ -393,7 +404,7 @@ fn make_finding(root: &Path, v: &MarkerVerdict, s: &FolderSummary, h: &'static s
 - [ ] **T-07-08** — H-USR: кластеризация §4.3.3, одиночные ценные файлы, лимиты. *Зависит:* T-07-07, T-07-02.
 - [ ] **T-07-09** — H-GIT: поиск репозиториев, `GitState` через gix (только чтение), классификация §4.4.3, exclude тяжёлых каталогов. *Зависит:* T-07-07. *Готово, когда:* git-тесты §6 + проверка неизменности `.git`.
 - [ ] **T-07-10** — Дочерняя находка `git-bundle` (§4.4.4) + согласование экспортёра с SPEC-06. *Зависит:* T-07-09.
-- [ ] **T-07-11** — Ключи i18n `heuristic.*` (ru, en) в общем каталоге UI (SPEC-11). *Зависит:* T-07-04.
+- [ ] **T-07-11** — Ключи i18n `heuristic.*` (ru, en) в общем каталоге UI (SPEC-11), включая `heuristic.junk.*` (§4.5) и `heuristic.data_invalid` (§5). *Зависит:* T-07-04.
 - [ ] **T-07-12** — Windows-интеграционный тест и бенчмарк H-USR. *Зависит:* T-07-05, T-07-08.
 
 ## 8. Критерии приёмки

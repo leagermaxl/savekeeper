@@ -8,8 +8,12 @@
 mod collector;
 mod data;
 mod heuristic;
+mod junk;
+mod verdict;
 
 pub use collector::HeuristicsCollector;
 pub use heuristic::{Heuristic, HeuristicContext, HeuristicOutput};
+pub use junk::{junk_verdict, junk_verdict_with_siblings};
 /// Configuration of the heuristics; defined in `sk-core::config` (SPEC-07 §4.9).
 pub use sk_core::config::HeuristicsConfig;
+pub use verdict::MarkerVerdict;

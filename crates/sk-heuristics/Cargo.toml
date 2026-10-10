@@ -23,6 +23,8 @@ tokio = { workspace = true, features = ["rt"] }
 [dev-dependencies]
 # `MemFs` as the scanner of the collector tests.
 sk-scan.workspace = true
+# File times of the `FolderSummary`s in the `junk_verdict` tests.
+time.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "sync"] }
 
 [lints]
