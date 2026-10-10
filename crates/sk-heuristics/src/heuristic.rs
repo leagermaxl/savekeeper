@@ -11,6 +11,8 @@ use sk_core::path::PathSet;
 use sk_core::CancellationToken;
 use sk_scan::ExcludeSet;
 
+use crate::walk::RootsWalkCache;
+
 /// One heuristic of the collector: `h-unk`, `h-usr`, `h-git`, `h-junk` or
 /// `h-web`. Internal to the collector; public for tests.
 pub trait Heuristic: Send + Sync {
@@ -41,6 +43,9 @@ pub struct HeuristicContext<'a> {
     pub cancel: &'a CancellationToken,
     /// Progress of the `Heuristics` phase: entries done and the current item.
     pub progress: &'a dyn Fn(u64, Option<&str>),
+    /// The walk of the roots shared by H-GIT and H-USR (SPEC-07 §4.3.1),
+    /// done once per scan by the first heuristic that needs it.
+    pub roots_walk: &'a RootsWalkCache,
 }
 
 /// What a heuristic found.

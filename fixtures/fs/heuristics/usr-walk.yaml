@@ -1,0 +1,126 @@
+# Shared walk of the roots (SPEC-07 §4.3.1, §4.3.3 steps 1-2, T-07-07): user
+# files in and outside the standard folders, folders skipped by §4.3.1 and by
+# the global exclusions (SPEC-03 §4.5), git working copies and a bare
+# repository. The test walks the profile root as an extra root, adds a Steam
+# game in `{HOME}/SteamLibrary` and an installed program in `{HOME}/Tools/Paint`,
+# and compares the per-folder aggregates with a reference.
+# Loaded into MemFs by sk_testkit::mem_fixture.
+launchers:
+  steam: { root: "Games/Steam" }
+tree:
+  # === {HOME}\Work: user files ===
+  - path: "{HOME}/Work/ClientA/contract.docx"
+    size: 2 MiB
+    mtime: "2026-03-01T10:00:00Z"
+  - path: "{HOME}/Work/ClientA/photo.jpg"
+    size: 4 MiB
+    mtime: "2026-02-01T00:00:00Z"
+  # --- larger than 50 MiB: weighs as 50 MiB ---
+  - path: "{HOME}/Work/ClientA/raw/IMG_0001.cr2"
+    size: 60 MiB
+    mtime: "2026-04-01T00:00:00Z"
+  - path: "{HOME}/Work/ClientB/report.pdf"
+    size: 1 MiB
+    mtime: "2025-12-01T00:00:00Z"
+  - path: "{HOME}/Work/ClientB/notes.txt"
+    size: 512 KiB
+    mtime: "2025-11-01T00:00:00Z"
+  - path: "{HOME}/Work/ClientB/setup.exe"
+    size: 3 MiB
+    mtime: "2025-10-01T00:00:00Z"
+  - path: "{HOME}/Work/ClientB/unknown.xyz"
+    size: 10 KiB
+    mtime: "2025-09-01T00:00:00Z"
+  # --- excluded by the user glob `*.tmp` of the test ---
+  - path: "{HOME}/Work/ClientB/backup.tmp"
+    size: 1 KiB
+  # --- global exclusion by name ---
+  - path: "{HOME}/Work/$Recycle.Bin/old.docx"
+    size: 1 MiB
+  # --- link: not followed, not counted ---
+  - path: "{HOME}/Work/linked"
+    dir: true
+    reparse: junction
+
+  # === git: a working copy (its .git is not walked), a gitlink, a bare repo ===
+  - path: "{HOME}/Work/app/Cargo.toml"
+    size: 1 KiB
+    mtime: "2026-01-10T00:00:00Z"
+  - path: "{HOME}/Work/app/src/main.rs"
+    size: 8 KiB
+    mtime: "2026-01-11T00:00:00Z"
+  - path: "{HOME}/Work/app/.git/HEAD"
+    size: 64
+  - path: "{HOME}/Work/app/.git/objects/ab/cdef"
+    size: 100 KiB
+  # --- global exclusion: target next to Cargo.toml ---
+  - path: "{HOME}/Work/app/target/debug/app.exe"
+    size: 5 MiB
+  - path: "{HOME}/Work/web/index.js"
+    size: 2 KiB
+    mtime: "2026-01-12T00:00:00Z"
+  # --- global exclusion: node_modules ---
+  - path: "{HOME}/Work/web/node_modules/lib/index.js"
+    size: 1 MiB
+  - path: "{HOME}/Work/wt/.git"
+    size: 64
+    mtime: "2026-01-13T00:00:00Z"
+  - path: "{HOME}/Work/bare.git/HEAD"
+    size: 64
+    mtime: "2026-01-14T00:00:00Z"
+  - path: "{HOME}/Work/bare.git/objects/pack/p.pack"
+    size: 1 MiB
+    mtime: "2026-01-14T00:00:00Z"
+  - path: "{HOME}/Work/bare.git/refs/heads/main"
+    size: 64
+    mtime: "2026-01-14T00:00:00Z"
+
+  # === single valuable files ===
+  - path: "{HOME}/Secrets/vault.kdbx"
+    size: 64 KiB
+    mtime: "2026-05-01T00:00:00Z"
+  - path: "{HOME}/Secrets/id_rsa.pem"
+    size: 2 KiB
+    mtime: "2026-05-02T00:00:00Z"
+
+  # === standard folders are walked ===
+  - path: "{DOCUMENTS}/Outlook/archive.pst"
+    size: 100 MiB
+    mtime: "2026-06-01T00:00:00Z"
+  - path: "{DOCUMENTS}/cloud.docx"
+    size: 1 MiB
+    mtime: "2026-06-02T00:00:00Z"
+    cloud_only: true
+  - path: "{PUBLIC}/Shared/budget.xlsx"
+    size: 256 KiB
+    mtime: "2026-02-02T00:00:00Z"
+
+  # === game library: steamapps is skipped, the rest is walked ===
+  - path: "{HOME}/SteamLibrary/steamapps/common/Hades/Hades.exe"
+    size: 50 MiB
+  - path: "{HOME}/SteamLibrary/steamapps/appmanifest_1145360.acf"
+    size: 1 KiB
+  - path: "{HOME}/SteamLibrary/readme.md"
+    size: 1 KiB
+    mtime: "2026-01-01T00:00:00Z"
+
+  # === installed program: its InstallLocation is skipped ===
+  - path: "{HOME}/Tools/Paint/paint.exe"
+    size: 2 MiB
+  - path: "{HOME}/Tools/readme.md"
+    size: 4 KiB
+    mtime: "2026-01-02T00:00:00Z"
+
+  # === skipped by §4.3.1 ===
+  - path: "{STEAM}/steam.exe"
+    size: 4 MiB
+  - path: "{HOME}/AppData/Roaming/App/settings.json"
+    size: 1 KiB
+  - path: "{WINDIR}/System32/kernel32.dll"
+    size: 1 MiB
+  - path: "{PROGRAMFILES}/App/app.exe"
+    size: 1 MiB
+  - path: "{PROGRAMFILES_X86}/Old/old.exe"
+    size: 1 MiB
+  - path: "{PROGRAMDATA}/Vendor/data.dat"
+    size: 1 MiB

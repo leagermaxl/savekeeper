@@ -15,6 +15,7 @@ use time::OffsetDateTime;
 
 use super::*;
 use crate::heuristic::{Heuristic, HeuristicContext, HeuristicOutput};
+use crate::walk::RootsWalkCache;
 
 pub(super) const MIB: u64 = 1024 * 1024;
 
@@ -65,6 +66,7 @@ impl Setup {
             cfg: &self.cfg,
             cancel: &self.cancel,
             progress,
+            roots_walk: &RootsWalkCache::default(),
         };
         HUnk::at(OffsetDateTime::now_utc()).run(&hctx)
     }

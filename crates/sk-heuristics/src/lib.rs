@@ -14,6 +14,8 @@ mod junk;
 mod unk;
 mod unk_zones;
 mod verdict;
+mod walk;
+mod walk_tree;
 mod web;
 
 pub use classify::{classify_by_markers, classify_by_markers_with};
@@ -23,3 +25,4 @@ pub use junk::{junk_verdict, junk_verdict_with_siblings};
 /// Configuration of the heuristics; defined in `sk-core::config` (SPEC-07 §4.9).
 pub use sk_core::config::HeuristicsConfig;
 pub use verdict::MarkerVerdict;
+pub use walk::RootsWalkCache;

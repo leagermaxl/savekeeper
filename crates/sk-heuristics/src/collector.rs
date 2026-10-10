@@ -15,6 +15,7 @@ use sk_scan::ExcludeSet;
 use crate::data::{self, DataError};
 use crate::heuristic::{Heuristic, HeuristicContext};
 use crate::unk::HUnk;
+use crate::walk::RootsWalkCache;
 use crate::web::HWeb;
 
 #[cfg(test)]
@@ -116,6 +117,12 @@ pub(crate) fn run(
         ExcludeSet::with_user(&ctx.env, &ctx.config.scan.exclude_globs)
             .unwrap_or_else(|_| ExcludeSet::builtin(&ctx.env)),
     );
+    // Walked by the first heuristic that needs it (SPEC-07 §4.1). The roots
+    // of `ScanOptions` do not reach the collectors; `scan.extra_roots` does.
+    let roots_walk = RootsWalkCache::new(
+        ctx.config.scan.extra_roots.clone(),
+        ctx.config.scan.max_depth,
+    );
     let prior_count = findings.len();
     let mut output = CollectOutput::default();
     // The built-in data is parsed and validated once, when the first scan starts.
@@ -135,6 +142,7 @@ pub(crate) fn run(
             cfg,
             cancel: &ctx.cancel,
             progress: &progress,
+            roots_walk: &roots_walk,
         };
         let out = heuristic.run(&hctx);
         claimed.extend(out.claimed.iter().cloned());

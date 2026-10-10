@@ -16,6 +16,7 @@ use sk_scan::{ExcludeSet, MemFs};
 
 use super::*;
 use crate::heuristic::{Heuristic, HeuristicContext, HeuristicOutput};
+use crate::walk::RootsWalkCache;
 
 pub(super) fn env() -> Environment {
     Environment::fake(Path::new(if cfg!(windows) { r"C:\fake" } else { "/fake" }))
@@ -63,6 +64,7 @@ pub(super) fn run_web(
         cfg,
         cancel,
         progress: &|_, _| {},
+        roots_walk: &RootsWalkCache::default(),
     };
     HWeb::new().run(&hctx)
 }
