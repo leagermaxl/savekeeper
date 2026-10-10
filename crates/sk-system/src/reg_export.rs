@@ -2,8 +2,11 @@
 //!
 //! Used by the `registry-user` and `env-vars` exporters and, through [`export_registry`],
 //! by the backup for `Target::Registry` findings (SPEC-10). The registry is only read
-//! (principle P1): `reg export` reads the branch and writes the given file.
+//! (principle P1): `reg export` reads the branch and writes the given file. When
+//! `reg.exe` cannot be used (blocked by policy, missing, not allowed to start), the own
+//! serializer of [`reg_file`] writes the same format (SPEC-06 §5, T-06-10).
 
+mod reg_file;
 #[cfg(test)]
 mod tests;
 
@@ -20,10 +23,17 @@ use sk_core::CancellationToken;
 use crate::cmd::{Cmd, CmdRunner, SystemCmdRunner};
 use crate::error::ExportError;
 use crate::exporter::ExportedFile;
-use crate::exporters::{describe_file, failure_text};
+use crate::exporters::{describe_file, failure_text, write_file};
 
 /// Executable name of the registry console tool.
 pub(crate) const REG_EXE: &str = "reg.exe";
+
+/// Key of the group policy value [`DISABLE_REGISTRY_TOOLS`] (under `HKCU` and `HKLM`).
+const POLICY_SYSTEM_KEY: &str = r"Software\Microsoft\Windows\CurrentVersion\Policies\System";
+
+/// Policy "Prevent access to registry editing tools": `reg.exe` refuses to run when the
+/// value is not 0.
+const DISABLE_REGISTRY_TOOLS: &str = "DisableRegistryTools";
 
 /// Exports the registry branch `hive\key` (with its subkeys) to `out_file` with
 /// `{WINDIR}\System32\reg.exe export "<HIVE>\<key>" "<out_file>" /y` (SPEC-06 §4.5).
@@ -33,11 +43,23 @@ pub(crate) const REG_EXE: &str = "reg.exe";
 /// created if missing. `ExportedFile::rel_path` is the file name of `out_file`, i.e.
 /// relative to its folder.
 ///
+/// Fallback (SPEC-06 §5, T-06-10): when `reg.exe` cannot be used, the branch is read
+/// through the registry reader (`values`, `subkeys`, SPEC-02 §3.4) and written by an own
+/// serializer in the same format (`Windows Registry Editor Version 5.00`, accepted by
+/// `reg import`). This happens when the policy "Prevent access to registry editing tools"
+/// (`DisableRegistryTools` ≠ 0 in `HKCU` or `HKLM`
+/// `Software\Microsoft\Windows\CurrentVersion\Policies\System`) is set, so `reg.exe` is
+/// not started; when the Windows folder is unknown; and when `reg.exe` cannot be started
+/// (missing, blocked by software restriction policies or AppLocker). A non-zero exit
+/// code of a started `reg.exe` is not a reason for the fallback. Subkeys the serializer
+/// cannot read are left out (logged).
+///
 /// Errors: [`ExportError::NotAvailable`] when the key does not exist (a warning for the
 /// backup, not an error); [`ExportError::ProcessFailed`] when `reg.exe` fails otherwise;
-/// [`ExportError::Timeout`] / [`ExportError::Cancelled`] from the process;
-/// [`ExportError::Io`] when `reg.exe` cannot be found or started or the file cannot be
-/// read back. Outside Windows every key is missing, so the result is `NotAvailable`.
+/// [`ExportError::Timeout`] / [`ExportError::Cancelled`] from the process or the
+/// serializer; [`ExportError::Io`] when the file cannot be written or read back, or the
+/// serializer cannot read the key itself (`PermissionDenied`). Outside Windows every key
+/// is missing, so the result is `NotAvailable`.
 pub async fn export_registry(
     hive: RegHive,
     key: &str,
@@ -74,8 +96,9 @@ impl RegExport {
         Self { runner, registry }
     }
 
-    /// Exports `hive\key` to `out_file` with `reg.exe` from `windir`; see
-    /// [`export_registry`] for the behaviour and errors.
+    /// Exports `hive\key` to `out_file` with `reg.exe` from `windir`, or with the own
+    /// serializer when `reg.exe` cannot be used; see [`export_registry`] for the
+    /// behaviour and errors.
     pub(crate) async fn export(
         &self,
         windir: Option<&Path>,
@@ -91,13 +114,6 @@ impl RegExport {
         if self.registry.key_state(hive, &key) == KeyState::Missing {
             return Err(ExportError::NotAvailable);
         }
-        let reg_exe = windir.map(reg_exe);
-        let Some(program) = reg_exe.as_deref().and_then(Path::to_str) else {
-            return Err(ExportError::Io(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                "reg.exe not found: the Windows folder is unknown",
-            )));
-        };
         let (Some(dir), Some(name)) = (out_file.parent(), out_file.file_name()) else {
             return Err(ExportError::Io(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
@@ -107,6 +123,15 @@ impl RegExport {
         std::fs::create_dir_all(dir)?;
 
         let branch = full_key(hive, &key);
+        if self.registry_tools_disabled() {
+            tracing::warn!(key = %branch, "registry tools disabled by policy: own .reg serializer used");
+            return self.serialize(hive, &key, dir, name, cancel).await;
+        }
+        let reg_exe = windir.map(reg_exe);
+        let Some(program) = reg_exe.as_deref().and_then(Path::to_str) else {
+            tracing::warn!(key = %branch, "Windows folder unknown, no reg.exe: own .reg serializer used");
+            return self.serialize(hive, &key, dir, name, cancel).await;
+        };
         let args: [&OsStr; 4] = [
             "export".as_ref(),
             branch.as_ref(),
@@ -114,7 +139,14 @@ impl RegExport {
             "/y".as_ref(),
         ];
         let cmd = Cmd::new(program).args(args);
-        let output = self.runner.run(cmd, cancel).await?;
+        let output = match self.runner.run(cmd, cancel).await {
+            Err(ExportError::Io(err)) => {
+                // Missing, or not allowed to start (software restriction, AppLocker).
+                tracing::warn!(key = %branch, error = %err, "reg.exe cannot be started: own .reg serializer used");
+                return self.serialize(hive, &key, dir, name, cancel).await;
+            }
+            result => result?,
+        };
         if output.code != 0 {
             // The key may have disappeared since the check above.
             if self.registry.key_state(hive, &key) == KeyState::Missing {
@@ -126,6 +158,40 @@ impl RegExport {
             });
         }
         Ok(describe_file(dir, Path::new(name))?)
+    }
+
+    /// Whether the policy "Prevent access to registry editing tools" is set
+    /// ([`DISABLE_REGISTRY_TOOLS`] ≠ 0 under [`POLICY_SYSTEM_KEY`] of `HKCU` or `HKLM`).
+    fn registry_tools_disabled(&self) -> bool {
+        [RegHive::Hkcu, RegHive::Hklm].into_iter().any(|hive| {
+            self.registry
+                .dword_value(hive, POLICY_SYSTEM_KEY, DISABLE_REGISTRY_TOOLS)
+                .is_some_and(|value| value != 0)
+        })
+    }
+
+    /// Writes `hive\key` with the own serializer ([`reg_file`]) to `dir/name`, in a
+    /// blocking task. Nothing is written when the branch cannot be read or the export is
+    /// cancelled; a file that fails while being written is removed again.
+    async fn serialize(
+        &self,
+        hive: RegHive,
+        key: &str,
+        dir: &Path,
+        name: &OsStr,
+        cancel: &CancellationToken,
+    ) -> Result<ExportedFile, ExportError> {
+        let registry = Arc::clone(&self.registry);
+        let key = key.to_owned();
+        let dir = dir.to_path_buf();
+        let name = PathBuf::from(name);
+        let cancel = cancel.clone();
+        tokio::task::spawn_blocking(move || {
+            let text = reg_file::serialize_branch(registry.as_ref(), hive, &key, &cancel)?;
+            Ok(write_file(&dir, &name, &reg_file::encode_reg_file(&text))?)
+        })
+        .await
+        .map_err(|err| ExportError::Io(std::io::Error::other(err.to_string())))?
     }
 }
 

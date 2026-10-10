@@ -2925,6 +2925,7 @@ dependencies = [
  "encoding_rs",
  "serde_json",
  "sk-core",
+ "sk-testkit",
  "tempfile",
  "thiserror",
  "tokio",

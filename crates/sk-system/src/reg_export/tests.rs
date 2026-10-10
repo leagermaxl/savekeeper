@@ -219,13 +219,136 @@ async fn failing_reg_exe_is_process_failure() {
     assert!(matches!(result, Err(ExportError::Io(_))), "{result:?}");
 }
 
-#[tokio::test]
-async fn unknown_windows_folder_and_cancellation() {
-    let dir = temp_dir();
-    let registry = registry_with(&[(RegHive::Hkcu, MOUSE)]);
-    let out_file = dir.path().join("out.reg");
-    let (export, runner) = reg_export(reg_runner(), registry);
+/// `HKCU\Control Panel\Mouse` with two values, as the own serializer writes it.
+fn mouse_registry() -> MemRegistry {
+    let mut registry = MemRegistry::new();
+    registry
+        .set_string(RegHive::Hkcu, MOUSE, "DoubleClickSpeed", "500")
+        .set_dword(RegHive::Hkcu, MOUSE, "Beep", 0);
+    registry
+}
 
+const MOUSE_SERIALIZED: &str = "Windows Registry Editor Version 5.00\r\n\
+    \r\n\
+    [HKEY_CURRENT_USER\\Control Panel\\Mouse]\r\n\
+    \"Beep\"=dword:00000000\r\n\
+    \"DoubleClickSpeed\"=\"500\"\r\n\
+    \r\n";
+
+/// Checks that `out_file` (the only file in `dir`) holds [`MOUSE_SERIALIZED`].
+fn assert_serialized_mouse(dir: &Path, out_file: &Path, file: &ExportedFile) {
+    let content = reg_file::encode_reg_file(MOUSE_SERIALIZED);
+    assert_eq!(std::fs::read(out_file).unwrap(), content);
+    assert_eq!(file.rel_path, PathBuf::from(out_file.file_name().unwrap()));
+    assert_eq!(file.bytes, content.len() as u64);
+    assert_eq!(file.blake3, blake3::hash(&content).to_hex().to_string());
+    assert_eq!(
+        files_under(dir),
+        [out_file.strip_prefix(dir).unwrap().to_path_buf()]
+    );
+}
+
+#[tokio::test]
+async fn unknown_windows_folder_uses_own_serializer() {
+    let dir = temp_dir();
+    let out_file = dir.path().join("out").join("mouse.reg");
+    let (export, runner) = reg_export(reg_runner(), Arc::new(mouse_registry()));
+    let file = export
+        .export(
+            None,
+            RegHive::Hkcu,
+            MOUSE,
+            &out_file,
+            &CancellationToken::new(),
+        )
+        .await
+        .unwrap();
+    assert_serialized_mouse(dir.path(), &out_file, &file);
+    assert!(runner.calls().is_empty());
+}
+
+#[tokio::test]
+async fn reg_exe_that_cannot_start_falls_back_to_own_serializer() {
+    let dir = temp_dir();
+    let out_file = dir.path().join("mouse.reg");
+    // No handler: the fake answers like a missing program (an i/o error at start).
+    let (export, runner) = reg_export(FakeCmdRunner::new(), Arc::new(mouse_registry()));
+    let file = export
+        .export(
+            Some(dir.path()),
+            RegHive::Hkcu,
+            MOUSE,
+            &out_file,
+            &CancellationToken::new(),
+        )
+        .await
+        .unwrap();
+    assert_serialized_mouse(dir.path(), &out_file, &file);
+    assert_eq!(runner.calls().len(), 1);
+}
+
+#[tokio::test]
+async fn registry_tools_policy_skips_reg_exe() {
+    const POLICY: &str = r"Software\Microsoft\Windows\CurrentVersion\Policies\System";
+    for (hive, value) in [(RegHive::Hkcu, 1), (RegHive::Hklm, 2)] {
+        let dir = temp_dir();
+        let out_file = dir.path().join("mouse.reg");
+        let mut registry = mouse_registry();
+        registry.set_dword(hive, POLICY, "DisableRegistryTools", value);
+        let (export, runner) = reg_export(reg_runner(), Arc::new(registry));
+        let file = export
+            .export(
+                Some(dir.path()),
+                RegHive::Hkcu,
+                MOUSE,
+                &out_file,
+                &CancellationToken::new(),
+            )
+            .await
+            .unwrap();
+        assert_serialized_mouse(dir.path(), &out_file, &file);
+        assert!(runner.calls().is_empty(), "{hive:?}");
+    }
+
+    // The value 0 does not block reg.exe.
+    let dir = temp_dir();
+    let mut registry = mouse_registry();
+    registry.set_dword(RegHive::Hkcu, POLICY, "DisableRegistryTools", 0);
+    let (export, runner) = reg_export(reg_runner(), Arc::new(registry));
+    export
+        .export(
+            Some(dir.path()),
+            RegHive::Hkcu,
+            MOUSE,
+            &dir.path().join("mouse.reg"),
+            &CancellationToken::new(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(runner.calls().len(), 1);
+}
+
+#[tokio::test]
+async fn timeout_and_unreadable_key_do_not_fall_back() {
+    let dir = temp_dir();
+    let out_file = dir.path().join("out.reg");
+    let runner = FakeCmdRunner::new().on(REG_EXE, |_| Err(ExportError::Timeout));
+    let (export, _) = reg_export(runner, Arc::new(mouse_registry()));
+    let result = export
+        .export(
+            Some(dir.path()),
+            RegHive::Hkcu,
+            MOUSE,
+            &out_file,
+            &CancellationToken::new(),
+        )
+        .await;
+    assert!(matches!(result, Err(ExportError::Timeout)), "{result:?}");
+
+    // Fallback on a key without read access: an error, no file.
+    let mut registry = MemRegistry::new();
+    registry.add_denied_key(RegHive::Hkcu, MOUSE);
+    let (export, _) = reg_export(reg_runner(), Arc::new(registry));
     let result = export
         .export(
             None,
@@ -236,16 +359,27 @@ async fn unknown_windows_folder_and_cancellation() {
         )
         .await;
     assert!(
-        matches!(&result, Err(ExportError::Io(err)) if err.kind() == std::io::ErrorKind::NotFound),
+        matches!(&result, Err(ExportError::Io(err)) if err.kind() == std::io::ErrorKind::PermissionDenied),
         "{result:?}"
     );
+    assert!(files_under(dir.path()).is_empty());
+}
+
+#[tokio::test]
+async fn cancellation_before_export() {
+    let dir = temp_dir();
+    let registry = registry_with(&[(RegHive::Hkcu, MOUSE)]);
+    let out_file = dir.path().join("out.reg");
+    let (export, runner) = reg_export(reg_runner(), registry);
 
     let cancel = CancellationToken::new();
     cancel.cancel();
-    let result = export
-        .export(Some(dir.path()), RegHive::Hkcu, MOUSE, &out_file, &cancel)
-        .await;
-    assert!(matches!(result, Err(ExportError::Cancelled)), "{result:?}");
+    for windir in [Some(dir.path()), None] {
+        let result = export
+            .export(windir, RegHive::Hkcu, MOUSE, &out_file, &cancel)
+            .await;
+        assert!(matches!(result, Err(ExportError::Cancelled)), "{result:?}");
+    }
     assert!(runner.calls().is_empty());
     assert!(!out_file.exists());
 }

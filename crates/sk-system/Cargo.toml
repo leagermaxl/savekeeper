@@ -30,6 +30,9 @@ tracing.workspace = true
 wmi.workspace = true
 
 [dev-dependencies]
+# `RegTestKey`: temporary HKCU key to compare the own `.reg` serializer with
+# `reg export` (SPEC-06 T-06-10, SPEC-12 §4.2).
+sk-testkit.workspace = true
 # Target folders of exporter tests, created under `target/tmp` (not the system temp dir).
 tempfile.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "sync"] }
