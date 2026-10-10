@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
-use sk_core::registry::MemRegistry;
+use sk_core::registry::{MemRegistry, RegValue};
 
 use super::*;
 use crate::cmd::{CmdOutput, FakeCmdRunner};
@@ -46,6 +46,9 @@ impl RegistryReader for VanishingKey {
     }
     fn subkeys(&self, _hive: RegHive, _key: &str) -> Vec<String> {
         Vec::new()
+    }
+    fn values(&self, _hive: RegHive, _key: &str) -> Option<Vec<RegValue>> {
+        None
     }
 }
 

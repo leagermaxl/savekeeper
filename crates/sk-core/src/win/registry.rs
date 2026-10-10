@@ -2,20 +2,28 @@
 //! `KEY_READ`; nothing here writes to the registry (principle P1).
 
 use windows::core::PCWSTR;
-use windows::Win32::Foundation::{ERROR_ACCESS_DENIED, ERROR_MORE_DATA, ERROR_SUCCESS};
+use windows::Win32::Foundation::{
+    ERROR_ACCESS_DENIED, ERROR_MORE_DATA, ERROR_NO_MORE_ITEMS, ERROR_SUCCESS,
+};
 use windows::Win32::System::Registry::{
-    RegCloseKey, RegEnumKeyExW, RegGetValueW, RegOpenKeyExW, HKEY, KEY_READ, REG_DWORD,
-    REG_VALUE_TYPE, RRF_RT_REG_DWORD, RRF_RT_REG_SZ,
+    RegCloseKey, RegEnumKeyExW, RegEnumValueW, RegGetValueW, RegOpenKeyExW, RegQueryInfoKeyW, HKEY,
+    KEY_READ, REG_DWORD, REG_VALUE_TYPE, RRF_RT_REG_DWORD, RRF_RT_REG_SZ,
 };
 
 use super::{from_wide, wide};
 use crate::model::RegHive;
-use crate::registry::KeyState;
+use crate::registry::{KeyState, RegValue};
 
 pub(crate) use windows::Win32::System::Registry::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE};
 
 /// Attempts to read a string whose expanded size grows between two calls.
 const STRING_ATTEMPTS: usize = 4;
+
+/// Attempts to read one enumerated value that grows between two calls.
+const VALUE_ATTEMPTS: usize = 4;
+
+/// Value names are limited to 16 383 characters (plus the NUL).
+const MAX_VALUE_NAME: usize = 16_384;
 
 /// The predefined key of a hive.
 pub(crate) fn hive_root(hive: RegHive) -> HKEY {
@@ -154,4 +162,113 @@ pub(crate) fn subkeys(root: HKEY, key: &str) -> Vec<String> {
     // SAFETY: `handle` was opened above and is not used afterwards.
     let _ = unsafe { RegCloseKey(handle) };
     names
+}
+
+/// All values of a key in `RegEnumValueW` order with their raw data
+/// (`REG_EXPAND_SZ` not expanded, decoded by `registry::value::decode`);
+/// `None` if the key is missing or cannot be opened for reading. A value
+/// that keeps growing between attempts is skipped.
+pub(crate) fn values(root: HKEY, key: &str) -> Option<Vec<RegValue>> {
+    let key = wide(key);
+    let mut handle = HKEY::default();
+    // SAFETY: `key` is NUL-terminated; `handle` receives the opened key.
+    let status = unsafe { RegOpenKeyExW(root, PCWSTR(key.as_ptr()), None, KEY_READ, &mut handle) };
+    if status != ERROR_SUCCESS {
+        return None;
+    }
+    let values = enum_values(handle);
+    // SAFETY: `handle` was opened above and is not used afterwards.
+    let _ = unsafe { RegCloseKey(handle) };
+    Some(values)
+}
+
+/// Enumerates the values of the open key `handle`.
+fn enum_values(handle: HKEY) -> Vec<RegValue> {
+    let mut values = Vec::new();
+    let (mut name_cap, mut data_cap) = buffer_sizes(handle);
+    let mut index = 0u32;
+    let mut attempts = 0;
+    loop {
+        let mut name = vec![0u16; name_cap];
+        let mut name_len = u32::try_from(name.len()).unwrap_or(u32::MAX);
+        let mut data = vec![0u8; data_cap];
+        let mut data_len = u32::try_from(data.len()).unwrap_or(u32::MAX);
+        let mut kind = 0u32;
+        // SAFETY: `handle` is open; `name` holds `name_len` characters and
+        // `data` holds `data_len` bytes, as passed.
+        let status = unsafe {
+            RegEnumValueW(
+                handle,
+                index,
+                Some(windows::core::PWSTR(name.as_mut_ptr())),
+                &mut name_len,
+                None,
+                Some(&mut kind),
+                Some(data.as_mut_ptr()),
+                Some(&mut data_len),
+            )
+        };
+        if status == ERROR_MORE_DATA && attempts < VALUE_ATTEMPTS {
+            // The value (its name or data) grew since the sizes were queried.
+            attempts += 1;
+            let (name_max, data_max) = buffer_sizes(handle);
+            name_cap = name_max.max(name_cap.saturating_mul(2)).min(MAX_VALUE_NAME);
+            data_cap = data_max.max(data_len as usize).max(data_cap);
+            continue;
+        }
+        if status == ERROR_SUCCESS {
+            data.truncate(data_len as usize);
+            let name = from_wide(&name[..(name_len as usize).min(name.len())]);
+            values.push(RegValue {
+                name: name.to_string_lossy().into_owned(),
+                data: crate::registry::value::decode(kind, data),
+            });
+        } else if status != ERROR_MORE_DATA {
+            // ERROR_NO_MORE_ITEMS ends the list; any other error means the
+            // key cannot be enumerated further.
+            if status != ERROR_NO_MORE_ITEMS {
+                tracing::debug!(
+                    status = status.0,
+                    index,
+                    "registry value enumeration stopped"
+                );
+            }
+            break;
+        }
+        // A value read (or skipped after too many attempts): next one.
+        index += 1;
+        attempts = 0;
+    }
+    values
+}
+
+/// Buffer sizes for `RegEnumValueW`: the longest value name in characters
+/// (with the NUL) and the largest data in bytes, at least 1 each; generous
+/// defaults if the key cannot be queried.
+fn buffer_sizes(handle: HKEY) -> (usize, usize) {
+    let mut name_max = 0u32;
+    let mut data_max = 0u32;
+    // SAFETY: `handle` is open; the two counters receive the maximum sizes,
+    // every other output is not requested.
+    let status = unsafe {
+        RegQueryInfoKeyW(
+            handle,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(&mut name_max),
+            Some(&mut data_max),
+            None,
+            None,
+        )
+    };
+    if status != ERROR_SUCCESS {
+        return (MAX_VALUE_NAME, 4096);
+    }
+    let name = (name_max as usize + 1).min(MAX_VALUE_NAME);
+    (name, (data_max as usize).max(1))
 }

@@ -1,4 +1,4 @@
-//! Windows integration test of `SystemRegistry` (SPEC-02 §3.4, T-02-10).
+//! Windows integration test of `SystemRegistry` (SPEC-02 §3.4, T-02-10, T-02-11).
 //!
 //! Only a temporary key `HKCU\Software\SaveKeeperTest\<uuid>`
 //! (`sk_testkit::RegTestKey`, SPEC-12 §4.2) is written and read; no other
@@ -8,7 +8,7 @@
 use std::process::Command;
 
 use sk_core::model::RegHive;
-use sk_core::registry::{KeyState, RegistryReader, SystemRegistry};
+use sk_core::registry::{KeyState, RegData, RegValue, RegistryReader, SystemRegistry};
 use sk_testkit::RegTestKey;
 
 /// A test key with values of each type and two subkeys.
@@ -136,4 +136,75 @@ fn subkeys_lists_direct_children() {
     assert!(reg
         .subkeys(RegHive::Hkcu, &format!(r"{}\NoSuchKey", key.subkey()))
         .is_empty());
+}
+
+fn utf16le(s: &str) -> Vec<u8> {
+    s.encode_utf16().flat_map(u16::to_le_bytes).collect()
+}
+
+#[test]
+fn values_lists_raw_values_of_each_type() {
+    let key = RegTestKey::new();
+    key.set_raw_value("", 1, &utf16le("default\0"));
+    key.set_raw_value("Name", 1, &utf16le("Жук\0"));
+    key.set_raw_value("Embedded", 1, &utf16le("before\0after\0"));
+    key.set_raw_value("Expand", 2, &utf16le("%SystemRoot%\\sk\0"));
+    key.set_raw_value("List", 7, &utf16le("a\0bc\0\0"));
+    key.set_raw_value("Count", 4, &42u32.to_le_bytes());
+    key.set_raw_value("Big", 11, &(1u64 << 40).to_le_bytes());
+    key.set_raw_value("Bin", 3, &[0, 1, 0xFF]);
+    key.set_raw_value("None", 0, &[7]);
+    key.key()
+        .create_subkey("Empty")
+        .unwrap_or_else(|e| panic!("{e}"));
+
+    let reg = SystemRegistry;
+    let mut values = reg
+        .values(RegHive::Hkcu, key.subkey())
+        .unwrap_or_else(|| panic!("no values"));
+    values.sort_by_key(|v| v.name.to_lowercase());
+    let value = |name: &str, data: RegData| RegValue {
+        name: name.to_owned(),
+        data,
+    };
+    assert_eq!(
+        values,
+        [
+            value("", RegData::String("default".to_owned())),
+            value("Big", RegData::Qword(1 << 40)),
+            value("Bin", RegData::Binary(vec![0, 1, 0xFF])),
+            value("Count", RegData::Dword(42)),
+            // Up to the first NUL.
+            value("Embedded", RegData::String("before".to_owned())),
+            // Not expanded.
+            value(
+                "Expand",
+                RegData::ExpandString(r"%SystemRoot%\sk".to_owned())
+            ),
+            // The empty tail is dropped.
+            value(
+                "List",
+                RegData::MultiString(vec!["a".to_owned(), "bc".to_owned()])
+            ),
+            value("Name", RegData::String("Жук".to_owned())),
+            value(
+                "None",
+                RegData::Other {
+                    kind: 0,
+                    bytes: vec![7]
+                }
+            ),
+        ]
+    );
+    // The same key written another way, a key without values, a missing key.
+    let messy = format!("/{}//", key.subkey().replace('\\', "/").to_lowercase());
+    assert_eq!(reg.values(RegHive::Hkcu, &messy).map(|v| v.len()), Some(9));
+    assert_eq!(
+        reg.values(RegHive::Hkcu, &format!(r"{}\Empty", key.subkey())),
+        Some(Vec::new())
+    );
+    assert_eq!(
+        reg.values(RegHive::Hkcu, &format!(r"{}\NoSuchKey", key.subkey())),
+        None
+    );
 }

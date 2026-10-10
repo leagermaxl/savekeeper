@@ -5,12 +5,14 @@
 #[cfg(test)]
 mod tests;
 
+use std::io;
 use std::sync::Arc;
 
 use async_trait::async_trait;
 use serde_json::json;
 use sk_core::env::Environment;
 use sk_core::model::{Category, Finding, RegHive, Sensitivity};
+use sk_core::registry::{KeyState, RegData, RegValue, RegistryReader, SystemRegistry};
 
 use super::partial::{Partial, ISSUE_EXPORT_FAILED, ISSUE_READ_FAILED};
 use super::{plan_finding, unavailable, write_file, Plan, NOT_WINDOWS};
@@ -19,7 +21,6 @@ use crate::exporter::{
     Availability, ExportContext, ExportResult, ExportedFile, RestoreHint, SystemExporter,
 };
 use crate::reg_export::{full_key, windir, RegExport};
-use crate::reg_values::{RegData, RegValue, SystemValueReader, ValueReader};
 
 /// Exporter identifier.
 pub(crate) const ID: &str = "env-vars";
@@ -44,7 +45,8 @@ const RESTORE_KEY: &str = "system.restore.env_vars";
 /// Environment variables of the user and of the system.
 pub(crate) struct EnvVarsExporter {
     reg: RegExport,
-    values: Arc<dyn ValueReader>,
+    /// Registry whose values are written to the JSON files.
+    registry: Arc<dyn RegistryReader>,
 }
 
 impl EnvVarsExporter {
@@ -52,14 +54,14 @@ impl EnvVarsExporter {
     pub(crate) fn new() -> Self {
         Self {
             reg: RegExport::system(),
-            values: Arc::new(SystemValueReader),
+            registry: Arc::new(SystemRegistry),
         }
     }
 
-    /// The exporter with the given `reg export` and registry values (tests).
+    /// The exporter with the given `reg export` and registry of the JSON files (tests).
     #[cfg(test)]
-    pub(crate) fn with(reg: RegExport, values: Arc<dyn ValueReader>) -> Self {
-        Self { reg, values }
+    pub(crate) fn with(reg: RegExport, registry: Arc<dyn RegistryReader>) -> Self {
+        Self { reg, registry }
     }
 
     /// `detect` without the platform check: always available.
@@ -71,7 +73,8 @@ impl EnvVarsExporter {
     }
 
     /// Writes the values of `hive\key` as JSON to `file_name`; a missing or unreadable
-    /// key is recorded in `failures`.
+    /// key is recorded in `failures` (`NotAvailable` for a missing key, an access error
+    /// for a key that cannot be read).
     fn export_json(
         &self,
         ctx: &ExportContext<'_>,
@@ -80,16 +83,17 @@ impl EnvVarsExporter {
         file_name: &str,
         failures: &mut Partial,
     ) -> Result<Option<ExportedFile>, ExportError> {
-        let values = match self.values.values(hive, key) {
-            Ok(Some(values)) => values,
-            Ok(None) => {
-                failures.add(hive, key, ISSUE_READ_FAILED, ExportError::NotAvailable)?;
-                return Ok(None);
-            }
-            Err(err) => {
-                failures.add(hive, key, ISSUE_READ_FAILED, ExportError::Io(err))?;
-                return Ok(None);
-            }
+        let Some(values) = self.registry.values(hive, key) else {
+            let err = match self.registry.key_state(hive, key) {
+                KeyState::AccessDenied => ExportError::Io(io::Error::new(
+                    io::ErrorKind::PermissionDenied,
+                    "access denied",
+                )),
+                // Missing, or deleted after `values`.
+                KeyState::Missing | KeyState::Present => ExportError::NotAvailable,
+            };
+            failures.add(hive, key, ISSUE_READ_FAILED, err)?;
+            return Ok(None);
         };
         let text = render_json(hive, key, values);
         Ok(Some(write_file(
@@ -184,24 +188,59 @@ impl SystemExporter for EnvVarsExporter {
 /// a newline.
 ///
 /// `value` is a string for `REG_SZ` and `REG_EXPAND_SZ`, an array of strings for
-/// `REG_MULTI_SZ`, a number for `REG_DWORD` and `REG_QWORD` and `null` for other types.
+/// `REG_MULTI_SZ`, a number for `REG_DWORD` and `REG_QWORD` and `null` for other types
+/// (also for a `REG_DWORD`/`REG_QWORD` of the wrong size). A value of a type without a
+/// `REG_*` name (type number above `REG_QWORD`) is left out.
 pub(crate) fn render_json(hive: RegHive, key: &str, mut values: Vec<RegValue>) -> String {
     values.sort_by_cached_key(|v| (v.name.to_lowercase(), v.name.clone()));
     let variables: Vec<_> = values
         .into_iter()
-        .map(|v| {
+        .filter_map(|v| {
+            let Some(type_name) = type_name(&v.data) else {
+                tracing::debug!(name = %v.name, data = ?v.data, "registry value of unknown type skipped");
+                return None;
+            };
             let value = match &v.data {
                 RegData::String(s) | RegData::ExpandString(s) => json!(s),
                 RegData::MultiString(items) => json!(items),
                 RegData::Dword(n) => json!(n),
                 RegData::Qword(n) => json!(n),
-                RegData::Other(_) => serde_json::Value::Null,
+                RegData::Binary(_) | RegData::Other { .. } => serde_json::Value::Null,
             };
-            json!({ "name": v.name, "type": v.data.type_name(), "value": value })
+            Some(json!({ "name": v.name, "type": type_name, "value": value }))
         })
         .collect();
     let doc = json!({ "key": full_key(hive, key), "variables": variables });
     let mut text = serde_json::to_string_pretty(&doc).unwrap_or_default();
     text.push('\n');
     text
+}
+
+/// Name of the registry type of `data`: `REG_SZ`, `REG_EXPAND_SZ`, …; `None` for a type
+/// number without a name.
+pub(crate) fn type_name(data: &RegData) -> Option<&'static str> {
+    let name = match data {
+        RegData::String(_) => "REG_SZ",
+        RegData::ExpandString(_) => "REG_EXPAND_SZ",
+        RegData::MultiString(_) => "REG_MULTI_SZ",
+        RegData::Dword(_) => "REG_DWORD",
+        RegData::Qword(_) => "REG_QWORD",
+        RegData::Binary(_) => "REG_BINARY",
+        RegData::Other { kind, .. } => match kind {
+            0 => "REG_NONE",
+            1 => "REG_SZ",
+            2 => "REG_EXPAND_SZ",
+            3 => "REG_BINARY",
+            4 => "REG_DWORD",
+            5 => "REG_DWORD_BIG_ENDIAN",
+            6 => "REG_LINK",
+            7 => "REG_MULTI_SZ",
+            8 => "REG_RESOURCE_LIST",
+            9 => "REG_FULL_RESOURCE_DESCRIPTOR",
+            10 => "REG_RESOURCE_REQUIREMENTS_LIST",
+            11 => "REG_QWORD",
+            _ => return None,
+        },
+    };
+    Some(name)
 }

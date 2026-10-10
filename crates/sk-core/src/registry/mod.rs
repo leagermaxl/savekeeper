@@ -12,8 +12,10 @@
 //! the hive.
 
 mod mem;
+pub(crate) mod value;
 
 pub use mem::MemRegistry;
+pub use value::{RegData, RegValue};
 
 use crate::model::RegHive;
 
@@ -50,13 +52,20 @@ pub trait RegistryReader: Send + Sync {
     /// cannot be read. The order depends on the implementation: callers that
     /// need a stable one sort the names themselves.
     fn subkeys(&self, hive: RegHive, key: &str) -> Vec<String>;
+
+    /// All values of `key` with their raw data: `REG_EXPAND_SZ` is not
+    /// expanded, strings end at the first NUL, the empty tail of a
+    /// `REG_MULTI_SZ` is dropped. `None` if the key is missing or cannot be
+    /// read ([`key_state`](Self::key_state) tells which). A value that cannot
+    /// be read is skipped. The order depends on the implementation.
+    fn values(&self, hive: RegHive, key: &str) -> Option<Vec<RegValue>>;
 }
 
 /// The registry of this machine, read through `sk-core::win::registry`.
 ///
 /// Outside Windows there is no registry: every key is [`KeyState::Missing`],
 /// every value `None`, every subkey list empty. `subkeys` keeps the order of
-/// `RegEnumKeyExW`.
+/// `RegEnumKeyExW`, `values` the order of `RegEnumValueW`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct SystemRegistry;
 
@@ -89,6 +98,10 @@ impl RegistryReader for SystemRegistry {
     fn subkeys(&self, hive: RegHive, key: &str) -> Vec<String> {
         crate::win::registry::subkeys(crate::win::registry::hive_root(hive), &normalize_key(key))
     }
+
+    fn values(&self, hive: RegHive, key: &str) -> Option<Vec<RegValue>> {
+        crate::win::registry::values(crate::win::registry::hive_root(hive), &normalize_key(key))
+    }
 }
 
 /// There is no registry outside Windows.
@@ -108,6 +121,10 @@ impl RegistryReader for SystemRegistry {
 
     fn subkeys(&self, _hive: RegHive, _key: &str) -> Vec<String> {
         Vec::new()
+    }
+
+    fn values(&self, _hive: RegHive, _key: &str) -> Option<Vec<RegValue>> {
+        None
     }
 }
 

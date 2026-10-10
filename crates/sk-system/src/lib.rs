@@ -19,10 +19,7 @@ mod exporter;
 mod exporters;
 mod installed;
 mod reg_export;
-mod reg_values;
 mod registry;
-#[cfg(windows)]
-mod win;
 
 pub use cmd::{Cmd, CmdOutput, OutputEncoding, DEFAULT_TIMEOUT, OUTPUT_LIMIT};
 pub use collector::SystemCollector;

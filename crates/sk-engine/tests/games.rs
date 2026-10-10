@@ -23,7 +23,7 @@ use sk_core::events::Event;
 use sk_core::model::{
     Category, CollectorToggles, EvidenceSource, Finding, IssueSeverity, RegHive, ScanReport,
 };
-use sk_core::registry::{KeyState, MemRegistry, RegistryReader};
+use sk_core::registry::{KeyState, MemRegistry, RegValue, RegistryReader};
 use sk_core::CancellationToken;
 use sk_engine::{ScanOptions, ScanPipeline};
 use sk_scan::MemFs;
@@ -319,6 +319,10 @@ impl RegistryReader for WaitingRegistry {
     fn subkeys(&self, hive: RegHive, key: &str) -> Vec<String> {
         self.wait_for_index();
         self.inner.subkeys(hive, key)
+    }
+    fn values(&self, hive: RegHive, key: &str) -> Option<Vec<RegValue>> {
+        self.wait_for_index();
+        self.inner.values(hive, key)
     }
 }
 

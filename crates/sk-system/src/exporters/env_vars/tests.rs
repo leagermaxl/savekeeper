@@ -11,7 +11,6 @@ use crate::exporters::test_util::{
     assert_system_settings_plan, files_under, reg_file_content, reg_runner, run_export, temp_dir,
 };
 use crate::reg_export::REG_EXE;
-use crate::reg_values::MemValues;
 
 fn user_values() -> Vec<(&'static str, RegData)> {
     vec![
@@ -37,10 +36,20 @@ fn system_values() -> Vec<(&'static str, RegData)> {
     ]
 }
 
+/// Adds `hive\key` with `values` to `registry`.
+fn add_values(registry: &mut MemRegistry, hive: RegHive, key: &str, values: Vec<(&str, RegData)>) {
+    registry.add_key(hive, key);
+    for (name, data) in values {
+        registry.set_value(hive, key, name, data);
+    }
+}
+
+/// The exporter whose `reg export` sees `registry_keys` and whose JSON files are read
+/// from `values`.
 fn exporter(
     runner: FakeCmdRunner,
     registry_keys: &[(RegHive, &str)],
-    values: MemValues,
+    values: MemRegistry,
 ) -> (EnvVarsExporter, Arc<FakeCmdRunner>) {
     let mut registry = MemRegistry::new();
     for (hive, key) in registry_keys {
@@ -53,9 +62,9 @@ fn exporter(
 }
 
 fn full_machine() -> (EnvVarsExporter, Arc<FakeCmdRunner>) {
-    let values = MemValues::new()
-        .key(RegHive::Hkcu, USER_KEY, &user_values())
-        .key(RegHive::Hklm, SYSTEM_KEY, &system_values());
+    let mut values = MemRegistry::new();
+    add_values(&mut values, RegHive::Hkcu, USER_KEY, user_values());
+    add_values(&mut values, RegHive::Hklm, SYSTEM_KEY, system_values());
     exporter(reg_runner(), &[(RegHive::Hkcu, USER_KEY)], values)
 }
 
@@ -107,7 +116,28 @@ fn json_keeps_raw_values_sorted_by_name() {
         },
         RegValue {
             name: "Blob".to_owned(),
-            data: RegData::Other("REG_BINARY"),
+            data: RegData::Binary(vec![1, 2]),
+        },
+        RegValue {
+            name: "Short".to_owned(),
+            data: RegData::Other {
+                kind: 4,
+                bytes: vec![1, 2],
+            },
+        },
+        RegValue {
+            name: "Empty".to_owned(),
+            data: RegData::Other {
+                kind: 0,
+                bytes: Vec::new(),
+            },
+        },
+        RegValue {
+            name: "Unknown".to_owned(),
+            data: RegData::Other {
+                kind: 0x1234,
+                bytes: vec![1],
+            },
         },
         RegValue {
             name: "Name".to_owned(),
@@ -125,9 +155,11 @@ fn json_keeps_raw_values_sorted_by_name() {
                 { "name": "Big", "type": "REG_QWORD", "value": 1u64 << 40 },
                 { "name": "Blob", "type": "REG_BINARY", "value": null },
                 { "name": "Count", "type": "REG_DWORD", "value": 7 },
+                { "name": "Empty", "type": "REG_NONE", "value": null },
                 { "name": "List", "type": "REG_MULTI_SZ", "value": ["a", "b"] },
                 { "name": "Name", "type": "REG_SZ", "value": "Ж" },
                 { "name": "path", "type": "REG_EXPAND_SZ", "value": r"%USERPROFILE%\bin" },
+                { "name": "Short", "type": "REG_DWORD", "value": null },
             ]
         })
     );
@@ -204,9 +236,10 @@ async fn run_writes_user_json_reg_and_system_json_into_target_dir_only() {
 async fn unreadable_system_key_and_missing_user_key_are_warnings() {
     let dir = temp_dir();
     let env = Environment::fake(dir.path());
-    let values = MemValues::new()
-        .key(RegHive::Hkcu, USER_KEY, &user_values())
-        .broken(RegHive::Hklm, SYSTEM_KEY, "access denied");
+    let mut values = MemRegistry::new();
+    add_values(&mut values, RegHive::Hkcu, USER_KEY, user_values());
+    add_values(&mut values, RegHive::Hklm, SYSTEM_KEY, system_values());
+    values.add_denied_key(RegHive::Hklm, SYSTEM_KEY);
     // `reg export` sees no user key: the `.reg` file is skipped with a warning.
     let (exporter, runner) = exporter(reg_runner(), &[], values);
 
@@ -241,7 +274,7 @@ async fn unreadable_system_key_and_missing_user_key_are_warnings() {
 async fn nothing_exported_is_the_first_error() {
     let dir = temp_dir();
     let env = Environment::fake(dir.path());
-    let (exporter, _) = exporter(reg_runner(), &[], MemValues::new());
+    let (exporter, _) = exporter(reg_runner(), &[], MemRegistry::new());
     let result = run_export(
         &exporter,
         &env,

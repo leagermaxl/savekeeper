@@ -25,10 +25,6 @@ tokio = { workspace = true, features = ["io-util", "macros", "process", "rt", "t
 # `Cmd` logs the command, exit code and time (SPEC-06 §4.6).
 tracing.workspace = true
 
-[target.'cfg(windows)'.dependencies]
-# Values of `HKCU\Environment` for `env-vars` (SPEC-06 §4.3); read only (KEY_READ), no `unsafe`.
-winreg.workspace = true
-
 [dev-dependencies]
 # Target folders of exporter tests, created under `target/tmp` (not the system temp dir).
 tempfile.workspace = true
