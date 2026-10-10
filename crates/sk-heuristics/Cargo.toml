@@ -17,14 +17,14 @@ serde-saphyr.workspace = true
 sk-core.workspace = true
 # Errors of the built-in data (`DataError`).
 thiserror.workspace = true
+# "Recent" SQLite files of the marker classification (SPEC-07 §4.7, rule 8).
+time.workspace = true
 # `rt`: the heuristics run synchronously in `spawn_blocking` (SPEC-07 §4.1).
 tokio = { workspace = true, features = ["rt"] }
 
 [dev-dependencies]
 # `MemFs` as the scanner of the collector tests.
 sk-scan.workspace = true
-# File times of the `FolderSummary`s in the `junk_verdict` tests.
-time.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "sync"] }
 
 [lints]

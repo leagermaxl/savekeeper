@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-heuristics` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03, SPEC-04, SPEC-05 |
 | Используется в | SPEC-08, SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-10 (T-07-03: `junk_verdict_with_siblings` §4.1/§4.5, приоритет строк, определение игровой библиотеки и игнор широких корней §4.5, ключи `heuristic.junk.*`); 2026-10-10 (T-07-02: форматы `vendors.txt` §4.2.2 и `extensions.yaml` §4.3.2, issue `heuristic.data_invalid` §5); 2026-10-01 (`HeuristicsConfig` — в `sk-core::config`) |
+| Последнее изменение | 2026-10-10 (T-07-04: `classify_by_markers_with` §4.1, уточнения правил §4.7); 2026-10-10 (T-07-03: `junk_verdict_with_siblings` §4.1/§4.5, приоритет строк, определение игровой библиотеки и игнор широких корней §4.5, ключи `heuristic.junk.*`); 2026-10-10 (T-07-02: форматы `vendors.txt` §4.2.2 и `extensions.yaml` §4.3.2, issue `heuristic.data_invalid` §5); 2026-10-01 (`HeuristicsConfig` — в `sk-core::config`) |
 
 ## 1. Цель
 
@@ -97,8 +97,11 @@ pub struct HeuristicOutput {
     pub issues: Vec<ScanIssue>,
 }
 
-/// Классификация по маркерам (§4.7). Чистая функция, покрыта таблицей тестов.
+/// Классификация по маркерам (§4.7) с дефолтными порогами (§4.9); «сейчас» для правила 8 — текущее время UTC.
 pub fn classify_by_markers(s: &FolderSummary, env: &Environment) -> MarkerVerdict;
+/// То же с порогами `HeuristicsConfig::thresholds` и моментом `now`, от которого отсчитывается «недавно» (правило 8).
+/// Чистая функция, покрыта таблицей тестов; H-UNK вызывает её с одним `now` на скан.
+pub fn classify_by_markers_with(s: &FolderSummary, env: &Environment, thresholds: &HeuristicThresholds, now: OffsetDateTime) -> MarkerVerdict;
 
 /// H-JUNK (§4.5) только по summary: строки «target рядом с Cargo.toml» и «bin/obj рядом с *.csproj» здесь не срабатывают.
 pub fn junk_verdict(s: &FolderSummary, env: &Environment) -> Option<MarkerVerdict>;
@@ -328,7 +331,7 @@ Firefox, Brave, Opera) покрываются правилами SPEC-04, и H-W
 | 11 | `total_bytes == 0` или `file_count == 0` | Cache | 0.95 | `heuristic.empty` (находка **не создаётся**, только claimed) |
 | 12 | иначе | Unknown | 0.0 | `heuristic.unknown` |
 
-Пороги (`20%`, `5 МБ`, `90 дней` …) вынесены в `HeuristicsConfig::thresholds` с дефолтами из таблицы.
+Пороги правил 5, 7 и 8 (`20%`, `5 МБ`, `90 дней`) вынесены в `HeuristicsConfig::thresholds` с дефолтами из таблицы; порог правила 6 (10 МБ) фиксирован. Уточнения: сравнения строгие, как в таблице; МБ = 2^20 байт. Правило 2 — путь равен `{SAVED_GAMES}` или лежит под ним (по резолвленному пути, а если папка неизвестна — по токену в начале шаблона). Правило 5 — доля по `ext_histogram` (top-15) от `file_count`. Правило 6 — прямой потомок `{HOME}`, имя начинается с точки. Правило 8 — `now − newest_mtime < sqlite_recent_days`; mtime в будущем считается недавним, без `newest_mtime` правило не срабатывает. Правило 9 — «AppData» = под `{APPDATA}`, `{LOCALAPPDATA}`, `{LOCALLOW}` или `{HOME}\AppData`. Правило 11 не срабатывает при `truncated = true`: обрезанная сводка не доказывает пустоту, папка уходит в правило 12.
 
 ### 4.8 Формирование Finding
 
@@ -397,7 +400,7 @@ fn make_finding(root: &Path, v: &MarkerVerdict, s: &FolderSummary, h: &'static s
 - [x] **T-07-01** — Каркас `sk-heuristics`: `HeuristicsCollector`, трейт `Heuristic`, `HeuristicContext`, порядок выполнения и накопление `claimed`, реэкспорт `HeuristicsConfig` (тип и дефолты §4.9 реализуются в SPEC-01 T-01-04). *Зависит:* T-01-03, T-01-04. *Готово, когда:* коллектор с пустыми эвристиками встроен в `ScanPipeline` и проходит интеграционный тест.
 - [x] **T-07-02** — Данные: `vendors.txt`, `extensions.yaml` + загрузчик (include_bytes, валидация при старте). *Готово, когда:* unit-тест: все группы парсятся, нет дублей расширений.
 - [x] **T-07-03** — `junk_verdict` (§4.5). *Зависит:* T-07-01. *Готово, когда:* тесты §6.
-- [ ] **T-07-04** — `classify_by_markers` (§4.7) с конфигурируемыми порогами. *Зависит:* T-07-03, T-02-07. *Готово, когда:* таблица ≥ 25 кейсов зелёная.
+- [x] **T-07-04** — `classify_by_markers` (§4.7) с конфигурируемыми порогами. *Зависит:* T-07-03, T-02-07. *Готово, когда:* таблица ≥ 25 кейсов зелёная.
 - [ ] **T-07-05** — H-UNK: зоны, вендоры, UWP, частичное покрытие, `make_finding`, сбор `unknown`. *Зависит:* T-07-04, SPEC-03 `summarize`. *Готово, когда:* тесты H-UNK + FR-07-02 на фикстуре.
 - [ ] **T-07-06** — H-WEB. *Зависит:* T-07-01. *Готово, когда:* тест на Electron- и Chromium-фикстуре.
 - [ ] **T-07-07** — Общий обход корней (§4.3.1) с исключениями и агрегацией по директориям. *Зависит:* SPEC-03 `walk`. *Готово, когда:* агрегаты совпадают с эталоном на фикстуре.
