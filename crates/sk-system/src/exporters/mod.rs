@@ -3,19 +3,25 @@
 //! Each exporter lives in its own module and is listed by [`all`] in catalogue order.
 
 mod env_vars;
+mod fonts;
+mod hosts;
 mod partial;
+mod powershell_modules;
 mod programs;
 mod registry_user;
+mod scheduled_tasks;
 mod wifi;
 mod winget;
 
 #[cfg(test)]
 pub(crate) mod test_util;
+#[cfg(test)]
+mod tests;
 
 use std::collections::BTreeMap;
 use std::fs::File;
-use std::io;
-use std::path::{Path, PathBuf};
+use std::io::{self, Read, Write};
+use std::path::Path;
 use std::sync::Arc;
 
 use sk_core::model::{
@@ -27,8 +33,12 @@ use crate::cmd::CmdOutput;
 use crate::exporter::{Availability, ExportedFile, SystemExporter};
 
 pub(crate) use env_vars::EnvVarsExporter;
+pub(crate) use fonts::FontsExporter;
+pub(crate) use hosts::HostsExporter;
+pub(crate) use powershell_modules::PowershellModulesExporter;
 pub(crate) use programs::ProgramsExporter;
 pub(crate) use registry_user::RegistryUserExporter;
+pub(crate) use scheduled_tasks::ScheduledTasksExporter;
 pub(crate) use wifi::WifiExporter;
 pub(crate) use winget::WingetExporter;
 
@@ -43,6 +53,9 @@ const EVIDENCE_KEY: &str = "evidence.system_export";
 
 /// Longest process output kept in `ExportError::ProcessFailed`.
 const FAILURE_TEXT_CHARS: usize = 2000;
+
+/// Buffer size of [`copy_file`].
+const COPY_BUFFER: usize = 256 * 1024;
 
 /// The application all system exports belong to (`AppRef.kind = System`, SPEC-06 §4.1).
 const APP_ID: &str = "windows";
@@ -59,6 +72,10 @@ pub(crate) fn all() -> Vec<Arc<dyn SystemExporter>> {
         Arc::new(WifiExporter::new()),
         Arc::new(RegistryUserExporter::new()),
         Arc::new(EnvVarsExporter::new()),
+        Arc::new(FontsExporter::new()),
+        Arc::new(HostsExporter),
+        Arc::new(ScheduledTasksExporter::new()),
+        Arc::new(PowershellModulesExporter::new()),
     ]
 }
 
@@ -133,8 +150,17 @@ pub(crate) fn plan_finding(plan: Plan<'_>, avail: &Availability) -> Option<Findi
 
 /// A warning of an export run.
 pub(crate) fn warning(message_key: &str, message_args: BTreeMap<String, String>) -> ScanIssue {
+    issue(IssueSeverity::Warning, message_key, message_args)
+}
+
+/// An issue of an export run with the given severity.
+pub(crate) fn issue(
+    severity: IssueSeverity,
+    message_key: &str,
+    message_args: BTreeMap<String, String>,
+) -> ScanIssue {
     ScanIssue {
-        severity: IssueSeverity::Warning,
+        severity,
         source: ISSUE_SOURCE.to_owned(),
         path: None,
         message_key: message_key.to_owned(),
@@ -144,19 +170,89 @@ pub(crate) fn warning(message_key: &str, message_args: BTreeMap<String, String>)
 
 /// Writes `content` to `target_dir/rel_path` and describes the file.
 ///
-/// Only `target_dir` is written (principle P1); it is created if missing.
+/// Only `target_dir` is written (principle P1); it and the folders of `rel_path` are
+/// created if missing. A file that fails while being written is removed again
+/// ([`write_new`]).
 pub(crate) fn write_file(
     target_dir: &Path,
-    rel_path: &str,
+    rel_path: impl AsRef<Path>,
     content: &[u8],
 ) -> io::Result<ExportedFile> {
-    std::fs::create_dir_all(target_dir)?;
-    std::fs::write(target_dir.join(rel_path), content)?;
+    let rel_path = rel_path.as_ref();
+    let path = target_dir.join(rel_path);
+    std::fs::create_dir_all(path.parent().unwrap_or(target_dir))?;
+    write_new(&path, |file| file.write_all(content))?;
     Ok(ExportedFile {
-        rel_path: PathBuf::from(rel_path),
+        rel_path: rel_path.to_path_buf(),
         bytes: content.len() as u64,
         blake3: blake3::hash(content).to_hex().to_string(),
     })
+}
+
+/// Copies the file `src` to `target_dir/rel_path` and describes the copy; the content is
+/// hashed while it is copied.
+///
+/// `src` is only opened for reading (principle P1); only `target_dir` is written, it and
+/// the folders of `rel_path` are created if missing. An existing file is replaced. When
+/// reading or writing fails midway, the partial copy is removed ([`write_new`]), so
+/// every file left in `target_dir` is one reported in `ExportResult.files` (FR-06-02).
+pub(crate) fn copy_file(
+    src: &Path,
+    target_dir: &Path,
+    rel_path: impl AsRef<Path>,
+) -> io::Result<ExportedFile> {
+    let rel_path = rel_path.as_ref();
+    let mut source = File::open(src)?;
+    let path = target_dir.join(rel_path);
+    std::fs::create_dir_all(path.parent().unwrap_or(target_dir))?;
+    let (bytes, blake3) = write_new(&path, |dest| copy_hashed(&mut source, dest))?;
+    Ok(ExportedFile {
+        rel_path: rel_path.to_path_buf(),
+        bytes,
+        blake3,
+    })
+}
+
+/// Creates the output file `path` (in the target folder) and fills it with `fill`. On
+/// any error after the file was created, the file is removed again: an empty or partial
+/// output must not stay behind unreported. Only this newly created output file is
+/// removed, never a source.
+pub(crate) fn write_new<T>(
+    path: &Path,
+    fill: impl FnOnce(&mut File) -> io::Result<T>,
+) -> io::Result<T> {
+    let mut file = File::create(path)?;
+    let result = fill(&mut file);
+    drop(file);
+    if result.is_err() {
+        if let Err(err) = std::fs::remove_file(path) {
+            tracing::warn!(error = %err, "partial export file not removed");
+        }
+    }
+    result
+}
+
+/// Copies `source` to `dest`; returns the number of bytes and their BLAKE3 hash.
+pub(crate) fn copy_hashed(
+    source: &mut impl Read,
+    dest: &mut impl Write,
+) -> io::Result<(u64, String)> {
+    let mut hasher = blake3::Hasher::new();
+    let mut buf = vec![0u8; COPY_BUFFER];
+    let mut bytes = 0u64;
+    loop {
+        let n = match source.read(&mut buf) {
+            Ok(0) => break,
+            Ok(n) => n,
+            Err(err) if err.kind() == io::ErrorKind::Interrupted => continue,
+            Err(err) => return Err(err),
+        };
+        hasher.update(&buf[..n]);
+        dest.write_all(&buf[..n])?;
+        bytes += n as u64;
+    }
+    dest.flush()?;
+    Ok((bytes, hasher.finalize().to_hex().to_string()))
 }
 
 /// Describes the existing file `target_dir/rel_path` (written by an external process):

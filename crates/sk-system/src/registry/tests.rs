@@ -81,7 +81,17 @@ fn registry_lists_exporters_in_catalogue_order() {
     // `winget` before `programs`: `programs` reads `winget.json` (SPEC-06 §4.3).
     assert_eq!(
         ids,
-        ["winget", "programs", "wifi", "registry-user", "env-vars"]
+        [
+            "winget",
+            "programs",
+            "wifi",
+            "registry-user",
+            "env-vars",
+            "fonts",
+            "hosts",
+            "scheduled-tasks",
+            "powershell-modules",
+        ]
     );
 }
 
