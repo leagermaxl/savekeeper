@@ -6,6 +6,7 @@ use sk_core::CancellationToken;
 
 use super::manifest::{decode, module_version};
 use super::*;
+use crate::exporters::source::RealSourceFs;
 use crate::exporters::test_util::{files_under, run_export, temp_dir};
 
 fn documents(root: &Path) -> PathBuf {
@@ -156,7 +157,12 @@ fn versions_of_versioned_and_plain_modules() {
     // Version folders sorted numerically; a folder without a manifest keeps its name.
     write_files(&core, &[("Pester/2.0/readme.txt", "")]);
     assert_eq!(
-        versions(&core.join("Pester"), "Pester"),
+        versions(
+            &core.join("Pester"),
+            "Pester",
+            &RealSourceFs,
+            &mut Partial::default()
+        ),
         [
             ModuleVersion {
                 version: Some("2.0".to_owned()),
@@ -173,7 +179,12 @@ fn versions_of_versioned_and_plain_modules() {
         ]
     );
     assert_eq!(
-        versions(&core.join("my-tools"), "my-tools"),
+        versions(
+            &core.join("my-tools"),
+            "my-tools",
+            &RealSourceFs,
+            &mut Partial::default()
+        ),
         [ModuleVersion {
             version: Some("0.3".to_owned()),
             path: "my-tools".to_owned()
@@ -181,7 +192,7 @@ fn versions_of_versioned_and_plain_modules() {
     );
     let big = modules_dir(dir.path(), "WindowsPowerShell").join("Big");
     assert_eq!(
-        versions(&big, "Big"),
+        versions(&big, "Big", &RealSourceFs, &mut Partial::default()),
         [ModuleVersion {
             version: None,
             path: "Big".to_owned()

@@ -1,17 +1,22 @@
 //! The `hosts` exporter (SPEC-06 §4.3): a copy of `{WINDIR}\System32\drivers\etc\hosts`
-//! when it holds entries of its own (the stock file has only comments).
+//! when it holds entries of its own (the stock file has only comments). A cloud-only
+//! file is never opened (SPEC-10 FR-10-15).
 
 #[cfg(test)]
 mod tests;
 
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
+use std::sync::Arc;
 
 use async_trait::async_trait;
 use sk_core::env::Environment;
+use sk_core::fs::CloudState;
 use sk_core::model::{Category, Finding, Sensitivity};
 
+use super::partial::Partial;
+use super::source::{self, SourceFs};
 use super::{copy_file, plan_finding, unavailable, Plan, NOT_WINDOWS};
 use crate::error::ExportError;
 use crate::exporter::{Availability, ExportContext, ExportResult, RestoreHint, SystemExporter};
@@ -36,17 +41,46 @@ const MISSING: &str = "system.hosts.missing";
 const RESTORE_KEY: &str = "system.restore.hosts";
 
 /// The `hosts` file of the machine.
-pub(crate) struct HostsExporter;
+pub(crate) struct HostsExporter {
+    /// The `hosts` file; a cloud-only one is not opened (SPEC-10 FR-10-15).
+    source: Arc<dyn SourceFs>,
+}
 
 impl HostsExporter {
+    /// The exporter reading the real `hosts` file.
+    pub(crate) fn new() -> Self {
+        Self {
+            source: source::real(),
+        }
+    }
+
+    /// The exporter reading the file through `source` (tests).
+    #[cfg(test)]
+    pub(crate) fn with_source(source: Arc<dyn SourceFs>) -> Self {
+        Self { source }
+    }
+
     /// `detect` without the platform check: Available when the file has an entry, a
     /// non-empty line that does not start with `#` (SPEC-06 §4.3). Reading stops at the
     /// first entry, so large block lists do not slow the scan down.
-    pub(crate) fn probe(env: &Environment) -> Availability {
+    ///
+    /// A cloud-only file is not opened: whether it has entries is unknown, so it is
+    /// Available without an estimate, and `run` reports it.
+    pub(crate) fn probe(&self, env: &Environment) -> Availability {
         let Some(path) = hosts_path(env) else {
             return unavailable(MISSING);
         };
-        match has_entries(&path) {
+        let file = match self.source.cloud_state(&path) {
+            Ok(CloudState::CloudOnly) => {
+                return Availability::Available {
+                    estimated_bytes: None,
+                    details: Default::default(),
+                }
+            }
+            Ok(CloudState::Local) => self.source.open(&path),
+            Err(err) => Err(err),
+        };
+        match file.and_then(has_entries) {
             Ok(true) => Availability::Available {
                 estimated_bytes: std::fs::metadata(&path).ok().map(|m| m.len()),
                 details: Default::default(),
@@ -70,7 +104,7 @@ impl SystemExporter for HostsExporter {
     /// `system.hosts.missing`, `system.not_windows`.
     fn detect(&self, env: &Environment) -> Availability {
         if cfg!(windows) {
-            Self::probe(env)
+            self.probe(env)
         } else {
             unavailable(NOT_WINDOWS)
         }
@@ -88,7 +122,8 @@ impl SystemExporter for HostsExporter {
     }
 
     /// Copies the `hosts` file as is to `hosts` in the target folder. A missing file is
-    /// [`ExportError::NotAvailable`].
+    /// [`ExportError::NotAvailable`]; a cloud-only file is not opened, the result has no
+    /// files and the warning `issue.system.cloud_only` {path} (SPEC-10 FR-10-15).
     async fn run(
         &self,
         ctx: &ExportContext<'_>,
@@ -100,20 +135,22 @@ impl SystemExporter for HostsExporter {
         let Some(src) = hosts_path(ctx.env) else {
             return Err(ExportError::NotAvailable);
         };
-        let file = match copy_file(&src, ctx.target_dir, FILE) {
-            Ok(file) => file,
+        let mut files = Vec::new();
+        let mut skipped = Partial::default();
+        match copy_file(self.source.as_ref(), &src, ctx.target_dir, FILE) {
+            Ok(Some(file)) => files.push(file),
+            Ok(None) => skipped.cloud_only(&src),
             Err(err) if err.kind() == io::ErrorKind::NotFound => {
                 return Err(ExportError::NotAvailable)
             }
             Err(err) => return Err(err.into()),
-        };
-        Ok(ExportResult {
-            files: vec![file],
-            warnings: Vec::new(),
-            restore_hint: RestoreHint::Manual {
+        }
+        skipped.finish(
+            files,
+            RestoreHint::Manual {
                 key: RESTORE_KEY.to_owned(),
             },
-        })
+        )
     }
 }
 
@@ -122,10 +159,10 @@ fn hosts_path(env: &Environment) -> Option<PathBuf> {
     windir(env).map(|dir| dir.join("System32").join("drivers").join("etc").join(FILE))
 }
 
-/// Whether the file at `path` has an entry: a line that is not empty and does not start
-/// with `#` after leading whitespace (and a UTF-8 BOM) are removed.
-fn has_entries(path: &Path) -> io::Result<bool> {
-    let mut reader = BufReader::new(File::open(path)?);
+/// Whether the open `hosts` file has an entry: a line that is not empty and does not
+/// start with `#` after leading whitespace (and a UTF-8 BOM) are removed.
+fn has_entries(file: File) -> io::Result<bool> {
+    let mut reader = BufReader::new(file);
     let mut line = Vec::new();
     let mut first = true;
     loop {

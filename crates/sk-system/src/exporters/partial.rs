@@ -2,8 +2,8 @@
 //! copied files): a failed part is a warning, the export fails only when no part
 //! succeeded.
 
-use std::collections::BTreeMap;
-use std::path::Path;
+use std::collections::{BTreeMap, BTreeSet};
+use std::path::{Path, PathBuf};
 
 use sk_core::model::{RegHive, ScanIssue};
 
@@ -27,11 +27,17 @@ pub(crate) const ISSUE_FILE_COPY_FAILED: &str = "issue.system.file_copy_failed";
 /// Warning: a folder could not be listed. Args: `path`, `error`.
 pub(crate) const ISSUE_FOLDER_READ_FAILED: &str = "issue.system.folder_read_failed";
 
+/// Warning: a file is only in the cloud and was not opened, so it is not in the backup
+/// (SPEC-10 FR-10-15). Args: `path`.
+pub(crate) const ISSUE_CLOUD_ONLY: &str = "issue.system.cloud_only";
+
 /// Warnings of the failed parts and the first error.
 #[derive(Debug, Default)]
 pub(crate) struct Partial {
     warnings: Vec<ScanIssue>,
     first_error: Option<ExportError>,
+    /// Files skipped because they are only in the cloud (each warned once).
+    cloud_only: BTreeSet<PathBuf>,
 }
 
 impl Partial {
@@ -97,15 +103,32 @@ impl Partial {
         self.warnings.push(issue);
     }
 
-    /// The result with `files` and the warnings; with no file at all, the first error,
-    /// or [`ExportError::NotAvailable`] when nothing failed (nothing to export).
+    /// Records the file `path` that is only in the cloud and was not opened (SPEC-10
+    /// FR-10-15): the warning [`ISSUE_CLOUD_ONLY`] with the argument `path`, once per
+    /// path. It is not a failed part.
+    pub(crate) fn cloud_only(&mut self, path: &Path) {
+        if self.cloud_only.insert(path.to_path_buf()) {
+            tracing::debug!(path = %path.display(), "cloud-only file not opened");
+            let args = BTreeMap::from([("path".to_owned(), path.to_string_lossy().into_owned())]);
+            self.warnings.push(warning(ISSUE_CLOUD_ONLY, args));
+        }
+    }
+
+    /// The result with `files` and the warnings. With no file at all: the first error;
+    /// else, when cloud-only files were skipped, a result without files whose warnings
+    /// say so; else [`ExportError::NotAvailable`] (nothing to export).
     pub(crate) fn finish(
         self,
         files: Vec<ExportedFile>,
         restore_hint: RestoreHint,
     ) -> Result<ExportResult, ExportError> {
         if files.is_empty() {
-            return Err(self.first_error.unwrap_or(ExportError::NotAvailable));
+            if let Some(err) = self.first_error {
+                return Err(err);
+            }
+            if self.cloud_only.is_empty() {
+                return Err(ExportError::NotAvailable);
+            }
         }
         Ok(ExportResult {
             files,

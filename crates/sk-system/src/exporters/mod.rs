@@ -14,10 +14,13 @@ mod printers;
 mod programs;
 mod registry_user;
 mod scheduled_tasks;
+mod source;
 mod wifi;
 mod windows_info;
 mod winget;
 
+#[cfg(test)]
+mod cloud_tests;
 #[cfg(test)]
 pub(crate) mod test_util;
 #[cfg(test)]
@@ -36,6 +39,7 @@ use sk_core::model::{
 
 use crate::cmd::CmdOutput;
 use crate::exporter::{Availability, ExportedFile, SystemExporter};
+use source::SourceFs;
 
 pub(crate) use checklist::ChecklistExporter;
 pub(crate) use disks_info::DisksInfoExporter;
@@ -85,7 +89,7 @@ pub(crate) fn all() -> Vec<Arc<dyn SystemExporter>> {
         Arc::new(RegistryUserExporter::new()),
         Arc::new(EnvVarsExporter::new()),
         Arc::new(FontsExporter::new()),
-        Arc::new(HostsExporter),
+        Arc::new(HostsExporter::new()),
         Arc::new(ScheduledTasksExporter::new()),
         Arc::new(PowershellModulesExporter::new()),
         Arc::new(PrintersExporter::new()),
@@ -208,25 +212,31 @@ pub(crate) fn write_file(
 /// Copies the file `src` to `target_dir/rel_path` and describes the copy; the content is
 /// hashed while it is copied.
 ///
-/// `src` is only opened for reading (principle P1); only `target_dir` is written, it and
-/// the folders of `rel_path` are created if missing. An existing file is replaced. When
-/// reading or writing fails midway, the partial copy is removed ([`write_new`]), so
-/// every file left in `target_dir` is one reported in `ExportResult.files` (FR-06-02).
+/// A file that is only in the cloud is not opened and nothing is written: `Ok(None)`
+/// (SPEC-10 FR-10-15, [`source::open_local`]); the caller reports it
+/// ([`partial::Partial::cloud_only`]). `src` is only opened for reading (principle P1);
+/// only `target_dir` is written, it and the folders of `rel_path` are created if
+/// missing. An existing file is replaced. When reading or writing fails midway, the
+/// partial copy is removed ([`write_new`]), so every file left in `target_dir` is one
+/// reported in `ExportResult.files` (FR-06-02).
 pub(crate) fn copy_file(
+    source: &dyn SourceFs,
     src: &Path,
     target_dir: &Path,
     rel_path: impl AsRef<Path>,
-) -> io::Result<ExportedFile> {
+) -> io::Result<Option<ExportedFile>> {
     let rel_path = rel_path.as_ref();
-    let mut source = File::open(src)?;
+    let Some(mut file) = source::open_local(source, src)? else {
+        return Ok(None);
+    };
     let path = target_dir.join(rel_path);
     std::fs::create_dir_all(path.parent().unwrap_or(target_dir))?;
-    let (bytes, blake3) = write_new(&path, |dest| copy_hashed(&mut source, dest))?;
-    Ok(ExportedFile {
+    let (bytes, blake3) = write_new(&path, |dest| copy_hashed(&mut file, dest))?;
+    Ok(Some(ExportedFile {
         rel_path: rel_path.to_path_buf(),
         bytes,
         blake3,
-    })
+    }))
 }
 
 /// Creates the output file `path` (in the target folder) and fills it with `fill`. On

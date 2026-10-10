@@ -20,6 +20,7 @@ use sk_core::registry::{RegistryReader, SystemRegistry};
 use super::partial::{
     Partial, ISSUE_EXPORT_FAILED, ISSUE_FILE_COPY_FAILED, ISSUE_FOLDER_READ_FAILED,
 };
+use super::source::{self, SourceFs};
 use super::{copy_file, plan_finding, unavailable, write_file, Plan, NOT_WINDOWS};
 use crate::error::ExportError;
 use crate::exporter::{
@@ -63,6 +64,8 @@ pub(crate) struct FontsExporter {
     reg: RegExport,
     /// Registry read by `detect` (registrations of user fonts).
     registry: Arc<dyn RegistryReader>,
+    /// The user's font files; cloud-only ones are not opened (SPEC-10 FR-10-15).
+    source: Arc<dyn SourceFs>,
 }
 
 impl FontsExporter {
@@ -71,13 +74,24 @@ impl FontsExporter {
         Self {
             reg: RegExport::system(),
             registry: Arc::new(SystemRegistry),
+            source: source::real(),
         }
     }
 
     /// The exporter with the given `reg export` and registry of `detect` (tests).
     #[cfg(test)]
     pub(crate) fn with(reg: RegExport, registry: Arc<dyn RegistryReader>) -> Self {
-        Self { reg, registry }
+        Self {
+            reg,
+            registry,
+            source: source::real(),
+        }
+    }
+
+    /// The exporter reading the font files through `source` (tests).
+    #[cfg(test)]
+    pub(crate) fn with_source(self, source: Arc<dyn SourceFs>) -> Self {
+        Self { source, ..self }
     }
 
     /// `detect` without the platform check (SPEC-06 §4.3): Available when
@@ -111,7 +125,8 @@ impl FontsExporter {
         }
     }
 
-    /// Copies the user fonts to `user/<name>`; a file or folder that fails is a warning.
+    /// Copies the user fonts to `user/<name>`; a file or folder that fails is a warning,
+    /// a cloud-only font is not opened (warning `issue.system.cloud_only`).
     fn copy_user_fonts(
         &self,
         ctx: &ExportContext<'_>,
@@ -131,8 +146,10 @@ impl FontsExporter {
                 return Err(ExportError::Cancelled);
             }
             let src = dir.join(&font.name);
-            match copy_file(&src, ctx.target_dir, Path::new(USER_DIR).join(&font.name)) {
-                Ok(file) => files.push(file),
+            let rel_path = Path::new(USER_DIR).join(&font.name);
+            match copy_file(self.source.as_ref(), &src, ctx.target_dir, rel_path) {
+                Ok(Some(file)) => files.push(file),
+                Ok(None) => failures.cloud_only(&src),
                 Err(err) => failures.add_path(ISSUE_FILE_COPY_FAILED, &src, err.into())?,
             }
         }
@@ -172,9 +189,12 @@ impl SystemExporter for FontsExporter {
     /// the built-in list of Windows fonts, one per line; only when there are any).
     ///
     /// A missing user font folder or registry key is skipped silently; a file or folder
-    /// that cannot be read and a failed `reg export` are warnings. When nothing is
-    /// written, the first error is returned ([`ExportError::NotAvailable`] when nothing
-    /// failed). Cancellation stops the export.
+    /// that cannot be read and a failed `reg export` are warnings. A user font that is
+    /// only in the cloud is not opened: warning `issue.system.cloud_only` {path} (SPEC-10
+    /// FR-10-15); the system fonts are only listed, never opened. When nothing is
+    /// written, the first error is returned (with no error: a result without files when
+    /// cloud-only fonts were skipped, else [`ExportError::NotAvailable`]). Cancellation
+    /// stops the export.
     async fn run(
         &self,
         ctx: &ExportContext<'_>,

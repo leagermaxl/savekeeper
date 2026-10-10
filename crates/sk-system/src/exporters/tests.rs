@@ -3,6 +3,7 @@
 use std::io::{self, Read};
 
 use super::partial::{Partial, ISSUE_FILE_COPY_FAILED};
+use super::source::RealSourceFs;
 use super::test_util::{files_under, temp_dir};
 use super::*;
 use crate::error::ExportError;
@@ -32,7 +33,14 @@ fn copy_file_copies_and_hashes() {
     let src = dir.path().join("src.ttf");
     std::fs::write(&src, b"font data").unwrap();
     let target = dir.path().join("out");
-    let file = copy_file(&src, &target, Path::new("user").join("a.ttf")).unwrap();
+    let file = copy_file(
+        &RealSourceFs,
+        &src,
+        &target,
+        Path::new("user").join("a.ttf"),
+    )
+    .unwrap()
+    .unwrap();
     assert_eq!(file.rel_path, Path::new("user").join("a.ttf"));
     assert_eq!(file.bytes, 9);
     assert_eq!(file.blake3, blake3::hash(b"font data").to_hex().to_string());
@@ -66,7 +74,13 @@ fn unreadable_source_leaves_no_file_and_is_a_copy_warning() {
     std::fs::create_dir_all(&src).unwrap();
     let target = dir.path().join("out");
 
-    let err = copy_file(&src, &target, Path::new("user").join("folder.ttf")).unwrap_err();
+    let err = copy_file(
+        &RealSourceFs,
+        &src,
+        &target,
+        Path::new("user").join("folder.ttf"),
+    )
+    .unwrap_err();
     let mut failures = Partial::default();
     failures
         .add_path(ISSUE_FILE_COPY_FAILED, &src, err.into())
@@ -80,7 +94,7 @@ fn unreadable_source_leaves_no_file_and_is_a_copy_warning() {
     assert!(matches!(result, Err(ExportError::Io(_))), "{result:?}");
 
     let mut failures = Partial::default();
-    let err = copy_file(&src, &target, "x.ttf").unwrap_err();
+    let err = copy_file(&RealSourceFs, &src, &target, "x.ttf").unwrap_err();
     failures
         .add_path(ISSUE_FILE_COPY_FAILED, &src, err.into())
         .unwrap();

@@ -30,14 +30,14 @@ fn write_hosts(root: &Path, content: &[u8]) -> PathBuf {
 
 #[test]
 fn plan_is_system_settings_without_sensitivity() {
-    assert_system_settings_plan(&HostsExporter, TITLE, Sensitivity::None);
+    assert_system_settings_plan(&HostsExporter::new(), TITLE, Sensitivity::None);
 }
 
 #[cfg(not(windows))]
 #[test]
 fn detect_off_windows_is_not_windows() {
     let env = Environment::fake(Path::new("/fake"));
-    assert_eq!(HostsExporter.detect(&env), unavailable(NOT_WINDOWS));
+    assert_eq!(HostsExporter::new().detect(&env), unavailable(NOT_WINDOWS));
 }
 
 #[test]
@@ -55,12 +55,12 @@ fn stock_file_is_default() {
     let dir = temp_dir();
     let env = Environment::fake(dir.path());
     write_hosts(dir.path(), STOCK.as_bytes());
-    assert_eq!(HostsExporter::probe(&env), unavailable(DEFAULT));
+    assert_eq!(HostsExporter::new().probe(&env), unavailable(DEFAULT));
     // An empty file and a BOM followed by comments are stock as well.
     write_hosts(dir.path(), b"");
-    assert_eq!(HostsExporter::probe(&env), unavailable(DEFAULT));
+    assert_eq!(HostsExporter::new().probe(&env), unavailable(DEFAULT));
     write_hosts(dir.path(), b"\xEF\xBB\xBF# comment\r\n\r\n");
-    assert_eq!(HostsExporter::probe(&env), unavailable(DEFAULT));
+    assert_eq!(HostsExporter::new().probe(&env), unavailable(DEFAULT));
 }
 
 #[test]
@@ -70,7 +70,7 @@ fn file_with_an_entry_is_available_with_its_size() {
     let content = format!("{STOCK}\r\n127.0.0.1 dev.local\r\n");
     write_hosts(dir.path(), content.as_bytes());
     assert_eq!(
-        HostsExporter::probe(&env),
+        HostsExporter::new().probe(&env),
         Availability::Available {
             estimated_bytes: Some(content.len() as u64),
             details: Default::default(),
@@ -79,7 +79,7 @@ fn file_with_an_entry_is_available_with_its_size() {
     // An entry right after a UTF-8 BOM.
     write_hosts(dir.path(), b"\xEF\xBB\xBF10.0.0.1 nas\n");
     assert!(matches!(
-        HostsExporter::probe(&env),
+        HostsExporter::new().probe(&env),
         Availability::Available { .. }
     ));
 }
@@ -88,7 +88,7 @@ fn file_with_an_entry_is_available_with_its_size() {
 fn missing_file_is_unavailable() {
     let dir = temp_dir();
     let env = Environment::fake(dir.path());
-    assert_eq!(HostsExporter::probe(&env), unavailable(MISSING));
+    assert_eq!(HostsExporter::new().probe(&env), unavailable(MISSING));
 }
 
 #[tokio::test]
@@ -100,9 +100,14 @@ async fn run_copies_the_file_into_target_dir_only() {
     let src = write_hosts(&machine, content);
     let target = dir.path().join("backup").join("system").join(ID);
 
-    let result = run_export(&HostsExporter, &env, &target, &CancellationToken::new())
-        .await
-        .unwrap();
+    let result = run_export(
+        &HostsExporter::new(),
+        &env,
+        &target,
+        &CancellationToken::new(),
+    )
+    .await
+    .unwrap();
 
     assert_eq!(result.files.len(), 1);
     let file = &result.files[0];
@@ -130,7 +135,13 @@ async fn run_without_the_file_is_not_available() {
     let dir = temp_dir();
     let env = Environment::fake(dir.path());
     let target = dir.path().join("out");
-    let result = run_export(&HostsExporter, &env, &target, &CancellationToken::new()).await;
+    let result = run_export(
+        &HostsExporter::new(),
+        &env,
+        &target,
+        &CancellationToken::new(),
+    )
+    .await;
     assert!(
         matches!(result, Err(ExportError::NotAvailable)),
         "{result:?}"
@@ -146,7 +157,7 @@ async fn cancelled_run_writes_nothing() {
     let cancel = CancellationToken::new();
     cancel.cancel();
     let target = dir.path().join("out");
-    let result = run_export(&HostsExporter, &env, &target, &cancel).await;
+    let result = run_export(&HostsExporter::new(), &env, &target, &cancel).await;
     assert!(matches!(result, Err(ExportError::Cancelled)), "{result:?}");
     assert!(!target.exists());
 }
@@ -157,12 +168,12 @@ async fn cancelled_run_writes_nothing() {
 #[tokio::test]
 async fn real_hosts_detect_and_run() {
     let env = Environment::detect().unwrap();
-    let avail = HostsExporter.detect(&env);
+    let avail = HostsExporter::new().detect(&env);
     println!("hosts: {avail:?}");
     if let Availability::Available { .. } = avail {
         let dir = temp_dir();
         let result = run_export(
-            &HostsExporter,
+            &HostsExporter::new(),
             &env,
             &dir.path().join(ID),
             &CancellationToken::new(),

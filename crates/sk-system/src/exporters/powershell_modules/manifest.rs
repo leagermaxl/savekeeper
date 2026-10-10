@@ -4,8 +4,7 @@
 //! evaluated: the first line that starts with the `ModuleVersion` key is read.
 
 use std::fs::File;
-use std::io::{self, Read};
-use std::path::Path;
+use std::io::Read;
 
 /// Longest manifest read; real ones are a few KB.
 const MANIFEST_LIMIT: u64 = 1024 * 1024;
@@ -13,17 +12,14 @@ const MANIFEST_LIMIT: u64 = 1024 * 1024;
 /// The key of the module version in the manifest.
 const KEY: &str = "ModuleVersion";
 
-/// `ModuleVersion` of the manifest at `path`; `None` when the file is missing,
-/// unreadable or has no such key.
-pub(crate) fn read_version(path: &Path) -> Option<String> {
+/// `ModuleVersion` of the open manifest `file`; `None` when it cannot be read or has no
+/// such key.
+pub(crate) fn read_version(file: File) -> Option<String> {
     let mut bytes = Vec::new();
-    let read = File::open(path).and_then(|file| file.take(MANIFEST_LIMIT).read_to_end(&mut bytes));
-    match read {
+    match file.take(MANIFEST_LIMIT).read_to_end(&mut bytes) {
         Ok(_) => module_version(&decode(&bytes)),
         Err(err) => {
-            if err.kind() != io::ErrorKind::NotFound {
-                tracing::debug!(error = %err, "module manifest not read");
-            }
+            tracing::debug!(error = %err, "module manifest not read");
             None
         }
     }

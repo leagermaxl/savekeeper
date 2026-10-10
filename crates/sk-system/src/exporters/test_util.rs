@@ -1,14 +1,19 @@
 //! Helpers of the exporter tests.
 
 use std::collections::BTreeMap;
+use std::fs::File;
+use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 
 use sk_core::config::SystemConfig;
 use sk_core::env::Environment;
+use sk_core::fs::CloudState;
 use sk_core::model::{AppKind, Category, EvidenceSource, FindingId, Sensitivity, Target};
 use sk_core::CancellationToken;
 use tempfile::TempDir;
 
+use super::source::SourceFs;
 use crate::cmd::{Cmd, CmdOutput, FakeCmdRunner};
 use crate::reg_export::REG_EXE;
 use crate::{Availability, ExportContext, ExportError, ExportResult, SystemExporter};
@@ -151,4 +156,52 @@ pub(crate) fn assert_system_settings_plan(
         reason_key: "system.not_windows".to_owned(),
     };
     assert!(exporter.plan(&env, &unavailable).is_none());
+}
+
+/// A [`SourceFs`] that reports the given paths as cloud-only (any other path gets the
+/// real [`sk_core::fs::cloud_state`]) and records every file it opens, so tests can check
+/// that a cloud-only file is never opened (SPEC-06 T-06-17).
+#[derive(Debug, Default)]
+pub(crate) struct FakeSourceFs {
+    cloud_only: Vec<PathBuf>,
+    opened: Mutex<Vec<PathBuf>>,
+}
+
+impl FakeSourceFs {
+    /// The fake with `cloud_only` reported as cloud-only.
+    pub(crate) fn new(cloud_only: impl IntoIterator<Item = PathBuf>) -> Arc<Self> {
+        Arc::new(Self {
+            cloud_only: cloud_only.into_iter().collect(),
+            opened: Mutex::new(Vec::new()),
+        })
+    }
+
+    /// The fake as the source of an exporter.
+    pub(crate) fn shared(self: &Arc<Self>) -> Arc<dyn SourceFs> {
+        Arc::clone(self) as Arc<dyn SourceFs>
+    }
+
+    /// Every opened path, in order.
+    pub(crate) fn opened(&self) -> Vec<PathBuf> {
+        self.opened.lock().unwrap().clone()
+    }
+
+    /// How many times `path` was opened.
+    pub(crate) fn opens_of(&self, path: &Path) -> usize {
+        self.opened().iter().filter(|p| *p == path).count()
+    }
+}
+
+impl SourceFs for FakeSourceFs {
+    fn cloud_state(&self, path: &Path) -> io::Result<CloudState> {
+        if self.cloud_only.iter().any(|p| p == path) {
+            return Ok(CloudState::CloudOnly);
+        }
+        sk_core::fs::cloud_state(path)
+    }
+
+    fn open(&self, path: &Path) -> io::Result<File> {
+        self.opened.lock().unwrap().push(path.to_path_buf());
+        File::open(path)
+    }
 }

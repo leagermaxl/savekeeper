@@ -4,7 +4,8 @@
 //! of the modules.
 //!
 //! Whether a module can be reinstalled from the PowerShell Gallery cannot be told, so
-//! with `params.copy_files` every module is copied, up to 200 MB in total.
+//! with `params.copy_files` every module is copied, up to 200 MB in total. Files that
+//! are only in the cloud are never opened, manifests included (SPEC-10 FR-10-15).
 
 mod manifest;
 
@@ -14,6 +15,7 @@ mod tests;
 use std::collections::BTreeMap;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use async_trait::async_trait;
 use serde_json::json;
@@ -21,6 +23,7 @@ use sk_core::env::{Environment, KnownFolder};
 use sk_core::model::{Category, Finding, Sensitivity};
 
 use super::partial::{Partial, ISSUE_FILE_COPY_FAILED, ISSUE_FOLDER_READ_FAILED};
+use super::source::{self, SourceFs};
 use super::{copy_file, plan_finding, unavailable, warning, write_file, Plan, NOT_WINDOWS};
 use crate::error::ExportError;
 use crate::exporter::{Availability, ExportContext, ExportResult, RestoreHint, SystemExporter};
@@ -62,6 +65,8 @@ pub(crate) const ISSUE_NOT_COPIED: &str = "issue.system.ps_module_not_copied";
 pub(crate) struct PowershellModulesExporter {
     /// Most bytes copied by one export.
     copy_limit: u64,
+    /// The module files; cloud-only ones are not opened (SPEC-10 FR-10-15).
+    source: Arc<dyn SourceFs>,
 }
 
 impl PowershellModulesExporter {
@@ -69,13 +74,23 @@ impl PowershellModulesExporter {
     pub(crate) fn new() -> Self {
         Self {
             copy_limit: COPY_LIMIT,
+            source: source::real(),
         }
     }
 
     /// The exporter with the given copy limit (tests).
     #[cfg(test)]
     pub(crate) fn with_copy_limit(copy_limit: u64) -> Self {
-        Self { copy_limit }
+        Self {
+            copy_limit,
+            ..Self::new()
+        }
+    }
+
+    /// The exporter reading the module files through `source` (tests).
+    #[cfg(test)]
+    pub(crate) fn with_source(self, source: Arc<dyn SourceFs>) -> Self {
+        Self { source, ..self }
     }
 
     /// `detect` without the platform check (SPEC-06 §4.3): Available when a module folder
@@ -140,7 +155,10 @@ impl SystemExporter for PowershellModulesExporter {
     /// Copied are whole modules, smallest first, while their total stays within
     /// [`COPY_LIMIT`]; a module that does not fit is only listed (warning
     /// `issue.system.ps_module_not_copied`). Links are not followed. A file or folder
-    /// that cannot be read is a warning. No module at all is
+    /// that cannot be read is a warning. A file that is only in the cloud is never
+    /// opened (SPEC-10 FR-10-15), warning `issue.system.cloud_only` {path}: a module is
+    /// copied without such files (`copied: true`), and the version of a cloud-only
+    /// manifest is the name of its version folder. No module at all is
     /// [`ExportError::NotAvailable`]. Cancellation stops the export.
     async fn run(
         &self,
@@ -177,7 +195,7 @@ impl SystemExporter for PowershellModulesExporter {
                 };
                 modules.push(Module {
                     edition,
-                    versions: versions(&dir, &name),
+                    versions: versions(&dir, &name, self.source.as_ref(), &mut failures),
                     name,
                     dir,
                     files,
@@ -203,8 +221,10 @@ impl SystemExporter for PowershellModulesExporter {
                     return Err(ExportError::Cancelled);
                 }
                 let src = module.dir.join(&file.rel_path);
-                match copy_file(&src, ctx.target_dir, dest.join(&file.rel_path)) {
-                    Ok(copied) => files.push(copied),
+                let rel_path = dest.join(&file.rel_path);
+                match copy_file(self.source.as_ref(), &src, ctx.target_dir, rel_path) {
+                    Ok(Some(copied)) => files.push(copied),
+                    Ok(None) => failures.cloud_only(&src),
                     Err(err) => failures.add_path(ISSUE_FILE_COPY_FAILED, &src, err.into())?,
                 }
             }
@@ -292,8 +312,14 @@ fn module_dirs(root: &Path) -> io::Result<Vec<String>> {
 
 /// Installed versions of the module `name` in `dir`: one per version folder
 /// (`<dir>/1.2.3/<name>.psd1`), or the module itself when it has none
-/// (`<dir>/<name>.psd1`).
-pub(crate) fn versions(dir: &Path, name: &str) -> Vec<ModuleVersion> {
+/// (`<dir>/<name>.psd1`). Manifests are read through `source`; a cloud-only one is not
+/// opened and is recorded in `skipped` ([`Partial::cloud_only`]).
+pub(crate) fn versions(
+    dir: &Path,
+    name: &str,
+    source: &dyn SourceFs,
+    skipped: &mut Partial,
+) -> Vec<ModuleVersion> {
     let manifest = format!("{name}.psd1");
     let mut version_dirs: Vec<String> = module_dirs(dir)
         .unwrap_or_default()
@@ -302,7 +328,7 @@ pub(crate) fn versions(dir: &Path, name: &str) -> Vec<ModuleVersion> {
         .collect();
     if version_dirs.is_empty() {
         return vec![ModuleVersion {
-            version: manifest::read_version(&dir.join(&manifest)),
+            version: manifest_version(&dir.join(&manifest), source, skipped),
             path: name.to_owned(),
         }];
     }
@@ -310,11 +336,30 @@ pub(crate) fn versions(dir: &Path, name: &str) -> Vec<ModuleVersion> {
     version_dirs
         .into_iter()
         .map(|sub| ModuleVersion {
-            version: manifest::read_version(&dir.join(&sub).join(&manifest))
+            version: manifest_version(&dir.join(&sub).join(&manifest), source, skipped)
                 .or_else(|| Some(sub.clone())),
             path: format!("{name}/{sub}"),
         })
         .collect()
+}
+
+/// `ModuleVersion` of the manifest at `path`; `None` when it is missing, unreadable, has
+/// no such key or is only in the cloud (then it is not opened and is recorded in
+/// `skipped`).
+fn manifest_version(path: &Path, source: &dyn SourceFs, skipped: &mut Partial) -> Option<String> {
+    match source::open_local(source, path) {
+        Ok(Some(file)) => manifest::read_version(file),
+        Ok(None) => {
+            skipped.cloud_only(path);
+            None
+        }
+        Err(err) => {
+            if err.kind() != io::ErrorKind::NotFound {
+                tracing::debug!(error = %err, "module manifest not read");
+            }
+            None
+        }
+    }
 }
 
 /// Numeric parts of a version folder name (`1.2`, `1.2.3`, `1.2.3.4`); `None` for any

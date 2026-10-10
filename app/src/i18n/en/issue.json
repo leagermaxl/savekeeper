@@ -46,6 +46,7 @@
     "activation_query_failed": "Could not read the Windows activation status: {{error}}",
     "bitlocker_needs_admin": "The BitLocker status of the drives can only be read with administrator rights, it is saved as “unknown”",
     "bitlocker_query_failed": "Could not read the BitLocker status of the drives: {{error}}",
+    "cloud_only": "The file {{path}} is only in the cloud (OneDrive or similar) and was not copied, so as not to download it. Make it available on this device and repeat the backup",
     "drivers_export_exit_code": "pnputil finished with code {{code}}: some drivers may not have been exported",
     "file_copy_failed": "Could not copy {{path}}: {{error}}",
     "folder_read_failed": "Could not read the folder {{path}}: {{error}}",
