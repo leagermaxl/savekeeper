@@ -73,12 +73,24 @@ impl Cli {
         )
         .unwrap();
     }
+
+    /// Switches every heuristic off in the config next to the program, so that
+    /// a scan does not look at the folders of this machine (SPEC-07 §4.9).
+    fn disable_heuristics(&self) {
+        std::fs::write(
+            self.path().join("savekeeper.config.json"),
+            r#"{ "schema_version": 1, "heuristics": { "enabled":
+                { "unk": false, "usr": false, "git": false, "junk": false, "web": false } } }"#,
+        )
+        .unwrap();
+    }
 }
 
 #[test]
 fn scan_out_writes_a_valid_report() {
     let cli = Cli::new();
     cli.disable_builtin_rules();
+    cli.disable_heuristics();
     // Without `--no-system` the system exports of this machine would be found.
     cli.cmd(&["scan", "--out", "r.json", "--no-games", "--no-system"])
         .assert()
@@ -107,6 +119,7 @@ fn scan_out_writes_a_valid_report() {
 fn scan_prints_the_report_without_out() {
     let cli = Cli::new();
     cli.disable_builtin_rules();
+    cli.disable_heuristics();
     // Without `--no-games` the games of this machine would be found, and the
     // manifest downloaded; without `--no-system`, its system exports.
     let output = cli

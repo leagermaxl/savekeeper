@@ -2874,6 +2874,7 @@ dependencies = [
  "serde-saphyr",
  "sk-core",
  "sk-scan",
+ "sk-testkit",
  "thiserror",
  "time",
  "tokio",

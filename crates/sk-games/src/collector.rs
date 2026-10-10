@@ -241,6 +241,7 @@ pub(crate) fn run(scan: &Scan<'_>) -> Result<CollectOutput, GamesError> {
         findings,
         claimed_paths,
         issues,
+        ..CollectOutput::default()
     })
 }
 

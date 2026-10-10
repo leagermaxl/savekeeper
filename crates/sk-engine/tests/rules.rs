@@ -71,7 +71,9 @@ fn pipeline(rules_dir: &Path) -> ScanPipeline {
         .with_collector(Arc::new(SystemCollector::with_exporters(Vec::new())))
 }
 
-async fn run(pipeline: &ScanPipeline, opts: ScanOptions) -> (ScanReport, Vec<Event>) {
+/// Runs a scan with the heuristics off: only the rules give findings here.
+async fn run(pipeline: &ScanPipeline, mut opts: ScanOptions) -> (ScanReport, Vec<Event>) {
+    opts.collectors.heuristics = false;
     let (tx, mut rx) = unbounded_channel();
     let report = pipeline
         .run(opts, tx, CancellationToken::new())

@@ -10,7 +10,7 @@ use crate::env::Environment;
 use crate::error::CollectorError;
 use crate::events::EventSink;
 use crate::fs::FsScanner;
-use crate::model::{Finding, ScanIssue};
+use crate::model::{Finding, FolderSummary, ScanIssue};
 use crate::path::PathSet;
 use crate::CancellationToken;
 
@@ -52,6 +52,9 @@ pub struct CollectOutput {
     pub claimed_paths: Vec<PathBuf>,
     /// Problems and notes.
     pub issues: Vec<ScanIssue>,
+    /// Summaries of the `Unknown` findings, for `ScanReport::unknown_summaries`
+    /// and the Classify phase (SPEC-07 FR-07-08); filled by the heuristics.
+    pub unknown_summaries: Vec<FolderSummary>,
 }
 
 /// A collector that runs after the others and sees their results: heuristics (SPEC-07).

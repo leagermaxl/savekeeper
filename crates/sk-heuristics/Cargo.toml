@@ -15,6 +15,8 @@ async-trait.workspace = true
 serde.workspace = true
 serde-saphyr.workspace = true
 sk-core.workspace = true
+# `summarize` and the global exclusions of H-UNK (SPEC-07 §4.2.4, SPEC-03 §4.4).
+sk-scan.workspace = true
 # Errors of the built-in data (`DataError`).
 thiserror.workspace = true
 # "Recent" SQLite files of the marker classification (SPEC-07 §4.7, rule 8).
@@ -23,8 +25,8 @@ time.workspace = true
 tokio = { workspace = true, features = ["rt"] }
 
 [dev-dependencies]
-# `MemFs` as the scanner of the collector tests.
-sk-scan.workspace = true
+# `mem_fixture`: `fixtures/fs/heuristics/*` trees in `MemFs` (SPEC-07 §6).
+sk-testkit.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "sync"] }
 
 [lints]

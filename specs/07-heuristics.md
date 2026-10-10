@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-heuristics` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03, SPEC-04, SPEC-05 |
 | Используется в | SPEC-08, SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-10 (T-07-04: `classify_by_markers_with` §4.1, уточнения правил §4.7); 2026-10-10 (T-07-03: `junk_verdict_with_siblings` §4.1/§4.5, приоритет строк, определение игровой библиотеки и игнор широких корней §4.5, ключи `heuristic.junk.*`); 2026-10-10 (T-07-02: форматы `vendors.txt` §4.2.2 и `extensions.yaml` §4.3.2, issue `heuristic.data_invalid` §5); 2026-10-01 (`HeuristicsConfig` — в `sk-core::config`) |
+| Последнее изменение | 2026-10-10 (T-07-05: `HeuristicContext.excludes` §4.1, уточнения зон §4.2.1, UWP §4.2.3, частичного покрытия и `installed` §4.2.4, `heuristic.read_failed` §5); 2026-10-10 (T-07-04: `classify_by_markers_with` §4.1, уточнения правил §4.7); 2026-10-10 (T-07-03: `junk_verdict_with_siblings` §4.1/§4.5, приоритет строк, определение игровой библиотеки и игнор широких корней §4.5, ключи `heuristic.junk.*`); 2026-10-10 (T-07-02: форматы `vendors.txt` §4.2.2 и `extensions.yaml` §4.3.2, issue `heuristic.data_invalid` §5); 2026-10-01 (`HeuristicsConfig` — в `sk-core::config`) |
 
 ## 1. Цель
 
@@ -88,6 +88,7 @@ pub struct HeuristicContext<'a> {
     pub cfg: &'a HeuristicsConfig,
     pub cancel: &'a CancellationToken,
     pub progress: &'a dyn Fn(u64, Option<&str>),
+    pub excludes: &'a Arc<ExcludeSet>,                  // глобальные исключения скана (SPEC-03 §4.5): встроенные + scan.exclude_globs; при некорректных глобах — только встроенные (issue выдаёт фаза Measure)
 }
 
 pub struct HeuristicOutput {
@@ -138,6 +139,8 @@ Electron-профиль не станет `Unknown`. `h-git` и `h-usr` деля
 | `{HOME}\.*` | 1 | dot-папки и dot-файлы (`.ssh`, `.gitconfig`, `.cargo`, `.aws`, `.kube`, `.docker` …), если не покрыты правилами |
 | `{HOME}\*` (не Known Folders) | 1 | Нестандартные папки в корне профиля (`source`, `projects`, `Zomboid` …) |
 
+Уточнения: кандидатами не считаются папки, исключённые глобально (SPEC-03 §4.5; отсюда же исключения `{LOCALAPPDATA}`: `Temp`, `Microsoft\Windows\INetCache`, `CrashDumps`), ссылки/junction, а также папки `{HOME}\*`, равные Known Folder или содержащие его (`{HOME}\AppData`, `{HOME}\OneDrive` с перенаправленными Documents). Корни облаков (`{HOME}\Dropbox`) — обычные кандидаты, тег `cloud-synced` по маркеру (§5). Вендорные контейнеры (§4.2.2) — только в `{APPDATA}` и `{LOCALAPPDATA}`. `{PROGRAMDATA}`: «есть файлы с mtime < 365 дней» = `summary.newest_mtime` моложе 365 дней. Dot-файлы `{HOME}\.*` (обычные файлы): < 10 МиБ — `Target::File`, `DevEnvironment`, confidence 0.65, `heuristic.dotfile`; иначе `Unknown` без summary (в LLM не отправляется); прочие файлы корня профиля не рассматриваются.
+
 #### 4.2.2 Вендорные контейнеры
 Если имя top-level папки есть в списке вендоров (`Microsoft`, `Google`, `Adobe`, `JetBrains`,
 `Mozilla`, `Autodesk`, `NVIDIA Corporation`, `Packages`, `Programs`, `Ubisoft`, `EpicGamesLauncher` …,
@@ -151,6 +154,7 @@ Electron-профиль не станет `Unknown`. `h-git` и `h-usr` деля
 (сохранения Xbox/Game Pass). `LocalCache`, `TempState`, `AC` отправляются в exclude.
 Пакеты `Microsoft.Windows.*` и `MicrosoftWindows.*` пропускаются. Категория: `GameSave`, если
 найден `SystemAppData\wgs`, иначе `AppData` с confidence 0.5 (кандидат для LLM).
+Уточнения: GameSave — confidence 0.8, `heuristic.uwp_saves`; AppData — `heuristic.uwp_package`. Include: `LocalState/**`, `RoamingState/**`, `Settings/**`, `SystemAppData/wgs/**`. Пакет без этих папок — claimed без находки.
 
 #### 4.2.4 Алгоритм
 ```
@@ -171,7 +175,9 @@ for zone in zones:
 - `title`: имя папки (для `{LOCALLOW}` — `Company / Product`).
 - `app`: `AppRef { id: slug(name), name, kind: Application, installed: match_installed(name) }`,
   где `match_installed` — нечёткое сравнение с `installed_programs.display_name/publisher`
-  (нормализация + совпадение токенов ≥ 0.8 Jaccard).
+  (нормализация + совпадение токенов ≥ 0.8 Jaccard). `installed`: `Some(true)` при совпадении, иначе `None` (промах нечёткого сравнения не доказывает удаление, SPEC-09).
+
+Уточнения (T-07-05): порог остатка при частичном покрытии — §5 (≥ 10% или ≥ 1 МиБ, размеры покрытых потомков — через `summarize`/метаданные); если summary кандидата `truncated`, остаток не оценивается и находка на остаток создаётся всегда. `exclude` — относительные пути верхних покрытых потомков, разделитель `/`, глоб-символы экранируются. Пустая папка (правило 11 §4.7) находки не даёт, но заносится в `claimed` (объяснена для FR-07-02).
 
 ### 4.3 H-USR: пользовательские файлы вне стандартных мест
 
@@ -372,6 +378,7 @@ fn make_finding(root: &Path, v: &MarkerVerdict, s: &FolderSummary, h: &'static s
 | Ситуация | Поведение |
 |---|---|
 | Нет доступа к папке-кандидату (ACL) | Находка `Unknown` с `stats.truncated = true`, `ScanIssue::Warning heuristic.access_denied`. В LLM не отправляется (нет summary). |
+| Иная ошибка чтения кандидата | Как при ACL, но `ScanIssue::Warning heuristic.read_failed {error}`. Папка исчезла (NotFound) — пропуск. Нечитаемая зона — только issue (source `heuristics`). |
 | Символьные ссылки и junction (`Application Data` → `AppData\Roaming`) | Не следуем (SPEC-03), кандидатом не считаем. |
 | OneDrive Files On-Demand (плейсхолдеры) | SPEC-03 не читает содержимое плейсхолдеров. Кластер получает тег `cloud-synced`, а evidence поясняет, что файлы уже в облаке. |
 | Огромный кандидат (> 50 ГБ) | Создаётся, тег `huge`, SPEC-09 не выберет его по умолчанию. |
@@ -401,13 +408,13 @@ fn make_finding(root: &Path, v: &MarkerVerdict, s: &FolderSummary, h: &'static s
 - [x] **T-07-02** — Данные: `vendors.txt`, `extensions.yaml` + загрузчик (include_bytes, валидация при старте). *Готово, когда:* unit-тест: все группы парсятся, нет дублей расширений.
 - [x] **T-07-03** — `junk_verdict` (§4.5). *Зависит:* T-07-01. *Готово, когда:* тесты §6.
 - [x] **T-07-04** — `classify_by_markers` (§4.7) с конфигурируемыми порогами. *Зависит:* T-07-03, T-02-07. *Готово, когда:* таблица ≥ 25 кейсов зелёная.
-- [ ] **T-07-05** — H-UNK: зоны, вендоры, UWP, частичное покрытие, `make_finding`, сбор `unknown`. *Зависит:* T-07-04, SPEC-03 `summarize`. *Готово, когда:* тесты H-UNK + FR-07-02 на фикстуре.
+- [x] **T-07-05** — H-UNK: зоны, вендоры, UWP, частичное покрытие, `make_finding`, сбор `unknown`. *Зависит:* T-07-04, SPEC-03 `summarize`. *Готово, когда:* тесты H-UNK + FR-07-02 на фикстуре.
 - [ ] **T-07-06** — H-WEB. *Зависит:* T-07-01. *Готово, когда:* тест на Electron- и Chromium-фикстуре.
 - [ ] **T-07-07** — Общий обход корней (§4.3.1) с исключениями и агрегацией по директориям. *Зависит:* SPEC-03 `walk`. *Готово, когда:* агрегаты совпадают с эталоном на фикстуре.
 - [ ] **T-07-08** — H-USR: кластеризация §4.3.3, одиночные ценные файлы, лимиты. *Зависит:* T-07-07, T-07-02.
 - [ ] **T-07-09** — H-GIT: поиск репозиториев, `GitState` через gix (только чтение), классификация §4.4.3, exclude тяжёлых каталогов. *Зависит:* T-07-07. *Готово, когда:* git-тесты §6 + проверка неизменности `.git`.
 - [ ] **T-07-10** — Дочерняя находка `git-bundle` (§4.4.4) + согласование экспортёра с SPEC-06. *Зависит:* T-07-09.
-- [ ] **T-07-11** — Ключи i18n `heuristic.*` (ru, en) в общем каталоге UI (SPEC-11), включая `heuristic.junk.*` (§4.5) и `heuristic.data_invalid` (§5). *Зависит:* T-07-04.
+- [ ] **T-07-11** — Ключи i18n `heuristic.*` (ru, en) в общем каталоге UI (SPEC-11), включая `heuristic.junk.*` (§4.5), `heuristic.data_invalid`, `heuristic.read_failed` (§5), `heuristic.dotfile` (§4.2.1), `heuristic.uwp_saves`, `heuristic.uwp_package` (§4.2.3), `heuristic.title.unrecognized` (суффикс заголовка для GUID/хэш-имён, §5). *Зависит:* T-07-04.
 - [ ] **T-07-12** — Windows-интеграционный тест и бенчмарк H-USR. *Зависит:* T-07-05, T-07-08.
 
 ## 8. Критерии приёмки

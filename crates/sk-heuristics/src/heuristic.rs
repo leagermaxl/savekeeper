@@ -1,6 +1,7 @@
 //! A single heuristic and what it sees and returns (SPEC-07 §4.1).
 
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use sk_core::config::HeuristicsConfig;
 use sk_core::env::Environment;
@@ -8,6 +9,7 @@ use sk_core::fs::FsScanner;
 use sk_core::model::{Finding, FolderSummary, ScanIssue};
 use sk_core::path::PathSet;
 use sk_core::CancellationToken;
+use sk_scan::ExcludeSet;
 
 /// One heuristic of the collector: `h-unk`, `h-usr`, `h-git`, `h-junk` or
 /// `h-web`. Internal to the collector; public for tests.
@@ -26,6 +28,9 @@ pub struct HeuristicContext<'a> {
     pub env: &'a Environment,
     /// File system access (SPEC-03 §4.1).
     pub scanner: &'a dyn FsScanner,
+    /// Global exclusions of the scan (SPEC-03 §4.5): the built-in ones plus
+    /// `scan.exclude_globs`, or only the built-in ones if the globs are broken.
+    pub excludes: &'a Arc<ExcludeSet>,
     /// Paths claimed by the collectors and by the heuristics that ran before.
     pub claimed: &'a PathSet,
     /// Findings of the collectors and of the heuristics that ran before.

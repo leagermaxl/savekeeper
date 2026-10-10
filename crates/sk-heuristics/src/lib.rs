@@ -8,8 +8,11 @@
 mod classify;
 mod collector;
 mod data;
+mod finding;
 mod heuristic;
 mod junk;
+mod unk;
+mod unk_zones;
 mod verdict;
 
 pub use classify::{classify_by_markers, classify_by_markers_with};

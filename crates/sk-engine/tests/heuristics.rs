@@ -1,6 +1,6 @@
-//! The heuristics of SPEC-07 in `ScanPipeline` (T-07-01): the built-in
-//! `heuristics` post-collector, still without heuristics, runs in the
-//! `Heuristics` phase, and `with_post_collector` replaces it.
+//! The heuristics of SPEC-07 in `ScanPipeline` (T-07-01, T-07-05): the
+//! built-in `heuristics` post-collector runs in the `Heuristics` phase, its
+//! unknown summaries reach the report, and `with_post_collector` replaces it.
 
 // Helpers outside `#[test]` functions are not covered by `allow-unwrap-in-tests`.
 #![allow(clippy::unwrap_used)]
@@ -82,7 +82,7 @@ impl Collector for Rules {
         Ok(CollectOutput {
             findings: vec![finding("Code")],
             claimed_paths: vec![app_data("Code")],
-            issues: vec![],
+            ..CollectOutput::default()
         })
     }
 }
@@ -146,8 +146,8 @@ async fn run(pipeline: &ScanPipeline, toggles: CollectorToggles) -> (Vec<String>
     (titles, events)
 }
 
-/// T-07-01: the built-in heuristics collector, with no heuristics yet, runs
-/// in the `Heuristics` phase without findings or issues of its own and passes
+/// T-07-01: the built-in heuristics collector runs in the `Heuristics` phase,
+/// on an empty file system without findings or issues of its own, and passes
 /// the claims of the collectors on to the post-collectors after it.
 #[tokio::test]
 async fn builtin_heuristics_run_in_the_heuristics_phase() {
@@ -212,4 +212,56 @@ async fn explicit_heuristics_collector_runs() {
     let pipeline = pipeline().with_post_collector(Arc::new(collector));
     let (titles, _) = run(&pipeline, CollectorToggles::default()).await;
     assert_eq!(titles, ["Code"]);
+}
+
+/// T-07-05 (FR-07-08): H-UNK of the built-in heuristics gives one finding per
+/// unclaimed folder of `{APPDATA}`; the summaries of the `Unknown` ones reach
+/// `ScanReport::unknown_summaries`.
+#[tokio::test]
+async fn unknown_folders_reach_the_report() {
+    let mut fs = MemFs::new();
+    for (name, file) in [
+        ("Code", "settings.json"),
+        ("Mystery", "data.bin"),
+        ("Tool", "config.json"),
+    ] {
+        fs.add_file(
+            app_data(name).join(file).to_str().unwrap(),
+            100,
+            "-1d",
+            None,
+        );
+    }
+    let pipeline = pipeline().with_scanner(Arc::new(fs));
+    let report = pipeline
+        .run(
+            ScanOptions::default(),
+            unbounded_channel().0,
+            CancellationToken::new(),
+        )
+        .await
+        .unwrap();
+    assert!(report.issues.is_empty(), "{:?}", report.issues);
+
+    let mut found: Vec<_> = report
+        .findings
+        .iter()
+        .map(|f| (f.title.as_str(), f.category))
+        .collect();
+    found.sort();
+    // `Code` is claimed by the rules.
+    assert_eq!(
+        found,
+        [
+            ("Code", Category::AppConfig),
+            ("Mystery", Category::Unknown),
+            ("Tool", Category::AppConfig)
+        ]
+    );
+    let summaries: Vec<_> = report
+        .unknown_summaries
+        .iter()
+        .map(|s| s.path.as_str())
+        .collect();
+    assert_eq!(summaries, [r"{APPDATA}\Mystery"]);
 }

@@ -103,7 +103,7 @@ impl Collector for Fake {
                 Ok(CollectOutput {
                     findings: findings.clone(),
                     claimed_paths: claims.iter().map(|c| app_data.join(c)).collect(),
-                    issues: vec![],
+                    ..CollectOutput::default()
                 })
             }
             Behavior::Fail => Err(CollectorError::Other("broken rules".to_owned())),

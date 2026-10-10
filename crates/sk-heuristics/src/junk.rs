@@ -272,7 +272,7 @@ fn is_inside_install_location(resolved: &[PathBuf], env: &Environment) -> bool {
 /// mark folders as reinstallable. Broken uninstall entries and launcher data
 /// can point at a drive root, `C:\Users` or `C:\Program Files`; such a folder
 /// would make whole profiles reinstallable, so it is ignored.
-fn is_specific(anchor: &Path, env: &Environment) -> bool {
+pub(crate) fn is_specific(anchor: &Path, env: &Environment) -> bool {
     let has_name = anchor
         .components()
         .any(|c| matches!(c, Component::Normal(_)));

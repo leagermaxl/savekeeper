@@ -19,8 +19,8 @@ use sk_core::error::{CollectorError, EngineError};
 use sk_core::events::{Event, EventSink, ScanPhase};
 use sk_core::fs::FsScanner;
 use sk_core::model::{
-    CollectorToggles, EnvironmentSnapshot, Finding, IssueSeverity, LlmMode, ScanIssue,
-    ScanOptionsSnapshot, ScanReport, Totals,
+    CollectorToggles, EnvironmentSnapshot, Finding, FolderSummary, IssueSeverity, LlmMode,
+    ScanIssue, ScanOptionsSnapshot, ScanReport, Totals,
 };
 use sk_core::path::PathSet;
 use sk_core::registry::RegistryReader;
@@ -331,6 +331,7 @@ impl ScanPipeline {
         let Accumulated {
             mut findings,
             mut issues,
+            unknown_summaries,
             ..
         } = acc;
         findings.sort_by(|a, b| {
@@ -358,7 +359,7 @@ impl ScanPipeline {
                 max_depth: Some(max_depth),
             },
             findings,
-            unknown_summaries: Vec::new(),
+            unknown_summaries,
             issues: Vec::new(),
             totals: Totals::default(),
         };
@@ -423,6 +424,8 @@ struct Accumulated {
     findings: Vec<Finding>,
     claimed: PathSet,
     issues: Vec<ScanIssue>,
+    /// Summaries of the `Unknown` findings of the heuristics (SPEC-07 FR-07-08).
+    unknown_summaries: Vec<FolderSummary>,
 }
 
 impl Accumulated {
@@ -435,22 +438,26 @@ impl Accumulated {
 
     fn extend(&mut self, outcomes: Vec<Outcome>, run: &Run<'_>) {
         for outcome in outcomes {
-            let (findings, claimed, issues) = match outcome {
-                Outcome::Output(out) => (out.findings, out.claimed_paths, out.issues),
-                Outcome::Failed(issue) => (Vec::new(), Vec::new(), vec![issue]),
+            let out = match outcome {
+                Outcome::Output(out) => out,
+                Outcome::Failed(issue) => CollectOutput {
+                    issues: vec![issue],
+                    ..CollectOutput::default()
+                },
             };
-            if !findings.is_empty() {
-                let count = u32::try_from(findings.len()).unwrap_or(u32::MAX);
+            if !out.findings.is_empty() {
+                let count = u32::try_from(out.findings.len()).unwrap_or(u32::MAX);
                 run.send(Event::FindingsAdded { count });
             }
-            for issue in &issues {
+            for issue in &out.issues {
                 run.send(Event::Issue {
                     issue: issue.clone(),
                 });
             }
-            self.findings.extend(findings);
-            self.claimed.extend(claimed);
-            self.issues.extend(issues);
+            self.findings.extend(out.findings);
+            self.claimed.extend(out.claimed_paths);
+            self.issues.extend(out.issues);
+            self.unknown_summaries.extend(out.unknown_summaries);
         }
     }
 }

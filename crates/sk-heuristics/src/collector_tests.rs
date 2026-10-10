@@ -275,16 +275,12 @@ fn cancellation_keeps_partial_output() {
     let ids: Vec<_> = log.lock().unwrap().iter().map(|s| s.id).collect();
     assert_eq!(ids, ["h-git"]);
     let titles: Vec<_> = collected
-        .output
         .findings
         .iter()
         .map(|f| f.title.as_str())
         .collect();
     assert_eq!(titles, ["Git"]);
-    assert_eq!(
-        collected.output.claimed_paths,
-        [app_data("Git"), app_data("Web")]
-    );
+    assert_eq!(collected.claimed_paths, [app_data("Git"), app_data("Web")]);
 }
 
 #[test]
@@ -302,8 +298,7 @@ fn already_cancelled_runs_nothing() {
         claimed,
     );
     assert!(log.lock().unwrap().is_empty());
-    assert_eq!(collected.output, Default::default());
-    assert!(collected.unknown.is_empty());
+    assert_eq!(collected, Default::default());
 }
 
 /// Reports its folder as unknown.
@@ -351,5 +346,5 @@ fn unknown_summaries_are_gathered() {
         Vec::new(),
         PathSet::new(),
     );
-    assert_eq!(collected.unknown, [summary()]);
+    assert_eq!(collected.unknown_summaries, [summary()]);
 }

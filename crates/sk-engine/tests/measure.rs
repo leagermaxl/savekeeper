@@ -75,8 +75,10 @@ impl Collector for Rules {
         "collector.rules"
     }
     async fn collect(&self, _: &CollectContext) -> Result<CollectOutput, CollectorError> {
+        // Claimed, as rules do, so that the heuristics add nothing.
         Ok(CollectOutput {
             findings: vec![finding("App"), finding("Link")],
+            claimed_paths: vec![app_data("App"), app_data("Link")],
             ..CollectOutput::default()
         })
     }

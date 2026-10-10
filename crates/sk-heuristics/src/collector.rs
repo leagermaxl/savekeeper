@@ -8,18 +8,20 @@ use sk_core::collector::{CollectContext, CollectOutput, PostCollector, PriorResu
 use sk_core::config::{HeuristicToggles, HeuristicsConfig};
 use sk_core::error::CollectorError;
 use sk_core::events::{Event, ScanPhase, ThrottledSink};
-use sk_core::model::{Finding, FolderSummary, IssueSeverity, ScanIssue};
+use sk_core::model::{Finding, IssueSeverity, ScanIssue};
 use sk_core::path::PathSet;
+use sk_scan::ExcludeSet;
 
 use crate::data::{self, DataError};
 use crate::heuristic::{Heuristic, HeuristicContext};
+use crate::unk::HUnk;
 
 #[cfg(test)]
 #[path = "collector_tests.rs"]
 mod tests;
 
 /// `PostCollector::id` of the collector.
-const COLLECTOR_ID: &str = "heuristics";
+pub(crate) const COLLECTOR_ID: &str = "heuristics";
 
 /// Order in which the heuristics run (SPEC-07 §4.1).
 const ORDER: [&str; 5] = ["h-git", "h-web", "h-junk", "h-unk", "h-usr"];
@@ -36,9 +38,8 @@ pub struct HeuristicsCollector {
 impl HeuristicsCollector {
     /// The collector with the built-in heuristics, configured by `cfg`.
     pub fn new(cfg: HeuristicsConfig) -> Self {
-        // The heuristics come with T-07-05 (h-unk), T-07-06 (h-web),
-        // T-07-08 (h-usr) and T-07-09 (h-git).
-        Self::with_heuristics(cfg, Vec::new())
+        // h-web, h-usr and h-git come with T-07-06, T-07-08 and T-07-09.
+        Self::with_heuristics(cfg, vec![Box::new(HUnk::new())])
     }
 
     /// The collector with the given heuristics, put in the order of SPEC-07
@@ -77,10 +78,7 @@ impl PostCollector for HeuristicsCollector {
         let task =
             tokio::task::spawn_blocking(move || run(&heuristics, &cfg, &ctx, findings, claimed));
         match task.await {
-            // The summaries of the `Unknown` findings are not carried by
-            // `CollectOutput` yet; they reach `ScanReport::unknown_summaries`
-            // with H-UNK (FR-07-08, T-07-05).
-            Ok(collected) => Ok(collected.output),
+            Ok(output) => Ok(output),
             // The engine reports a panicking post-collector (`collector.panicked`).
             Err(err) if err.is_panic() => std::panic::resume_unwind(err.into_panic()),
             Err(err) => Err(CollectorError::Other(format!(
@@ -90,25 +88,19 @@ impl PostCollector for HeuristicsCollector {
     }
 }
 
-/// Merged output of the heuristics.
-#[derive(Debug, Default)]
-pub(crate) struct Collected {
-    /// Findings, claimed paths and issues of all heuristics.
-    pub(crate) output: CollectOutput,
-    /// Summaries of the `Unknown` findings, for the LLM.
-    pub(crate) unknown: Vec<FolderSummary>,
-}
-
 /// Runs the heuristics switched on in `cfg`, in order. Each one sees the
 /// findings and claimed paths of the collectors (`findings`, `claimed`)
 /// extended by those of the heuristics before it.
+///
+/// The output holds the findings, claimed paths and issues of all heuristics
+/// and the summaries of their `Unknown` findings (FR-07-08).
 pub(crate) fn run(
     heuristics: &[Box<dyn Heuristic>],
     cfg: &HeuristicsConfig,
     ctx: &CollectContext,
     mut findings: Vec<Finding>,
     mut claimed: PathSet,
-) -> Collected {
+) -> CollectOutput {
     let sink = ThrottledSink::new(ctx.events.clone());
     let progress = |done: u64, current: Option<&str>| {
         sink.send(Event::Progress {
@@ -118,11 +110,16 @@ pub(crate) fn run(
             current: current.map(str::to_owned),
         });
     };
+    // Broken user globs are reported by the Measure phase (SPEC-01 §4.4).
+    let excludes = Arc::new(
+        ExcludeSet::with_user(&ctx.env, &ctx.config.scan.exclude_globs)
+            .unwrap_or_else(|_| ExcludeSet::builtin(&ctx.env)),
+    );
     let prior_count = findings.len();
-    let mut collected = Collected::default();
+    let mut output = CollectOutput::default();
     // The built-in data is parsed and validated once, when the first scan starts.
     if let Err(err) = data::builtin() {
-        collected.output.issues.push(data_issue(err));
+        output.issues.push(data_issue(err));
     }
     for heuristic in heuristics.iter().filter(|h| enabled(&cfg.enabled, h.id())) {
         if ctx.cancel.is_cancelled() {
@@ -131,6 +128,7 @@ pub(crate) fn run(
         let hctx = HeuristicContext {
             env: &ctx.env,
             scanner: ctx.scanner.as_ref(),
+            excludes: &excludes,
             claimed: &claimed,
             prior: &findings,
             cfg,
@@ -139,13 +137,13 @@ pub(crate) fn run(
         };
         let out = heuristic.run(&hctx);
         claimed.extend(out.claimed.iter().cloned());
-        collected.output.claimed_paths.extend(out.claimed);
+        output.claimed_paths.extend(out.claimed);
         findings.extend(out.findings);
-        collected.output.issues.extend(out.issues);
-        collected.unknown.extend(out.unknown);
+        output.issues.extend(out.issues);
+        output.unknown_summaries.extend(out.unknown);
     }
-    collected.output.findings = findings.split_off(prior_count);
-    collected
+    output.findings = findings.split_off(prior_count);
+    output
 }
 
 /// The issue `heuristic.data_invalid` for broken built-in data (`vendors.txt`,

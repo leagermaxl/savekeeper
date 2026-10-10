@@ -1,0 +1,142 @@
+# H-UNK profile (SPEC-07 §4.2, FR-07-02, T-07-05): top-level folders of every
+# search zone of §4.2.1 — known and unknown programs, vendor containers,
+# Store packages, Unity games in LocalLow, ProgramData folders that are kept
+# or skipped, dot entries and custom folders in the profile root, junk and
+# excluded folders. The test claims some of them as rules would.
+# Loaded into MemFs by sk_testkit::mem_fixture.
+tree:
+  # === {APPDATA} ===
+  # --- claimed whole by a "rule" in the test ---
+  - path: "{APPDATA}/Code/User/settings.json"
+    size: 4 KiB
+    mtime: "-1d"
+  # --- claimed in part: the rest is a finding with exclude ---
+  - path: "{APPDATA}/Tool/config/main.json"
+    size: 8 KiB
+    mtime: "-1d"
+  - path: "{APPDATA}/Tool/state/db.bin"
+    size: 2 MiB
+    mtime: "-1d"
+  # --- config of an unknown program ---
+  - path: "{APPDATA}/Notepad4/settings.ini"
+    size: 3 KiB
+    mtime: "-5d"
+  - path: "{APPDATA}/Notepad4/themes.json"
+    size: 1 KiB
+    mtime: "-5d"
+  # --- unknown content ---
+  - path: "{APPDATA}/Mystery/data.bin"
+    size: 300 KiB
+    mtime: "-20d"
+  # --- vendor container: its children are the candidates ---
+  - path: "{APPDATA}/Adobe/Lightroom/Preferences/prefs.json"
+    size: 6 KiB
+    mtime: "-2d"
+  - path: "{APPDATA}/Adobe/Common/Media Cache/cache.bin"
+    size: 1 MiB
+    mtime: "-2d"
+  - path: "{APPDATA}/Adobe/Logs/log.txt"
+    size: 10 KiB
+  # --- empty: claimed without a finding ---
+  - path: "{APPDATA}/EmptyApp"
+    dir: true
+  # --- link: not a candidate ---
+  - path: "{APPDATA}/Linked"
+    dir: true
+    reparse: junction
+
+  # === {LOCALAPPDATA} ===
+  # --- excluded: no candidates ---
+  - path: "{LOCALAPPDATA}/Temp/tmp1234.tmp"
+    size: 1 KiB
+  - path: "{LOCALAPPDATA}/CrashDumps/app.exe.1234.dmp"
+    size: 64 KiB
+  # --- junk ---
+  - path: "{LOCALAPPDATA}/SquirrelTemp/setup.nupkg"
+    size: 512 KiB
+  - path: "{LOCALAPPDATA}/Discord/Cache/data_0"
+    size: 256 KiB
+  - path: "{LOCALAPPDATA}/Discord/app-1.0.9/Discord.exe"
+    size: 90 MiB
+  # --- vendor container with the INetCache exclusion inside ---
+  - path: "{LOCALAPPDATA}/Microsoft/Windows/INetCache/IE/a.dat"
+    size: 2 MiB
+  - path: "{LOCALAPPDATA}/Microsoft/Windows/Settings/settings.dat"
+    size: 8 KiB
+  - path: "{LOCALAPPDATA}/Microsoft/Edge/User Data/Local State"
+    size: 4 KiB
+  # --- per-user programs (vendor "Programs") ---
+  - path: "{LOCALAPPDATA}/Programs/Obsidian/Obsidian.exe"
+    size: 150 MiB
+    mtime: "-30d"
+  - path: "{LOCALAPPDATA}/Programs/Obsidian/resources/app.asar"
+    size: 10 MiB
+    mtime: "-30d"
+  # --- Store packages ---
+  - path: "{LOCALAPPDATA}/Packages/Microsoft.SunriseBaseGame_8wekyb3d8bbwe/SystemAppData/wgs/000901F/container.index"
+    size: 4 KiB
+    mtime: "-3d"
+  - path: "{LOCALAPPDATA}/Packages/Microsoft.SunriseBaseGame_8wekyb3d8bbwe/LocalCache/shader.bin"
+    size: 1 MiB
+  - path: "{LOCALAPPDATA}/Packages/SpotifyAB.SpotifyMusic_zpdnekdrzrea0/LocalState/prefs.json"
+    size: 2 KiB
+    mtime: "-1d"
+  - path: "{LOCALAPPDATA}/Packages/SpotifyAB.SpotifyMusic_zpdnekdrzrea0/AC/INetCache/x.dat"
+    size: 64 KiB
+  - path: "{LOCALAPPDATA}/Packages/Microsoft.Windows.Photos_8wekyb3d8bbwe/LocalState/db.bin"
+    size: 64 KiB
+  - path: "{LOCALAPPDATA}/Packages/MicrosoftWindows.Client.CBS_cw5n1h2txyewy/Settings/settings.dat"
+    size: 8 KiB
+
+  # === {LOCALLOW} ===
+  - path: "{LOCALLOW}/Mojang/Minecraft Dungeons/Player.log"
+    size: 20 KiB
+    mtime: "-4d"
+  - path: "{LOCALLOW}/Mojang/Minecraft Dungeons/save.dat"
+    size: 100 KiB
+    mtime: "-4d"
+  - path: "{LOCALLOW}/Studio/Tool/output_log.txt"
+    size: 1 KiB
+
+  # === {PROGRAMDATA} ===
+  - path: "{PROGRAMDATA}/Recent/config.json"
+    size: 2 KiB
+    mtime: "-10d"
+  - path: "{PROGRAMDATA}/Stale/config.json"
+    size: 2 KiB
+    mtime: "-400d"
+  - path: "{PROGRAMDATA}/Agent/agent.exe"
+    size: 4 MiB
+    mtime: "-1d"
+
+  # === {DOCUMENTS} ===
+  - path: "{DOCUMENTS}/Klei/DoNotStarveTogether/client.ini"
+    size: 2 KiB
+    mtime: "-6d"
+  - path: "{DOCUMENTS}/Rockstar Games/GTA V/Profiles/ABCD/SGTA50000"
+    size: 512 KiB
+    mtime: "-6d"
+
+  # === {SAVED_GAMES} ===
+  - path: "{SAVED_GAMES}/Frontier Developments/Elite Dangerous/Options/Graphics/Settings.xml"
+    size: 4 KiB
+    mtime: "-8d"
+
+  # === {HOME} ===
+  - path: "{HOME}/.cargo/config.toml"
+    size: 1 KiB
+    mtime: "-9d"
+  - path: "{HOME}/.gitconfig"
+    content: "[user]\n\tname = User\n"
+    mtime: "-9d"
+  - path: "{HOME}/NTUSER.DAT"
+    size: 2 MiB
+  - path: "{HOME}/source/repos/App/App.sln"
+    size: 4 KiB
+    mtime: "-2d"
+  - path: "{HOME}/Zomboid/Saves/Sandbox/map.bin"
+    size: 1 MiB
+    mtime: "-3d"
+  - path: "{HOME}/Application Data"
+    dir: true
+    reparse: junction
