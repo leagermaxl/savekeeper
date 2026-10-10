@@ -6,6 +6,7 @@ mod env_vars;
 mod partial;
 mod programs;
 mod registry_user;
+mod wifi;
 mod winget;
 
 #[cfg(test)]
@@ -28,6 +29,7 @@ use crate::exporter::{Availability, ExportedFile, SystemExporter};
 pub(crate) use env_vars::EnvVarsExporter;
 pub(crate) use programs::ProgramsExporter;
 pub(crate) use registry_user::RegistryUserExporter;
+pub(crate) use wifi::WifiExporter;
 pub(crate) use winget::WingetExporter;
 
 /// `reason_key` of every exporter outside Windows (SPEC-06 §5).
@@ -54,6 +56,7 @@ pub(crate) fn all() -> Vec<Arc<dyn SystemExporter>> {
     vec![
         Arc::new(WingetExporter::new()),
         Arc::new(ProgramsExporter),
+        Arc::new(WifiExporter::new()),
         Arc::new(RegistryUserExporter::new()),
         Arc::new(EnvVarsExporter::new()),
     ]

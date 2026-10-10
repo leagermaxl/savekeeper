@@ -79,7 +79,10 @@ fn registry_ids_are_unique_and_resolvable() {
 fn registry_lists_exporters_in_catalogue_order() {
     let ids: Vec<&'static str> = registry().iter().map(|e| e.id()).collect();
     // `winget` before `programs`: `programs` reads `winget.json` (SPEC-06 §4.3).
-    assert_eq!(ids, ["winget", "programs", "registry-user", "env-vars"]);
+    assert_eq!(
+        ids,
+        ["winget", "programs", "wifi", "registry-user", "env-vars"]
+    );
 }
 
 #[test]
