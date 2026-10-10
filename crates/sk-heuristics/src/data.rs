@@ -100,7 +100,6 @@ impl ContentKind {
 }
 
 /// One group of `extensions.yaml`.
-#[cfg_attr(not(test), allow(dead_code))] // read by H-USR (T-07-08)
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct ExtensionGroup {
@@ -122,7 +121,6 @@ struct ExtensionsFile {
 }
 
 /// The extension table (SPEC-07 §4.3.2).
-#[cfg_attr(not(test), allow(dead_code))] // read by H-USR (T-07-08)
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct ExtensionTable {
     /// Groups in file order.
@@ -131,7 +129,6 @@ pub(crate) struct ExtensionTable {
     by_ext: BTreeMap<String, usize>,
 }
 
-#[cfg_attr(not(test), allow(dead_code))] // read by H-USR (T-07-08)
 impl ExtensionTable {
     /// The groups, in the order of the file.
     pub(crate) fn groups(&self) -> &[ExtensionGroup] {
@@ -146,13 +143,13 @@ impl ExtensionTable {
     }
 
     /// Weight of a file with the extension `ext`; 0 for extensions not listed.
+    #[cfg_attr(not(test), allow(dead_code))] // the walk weighs groups, the tests extensions
     pub(crate) fn weight(&self, ext: &str) -> f32 {
         self.group_of(ext).map_or(0.0, |g| g.weight)
     }
 }
 
 /// The vendor containers (SPEC-07 §4.2.2).
-#[cfg_attr(not(test), allow(dead_code))] // read by H-UNK (T-07-05)
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct VendorList {
     /// Names as written in the file, in file order.
@@ -161,9 +158,9 @@ pub(crate) struct VendorList {
     lower: BTreeSet<String>,
 }
 
-#[cfg_attr(not(test), allow(dead_code))] // read by H-UNK (T-07-05)
 impl VendorList {
     /// Names as written in the file, in file order.
+    #[cfg_attr(not(test), allow(dead_code))] // H-UNK only asks `contains`; read by the tests
     pub(crate) fn names(&self) -> &[String] {
         &self.names
     }
@@ -175,7 +172,6 @@ impl VendorList {
 }
 
 /// The built-in data of the heuristics.
-#[cfg_attr(not(test), allow(dead_code))] // read by H-UNK and H-USR (T-07-05, T-07-08)
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct HeuristicsData {
     /// `vendors.txt`.

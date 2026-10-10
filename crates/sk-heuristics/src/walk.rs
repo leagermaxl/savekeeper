@@ -2,9 +2,6 @@
 //! which roots are walked, what is skipped, and the cache that makes the
 //! walk happen once per scan (§4.1).
 
-// Read by H-USR and H-GIT (T-07-08, T-07-09); until then only by the tests.
-#![cfg_attr(not(test), allow(dead_code))]
-
 use std::collections::BTreeMap;
 use std::ffi::OsStr;
 use std::fmt;

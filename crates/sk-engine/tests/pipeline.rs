@@ -26,8 +26,12 @@ use sk_engine::{EngineError, ScanOptions, ScanPipeline};
 use sk_system::SystemCollector;
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
 
+/// The fake environment without drives: the pipelines here scan the real
+/// file system, and H-USR would walk the fixed drives (SPEC-07 §4.3.1).
 fn env() -> Environment {
-    Environment::fake(Path::new(if cfg!(windows) { r"C:\fake" } else { "/fake" }))
+    let mut env = Environment::fake(Path::new(if cfg!(windows) { r"C:\fake" } else { "/fake" }));
+    env.drives.clear();
+    env
 }
 
 fn finding(template: &str, category: Category, score: Option<f32>) -> Finding {

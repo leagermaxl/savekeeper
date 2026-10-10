@@ -118,7 +118,9 @@ fn has_offline_issue(report: &ScanReport) -> bool {
 #[tokio::test]
 async fn gamer_profile_gives_game_findings() {
     let profile = tmp();
-    let env = materialize_profile("gamer", profile.path()).unwrap();
+    let mut env = materialize_profile("gamer", profile.path()).unwrap();
+    // `RealFs`: H-USR must not walk the fixed drives of this machine.
+    env.drives.clear();
     let data = data_dir();
     let pipeline = pipeline(offline_config(), env)
         .with_data_dir(data.path().to_path_buf())

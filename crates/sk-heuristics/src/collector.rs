@@ -15,6 +15,7 @@ use sk_scan::ExcludeSet;
 use crate::data::{self, DataError};
 use crate::heuristic::{Heuristic, HeuristicContext};
 use crate::unk::HUnk;
+use crate::usr::HUsr;
 use crate::walk::RootsWalkCache;
 use crate::web::HWeb;
 
@@ -40,8 +41,21 @@ pub struct HeuristicsCollector {
 impl HeuristicsCollector {
     /// The collector with the built-in heuristics, configured by `cfg`.
     pub fn new(cfg: HeuristicsConfig) -> Self {
-        // h-usr and h-git come with T-07-08 and T-07-09.
-        Self::with_heuristics(cfg, vec![Box::new(HWeb::new()), Box::new(HUnk::new())])
+        // h-git comes with T-07-09.
+        Self::with_heuristics(
+            cfg,
+            vec![
+                Box::new(HWeb::new()),
+                Box::new(HUnk::new()),
+                Box::new(HUsr::new()),
+            ],
+        )
+    }
+
+    /// Ids of the heuristics, in the order they run.
+    #[cfg(test)]
+    pub(crate) fn ids(&self) -> Vec<&'static str> {
+        self.heuristics.iter().map(|h| h.id()).collect()
     }
 
     /// The collector with the given heuristics, put in the order of SPEC-07

@@ -24,7 +24,7 @@ pub(crate) const TITLE_UNRECOGNIZED: &str = "heuristic.title.unrecognized";
 /// Separator of the title parts (SPEC-11 §4.7).
 pub(crate) const TITLE_SEPARATOR: &str = " — ";
 /// A candidate larger than this gets the tag `huge` (SPEC-07 §5): 50 GiB.
-const HUGE_BYTES: u64 = 50 * 1024 * 1024 * 1024;
+pub(crate) const HUGE_BYTES: u64 = 50 * 1024 * 1024 * 1024;
 /// Smallest token Jaccard similarity of a name and an installed program.
 const INSTALLED_SIMILARITY: f64 = 0.8;
 /// Shortest folder name taken for a hash.

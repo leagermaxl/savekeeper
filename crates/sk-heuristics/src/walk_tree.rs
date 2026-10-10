@@ -8,9 +8,6 @@
 //! once, in a fixed order, so the result does not depend on the walk order
 //! (NFR-07-04).
 
-// Read by H-USR and H-GIT (T-07-08, T-07-09); until then only by the tests.
-#![cfg_attr(not(test), allow(dead_code))]
-
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -33,6 +30,7 @@ const GIT_FILE: u8 = 1 << 1;
 const BARE_HEAD: u8 = 1 << 2;
 const BARE_OBJECTS: u8 = 1 << 3;
 const BARE_REFS: u8 = 1 << 4;
+#[cfg_attr(not(test), allow(dead_code))] // read by H-GIT (T-07-09)
 const BARE: u8 = BARE_HEAD | BARE_OBJECTS | BARE_REFS;
 
 /// Files of one content kind (SPEC-07 §4.3.2) in a folder.
@@ -93,7 +91,7 @@ impl DirAggregate {
     }
 
     /// Adds the aggregates of a subfolder; the weights are set by `finish`.
-    fn add(&mut self, other: &DirAggregate) {
+    pub(crate) fn add(&mut self, other: &DirAggregate) {
         self.bytes = self.bytes.saturating_add(other.bytes);
         self.files += other.files;
         self.cloud_only_files += other.cloud_only_files;
@@ -102,7 +100,7 @@ impl DirAggregate {
     }
 
     /// Sets `user_weight` and `binary_bytes` from the kinds.
-    fn finish(&mut self, table: Option<&ExtensionTable>) {
+    pub(crate) fn finish(&mut self, table: Option<&ExtensionTable>) {
         let weight = |kind: ContentKind| {
             table
                 .and_then(|t| t.groups().iter().find(|g| g.kind == kind))
@@ -156,6 +154,7 @@ pub(crate) struct DirNode {
     git: u8,
 }
 
+#[cfg_attr(not(test), allow(dead_code))] // read by H-GIT (T-07-09)
 impl DirNode {
     /// The folder holds `.git` (a folder or a gitlink file): the working copy
     /// of a repository (SPEC-07 §4.4.1). The `.git` folder is not walked.

@@ -13,6 +13,8 @@ mod heuristic;
 mod junk;
 mod unk;
 mod unk_zones;
+mod usr;
+mod usr_finding;
 mod verdict;
 mod walk;
 mod walk_tree;
