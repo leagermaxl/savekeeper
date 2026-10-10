@@ -28,6 +28,19 @@ const UNINSTALL_SOURCES: [(RegHive, &str, ProgramSource); 3] = [
     (RegHive::Hkcu, UNINSTALL_USER, ProgramSource::Hkcu),
 ];
 
+/// Identity-name prefixes of system and framework MSIX packages (lower case, SPEC-06 §4.4).
+const SYSTEM_PACKAGE_PREFIXES: [&str; 5] = [
+    "microsoft.windows.",
+    "microsoft.ui.xaml.",
+    "microsoft.windowsappruntime.",
+    "windows.",
+    "microsoftwindows.",
+];
+
+/// PublisherId of packages published by Windows itself (`CN=Microsoft Windows`): system
+/// components, never programs to reinstall (compared without case).
+const SYSTEM_PUBLISHER_ID: &str = "cw5n1h2txyewy";
+
 /// `ReleaseType` values of entries that are updates, not programs (compared without case).
 const UPDATE_RELEASE_TYPES: [&str; 3] = ["update", "hotfix", "security update"];
 
@@ -36,8 +49,9 @@ const UPDATE_RELEASE_TYPES: [&str; 3] = ["update", "hotfix", "security update"];
 /// Sources, in this order: `HKLM` Uninstall, `HKLM` `WOW6432Node` Uninstall, `HKCU`
 /// Uninstall and the MSIX package repository of `HKCU`. Uninstall entries with
 /// `SystemComponent = 1`, a `ParentKeyName` (updates), a `ReleaseType` of `Update`,
-/// `Hotfix` or `Security Update`, or without `DisplayName` are skipped; so are system MSIX
-/// packages (`Microsoft.Windows.*`, `*.NET.*`, `VCLibs`). Programs are deduplicated by
+/// `Hotfix` or `Security Update`, or without `DisplayName` are skipped; so are system and
+/// framework MSIX packages (see [`is_system_package`] and [`SYSTEM_PUBLISHER_ID`]).
+/// Programs are deduplicated by
 /// lower-cased `(name, publisher)`, the first source wins, and the list is sorted by
 /// that pair. The previous content of `installed_programs` is replaced, so a repeated
 /// call gives the same result. Missing or unreadable keys only give fewer programs;
@@ -135,19 +149,21 @@ fn location(value: &str) -> Option<PathBuf> {
     (!path.is_empty()).then(|| PathBuf::from(path))
 }
 
-/// The MSIX packages of the current user, except system ones.
+/// The MSIX packages of the current user, except system and framework ones.
 ///
 /// The package full name `Name_Version_Arch_ResourceId_PublisherId` gives the name (its
-/// identity name, the name part of the package family name) and the version; the
-/// display name in the registry is an indirect resource string and is not used. The
-/// install location is `PackageRootFolder`; the publisher is unknown.
+/// identity name, the name part of the package family name), the version and the
+/// PublisherId; the display name in the registry is an indirect resource string and is
+/// not used. Packages whose name is a system one ([`is_system_package`]) or whose
+/// PublisherId is [`SYSTEM_PUBLISHER_ID`] are skipped. The install location is
+/// `PackageRootFolder`; the publisher is unknown.
 fn msix_programs(registry: &dyn RegistryReader) -> Vec<InstalledProgram> {
     sorted_subkeys(registry, RegHive::Hkcu, MSIX_PACKAGES)
         .into_iter()
         .filter_map(|full_name| {
-            let mut parts = full_name.split('_');
-            let name = parts.next().map(str::trim).filter(|n| !n.is_empty())?;
-            if is_system_package(name) {
+            let parts: Vec<&str> = full_name.split('_').collect();
+            let name = parts.first().map(|n| n.trim()).filter(|n| !n.is_empty())?;
+            if is_system_package(name) || parts.get(4).is_some_and(|id| is_system_publisher(id)) {
                 return None;
             }
             let key = format!(r"{MSIX_PACKAGES}\{full_name}");
@@ -155,7 +171,10 @@ fn msix_programs(registry: &dyn RegistryReader) -> Vec<InstalledProgram> {
             Some(InstalledProgram {
                 name: name.to_owned(),
                 publisher: None,
-                version: parts.next().filter(|v| !v.is_empty()).map(str::to_owned),
+                version: parts
+                    .get(1)
+                    .filter(|v| !v.is_empty())
+                    .map(|v| (*v).to_owned()),
                 install_location: root.and_then(|r| location(&r)),
                 install_date: None,
                 estimated_size_kb: None,
@@ -166,11 +185,23 @@ fn msix_programs(registry: &dyn RegistryReader) -> Vec<InstalledProgram> {
         .collect()
 }
 
-/// Whether an MSIX identity name is a system package: `Microsoft.Windows.*`, `*.NET.*`
-/// or a `VCLibs` framework (compared without case).
+/// Whether an MSIX identity name is a system or framework package: `Microsoft.Windows.*`,
+/// `Microsoft.UI.Xaml.*`, `Microsoft.WindowsAppRuntime.*`, `Windows.*`,
+/// `MicrosoftWindows.*`, `*.NET.*` or a `VCLibs` framework (compared without case).
 fn is_system_package(name: &str) -> bool {
     let name = name.to_ascii_lowercase();
-    name.starts_with("microsoft.windows.") || name.contains(".net.") || name.contains("vclibs")
+    SYSTEM_PACKAGE_PREFIXES
+        .iter()
+        .any(|prefix| name.starts_with(prefix))
+        || name.contains(".net.")
+        || name.contains("vclibs")
+}
+
+/// Whether a package PublisherId is the one of Windows itself ([`SYSTEM_PUBLISHER_ID`]).
+fn is_system_publisher(publisher_id: &str) -> bool {
+    publisher_id
+        .trim()
+        .eq_ignore_ascii_case(SYSTEM_PUBLISHER_ID)
 }
 
 /// Subkeys of `key` sorted without case (then by exact name), so that the result does

@@ -193,6 +193,36 @@
       "hive": "hkcu",
       "key": "Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages\\Microsoft.UI.Xaml.2.8_8.2501.31001.0_x86__8wekyb3d8bbwe",
       "values": {}
+    },
+    {
+      "hive": "hkcu",
+      "key": "Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages\\Microsoft.WindowsAppRuntime.1.5_5001.373.1736.0_x64__8wekyb3d8bbwe",
+      "values": {}
+    },
+    {
+      "hive": "hkcu",
+      "key": "Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages\\Windows.PrintDialog_6.2.3.0_neutral_neutral_8wekyb3d8bbwe",
+      "values": {}
+    },
+    {
+      "hive": "hkcu",
+      "key": "Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages\\MicrosoftWindows.Client.WebExperience_524.24900.0.0_x64__8wekyb3d8bbwe",
+      "values": {}
+    },
+    {
+      "hive": "hkcu",
+      "key": "Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages\\Microsoft.AAD.BrokerPlugin_1000.19580.1000.1_neutral_neutral_CW5N1H2TXYEWY",
+      "values": {}
+    },
+    {
+      "hive": "hkcu",
+      "key": "Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages\\Microsoft.WindowsTerminal_1.21.2361.0_x64__8wekyb3d8bbwe",
+      "values": {}
+    },
+    {
+      "hive": "hkcu",
+      "key": "Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages\\Microsoft.WindowsTerminal_1.21.2361.0_x86__8wekyb3d8bbwe",
+      "values": {}
     }
   ]
 }

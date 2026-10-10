@@ -5,7 +5,10 @@ use sk_core::env::{Environment, InstalledProgram, ProgramSource};
 use sk_core::model::RegHive;
 use sk_core::registry::{MemRegistry, SystemRegistry};
 
-use super::{enrich_with_registry, installed_programs, is_system_package, location, MSIX_PACKAGES};
+use super::{
+    enrich_with_registry, installed_programs, is_system_package, is_system_publisher, location,
+    MSIX_PACKAGES,
+};
 
 /// Registry dump of SPEC-06 §6 «фикстура JSON-дампа ключей».
 const FIXTURE: &str = include_str!("../../../../fixtures/samples/system/uninstall-keys.json");
@@ -73,7 +76,7 @@ fn fixture_is_filtered_deduplicated_and_sorted() {
                 Some("The Git Development Community"),
                 ProgramSource::Hklm
             ),
-            ("Microsoft.UI.Xaml.2.8", None, ProgramSource::Msix),
+            ("Microsoft.WindowsTerminal", None, ProgramSource::Msix),
             ("Notepad++ (32-bit x86)", None, ProgramSource::Hkcu),
             (
                 "Notepad++ (32-bit x86)",
@@ -142,11 +145,57 @@ fn msix_package_name_version_and_location() {
             uninstall_key: "SpotifyAB.SpotifyMusic_1.303.264.0_x64__zpdnekdrzrea0".into(),
         }
     );
-    let xaml = find(&programs, "Microsoft.UI.Xaml.2.8");
+    let terminal = find(&programs, "Microsoft.WindowsTerminal");
     assert_eq!(
-        xaml.uninstall_key, "Microsoft.UI.Xaml.2.8_8.2501.31001.0_x64__8wekyb3d8bbwe",
+        terminal.uninstall_key, "Microsoft.WindowsTerminal_1.21.2361.0_x64__8wekyb3d8bbwe",
         "x64 and x86 packages are one program; the first key wins"
     );
+}
+
+/// Each system/framework rule of SPEC-06 §4.4 removes its package of the fixture.
+#[test]
+fn fixture_system_and_framework_packages_are_skipped() {
+    let programs = installed_programs(&fixture_registry());
+    for (rule, name) in [
+        ("Microsoft.Windows.*", "Microsoft.Windows.Photos"),
+        ("*.NET.*", "Microsoft.NET.Native.Framework.2.2"),
+        ("VCLibs", "Microsoft.VCLibs.140.00.UWPDesktop"),
+        ("Microsoft.UI.Xaml.*", "Microsoft.UI.Xaml.2.8"),
+        (
+            "Microsoft.WindowsAppRuntime.*",
+            "Microsoft.WindowsAppRuntime.1.5",
+        ),
+        ("Windows.*", "Windows.PrintDialog"),
+        (
+            "MicrosoftWindows.*",
+            "MicrosoftWindows.Client.WebExperience",
+        ),
+        ("PublisherId cw5n1h2txyewy", "Microsoft.AAD.BrokerPlugin"),
+    ] {
+        assert!(
+            programs.iter().all(|p| !p.name.eq_ignore_ascii_case(name)),
+            "{rule}: {name} must be skipped"
+        );
+    }
+}
+
+/// The PublisherId rule looks at the fifth part of the full name only, without case.
+#[test]
+fn system_publisher_id_is_matched_on_the_publisher_part() {
+    let mut registry = MemRegistry::new();
+    for full_name in [
+        "Microsoft.AAD.BrokerPlugin_1000.19580.1000.1_neutral_neutral_cw5n1h2txyewy",
+        "Microsoft.LockApp_10.0.19041.1_neutral__Cw5n1h2txyewy",
+        "cw5n1h2txyewy_1.0.0.0_x64__8wekyb3d8bbwe",
+        "Contoso.App_1.0.0.0_x64__abcdef0123456",
+    ] {
+        registry.add_key(RegHive::Hkcu, &format!(r"{MSIX_PACKAGES}\{full_name}"));
+    }
+    let names: Vec<_> = installed_programs(&registry)
+        .into_iter()
+        .map(|p| p.name)
+        .collect();
+    assert_eq!(names, ["Contoso.App", "cw5n1h2txyewy"]);
 }
 
 #[test]
@@ -216,6 +265,14 @@ fn system_packages_are_recognised() {
         "Microsoft.NET.CoreRuntime.1.1",
         "Microsoft.VCLibs.140.00",
         "Microsoft.VCLibs.140.00.UWPDesktop",
+        "Microsoft.UI.Xaml.2.8",
+        "microsoft.ui.xaml.2.7",
+        "Microsoft.WindowsAppRuntime.1.5",
+        "MICROSOFT.WINDOWSAPPRUNTIME.1.6",
+        "Windows.PrintDialog",
+        "windows.immersivecontrolpanel",
+        "MicrosoftWindows.Client.CBS",
+        "microsoftwindows.UndockedDevKit",
     ] {
         assert!(is_system_package(name), "{name}");
     }
@@ -224,8 +281,23 @@ fn system_packages_are_recognised() {
         "Microsoft.WindowsTerminal",
         "SpotifyAB.SpotifyMusic",
         "Microsoft.NETFoo",
+        "Microsoft.UI.XamlFoo",
+        "Microsoft.WindowsAppRuntimeFoo",
+        "WindowsFoo.App",
+        "MicrosoftWindowsFoo.App",
+        "Contoso.Windows.App",
     ] {
         assert!(!is_system_package(name), "{name}");
+    }
+}
+
+#[test]
+fn system_publisher_ids_are_recognised() {
+    for id in ["cw5n1h2txyewy", "CW5N1H2TXYEWY", " cw5n1h2txyewy "] {
+        assert!(is_system_publisher(id), "{id:?}");
+    }
+    for id in ["8wekyb3d8bbwe", "", "cw5n1h2txyew", "xcw5n1h2txyewy"] {
+        assert!(!is_system_publisher(id), "{id:?}");
     }
 }
 
