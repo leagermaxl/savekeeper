@@ -8,6 +8,7 @@
 
 #[cfg(windows)]
 pub(crate) mod env;
+pub(crate) mod fs;
 #[cfg(windows)]
 pub(crate) mod known_folders;
 pub mod process;

@@ -116,6 +116,29 @@ pub enum CloudState {
     CloudOnly,
 }
 
+/// `FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS | FILE_ATTRIBUTE_RECALL_ON_OPEN |
+/// FILE_ATTRIBUTE_OFFLINE`: any of them means cloud-only (SPEC-03 §4.2).
+const CLOUD_ONLY_ATTRS: u32 = 0x0040_0000 | 0x0004_0000 | 0x1000;
+
+/// Whether the file at `path` is on the local disk or only in the cloud
+/// (SPEC-02 §3.5), for code that opens user files outside [`FsScanner`]
+/// (copying exporters, backup): a cloud-only file must not be opened, as that
+/// would download it.
+///
+/// The attributes of the entry itself are read without opening it
+/// (`GetFileAttributesW` on the extended path), so nothing is downloaded. A
+/// missing path is [`std::io::ErrorKind::NotFound`], other errors are
+/// returned as is. Outside Windows an existing path is always
+/// [`CloudState::Local`].
+pub fn cloud_state(path: &Path) -> std::io::Result<CloudState> {
+    let attrs = crate::win::fs::attributes(path)?;
+    Ok(if attrs & CLOUD_ONLY_ATTRS != 0 {
+        CloudState::CloudOnly
+    } else {
+        CloudState::Local
+    })
+}
+
 /// An entry found while listing or walking.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DirEntryInfo {
@@ -250,6 +273,10 @@ impl From<std::io::Error> for FsError {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "fs_cloud_tests.rs"]
+mod cloud_tests;
 
 #[cfg(test)]
 mod tests {
