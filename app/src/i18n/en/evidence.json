@@ -7,5 +7,6 @@
     "install_dir": "Install folder of “{{name}}”: the game can be installed again from $t(games.launcher.{{launcher}})",
     "xbox_wgs": "Saves of the Xbox / Microsoft Store game from package {{package}}",
     "ubisoft_savegames": "Local saves of Ubisoft Connect games"
-  }
+  },
+  "system_export": "System state that is not stored in ordinary files: SaveKeeper exports it during the backup"
 }

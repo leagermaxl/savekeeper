@@ -1,0 +1,90 @@
+{
+  "not_windows": "Available only on Windows",
+  "title": {
+    "winget": "Program list for winget",
+    "programs": "List of installed programs",
+    "wifi": "Wi-Fi profiles",
+    "drivers": "Drivers",
+    "registry_user": "Windows user settings (keyboard, mouse, region, Explorer, startup)",
+    "env_vars": "Environment variables",
+    "fonts": "User fonts",
+    "hosts": "hosts file",
+    "scheduled_tasks": "Scheduled tasks",
+    "powershell_modules": "PowerShell modules",
+    "printers": "Printer list",
+    "disks_info": "Drives and BitLocker status",
+    "windows_info": "Windows version and activation",
+    "checklist": "Checklist before reinstalling"
+  },
+  "restore": {
+    "programs": "Install the programs again from the list programs.html: it shows which of them winget can install.",
+    "wifi": "Import each profile with netsh wlan add profile filename=\"<file>.xml\". If the passwords were not saved, Windows asks for them when you connect.",
+    "registry_user": "Import the .reg files with a double-click, then sign out and sign in again.",
+    "env_vars": "Import user-env.reg with a double-click or add the variables from user-env.json in the environment variables settings. system-env.json is for reference only.",
+    "fonts": "Install the fonts from the user folder (right-click → Install). system-fonts-nonstandard.txt lists fonts installed for all users that do not come with Windows: get them from their original sources.",
+    "hosts": "Copy the file to C:\\Windows\\System32\\drivers\\etc\\hosts (administrator rights are needed).",
+    "scheduled_tasks": "Import the tasks in Task Scheduler (Action → Import Task…) or with schtasks /create /xml \"<file>.xml\" /tn \"<name>\".",
+    "powershell_modules": "Copy the folders from Modules to the PowerShell modules folder in Documents, or install the modules listed in modules.json with Install-Module."
+  },
+  "winget": {
+    "missing": "winget is not installed (it comes with App Installer from Microsoft Store)",
+    "outdated": "winget is too old (version 1.4 or newer is needed): update App Installer"
+  },
+  "wifi": {
+    "no_profiles": "No saved Wi-Fi networks"
+  },
+  "fonts": {
+    "none": "No fonts installed for this user"
+  },
+  "hosts": {
+    "default": "The hosts file has no entries of its own",
+    "missing": "The hosts file is missing or cannot be read"
+  },
+  "scheduled_tasks": {
+    "none": "No scheduled tasks of your own",
+    "query_failed": "Could not get the list of scheduled tasks"
+  },
+  "powershell_modules": {
+    "none": "No PowerShell modules installed for this user"
+  },
+  "printers": {
+    "none": "No printers besides the built-in ones",
+    "query_failed": "Could not get the list of printers"
+  },
+  "checklist": {
+    "title": "Checklist before reinstalling Windows",
+    "intro": "Computer: {{machine}}. These things are not saved as files: go through the list before reinstalling Windows.",
+    "section": {
+      "accounts": "Accounts and two-factor authentication",
+      "encryption": "Drive encryption",
+      "licenses": "Program licenses",
+      "windows": "Windows activation",
+      "data": "Data that was not saved completely",
+      "setup": "Drivers and programs"
+    },
+    "two_factor_credentials": "Passwords, keys or tokens were found on this computer. Make sure you have the backup codes for two-factor authentication (2FA) of your important accounts: without them you may not be able to sign in after reinstalling.",
+    "two_factor_apps": "Authenticator apps are installed: {{apps}}. If their codes are not synced with a cloud account, move the accounts to another device or save the backup codes: the codes are lost together with the app data.",
+    "browsers": "Turn on sync in your browsers and wait until it finishes. Passwords saved in Chromium-based browsers (Chrome, Edge, Opera, Yandex Browser and others) are encrypted for this Windows user and do not work when copied as files.",
+    "bitlocker_on": "Drives with BitLocker encryption on: {{drives}}. Save the recovery key before reinstalling: check whether it is in your Microsoft account at account.microsoft.com/devices/recoverykey; if it is not there, save it from the BitLocker settings (“Back up your recovery key”).",
+    "bitlocker_unknown": "Drives whose BitLocker status could not be read without administrator rights: {{drives}}. If a drive is encrypted, save its recovery key: account.microsoft.com/devices/recoverykey.",
+    "bitlocker_unchecked": "The BitLocker status of the drives was not checked. If a drive is encrypted, save its recovery key: account.microsoft.com/devices/recoverykey.",
+    "licenses_intro": "These programs have a license tied to this computer or to an account. SaveKeeper does not save license keys: keep the purchase emails. Games bought outside launchers need their keys too.",
+    "license_item": "**{{name}}** ({{programs}}): {{hint}}",
+    "license": {
+      "deactivate": "the number of activations is limited, so deactivate the license in the program or in your account on the vendor's website before reinstalling, then activate it again.",
+      "sign_out": "the subscription is tied to your account and works on a limited number of computers, so sign out in the program (or remove this computer in your account) before reinstalling, then sign in again.",
+      "account": "the license is tied to your account; make sure you know the login and password, and sign in again after reinstalling.",
+      "key": "activation needs a product key or a serial number; find it in the purchase email or in your account on the vendor's website.",
+      "license_file": "the license is the file {{file}} (in the program folder or its settings folder); keep a copy of it or the purchase email."
+    },
+    "windows_activated": "Windows is activated. After reinstalling the same edition on this computer, it activates again by itself through the digital license. Linking the license to your Microsoft account (in the activation settings) helps to activate it again after a hardware change.",
+    "windows_volume": "Windows is activated by an organization (volume license): ask its administrator before reinstalling.",
+    "windows_not_activated": "Windows is not activated. Before reinstalling, find the product key or the purchase you activate Windows with.",
+    "windows_unknown": "The activation status of Windows was not read. Before reinstalling, check in the activation settings that Windows is activated with a digital license, preferably linked to your Microsoft account.",
+    "windows_oem_key": "The computer's firmware holds the manufacturer's Windows product key: the same edition of Windows activates automatically, you do not need to enter the key.",
+    "unpushed_repos": "Git repositories with unpushed changes: {{count}}. Push them to the server or make sure their findings are selected for the backup.",
+    "cloud_only": "Files that are only in the cloud (OneDrive and others) and were not copied: {{count}}. Make sure they are synced and available online.",
+    "drivers": "Drivers were not exported (this needs administrator rights). Download the network adapter driver (Wi-Fi or Ethernet) for the new system in advance, so that you can get online after reinstalling.",
+    "winget": "The program list for winget was not saved (winget is missing or the export was not selected). Reinstall the programs by hand from programs.html; on the new system winget comes with App Installer from Microsoft Store."
+  }
+}

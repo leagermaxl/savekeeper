@@ -2,6 +2,7 @@
 //!
 //! Each exporter lives in its own module and is listed by [`all`] in catalogue order.
 
+mod checklist;
 mod disks_info;
 mod drivers;
 mod env_vars;
@@ -36,6 +37,7 @@ use sk_core::model::{
 use crate::cmd::CmdOutput;
 use crate::exporter::{Availability, ExportedFile, SystemExporter};
 
+pub(crate) use checklist::ChecklistExporter;
 pub(crate) use disks_info::DisksInfoExporter;
 pub(crate) use drivers::DriversExporter;
 pub(crate) use env_vars::EnvVarsExporter;
@@ -72,7 +74,8 @@ const APP_NAME: &str = "Windows";
 /// All exporters implemented so far, in the order of the catalogue (SPEC-06 §4.3).
 ///
 /// `winget` comes before `programs`: the backup runs exporters in this order, and
-/// `programs` reads `winget.json` for its "in winget" column.
+/// `programs` reads `winget.json` for its "in winget" column. `checklist` comes after
+/// `winget`, `drivers`, `disks-info` and `windows-info`, whose files it reads.
 pub(crate) fn all() -> Vec<Arc<dyn SystemExporter>> {
     vec![
         Arc::new(WingetExporter::new()),
@@ -88,6 +91,7 @@ pub(crate) fn all() -> Vec<Arc<dyn SystemExporter>> {
         Arc::new(PrintersExporter::new()),
         Arc::new(DisksInfoExporter::new()),
         Arc::new(WindowsInfoExporter::new()),
+        Arc::new(ChecklistExporter),
     ]
 }
 

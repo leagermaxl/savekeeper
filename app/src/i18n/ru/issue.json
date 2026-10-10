@@ -41,5 +41,23 @@
       "invalid": "формат файла не распознан",
       "drive_missing": "диск не подключён"
     }
+  },
+  "system": {
+    "activation_query_failed": "Не удалось прочитать состояние активации Windows: {{error}}",
+    "bitlocker_needs_admin": "Состояние BitLocker на дисках читается только с правами администратора, оно сохранено как «неизвестно»",
+    "bitlocker_query_failed": "Не удалось прочитать состояние BitLocker на дисках: {{error}}",
+    "drivers_export_exit_code": "pnputil завершился с кодом {{code}}: часть драйверов могла не экспортироваться",
+    "file_copy_failed": "Не удалось скопировать {{path}}: {{error}}",
+    "folder_read_failed": "Не удалось прочитать папку {{path}}: {{error}}",
+    "ps_module_not_copied": "Модуль PowerShell «{{module}}» ({{edition}}, {{bytes}} байт) не поместился в лимит размера и только перечислен в modules.json",
+    "registry_export_failed": "Не удалось экспортировать ключ реестра {{key}}: {{error}}",
+    "registry_key_missing": "Ключа реестра {{key}} нет, он пропущен",
+    "registry_read_failed": "Не удалось прочитать ключ реестра {{key}}: {{error}}",
+    "task_export_failed": "Не удалось экспортировать задачу планировщика «{{task}}»: {{error}}",
+    "tasks_hidden_without_admin": "Без прав администратора часть задач планировщика не видна и не сохранена",
+    "wifi_export_exit_code": "netsh завершился с кодом {{code}}: часть профилей Wi-Fi могла не экспортироваться",
+    "wifi_key_protected": "Пароль в профиле Wi-Fi {{profile}} защищён и не сохранён открытым текстом (нужны права администратора)",
+    "winget_export_exit_code": "winget export завершился с кодом {{code}}: части программ может не быть в winget.json",
+    "winget_json_unreadable": "Не удалось прочитать winget.json, колонка «winget» в списке программ пуста: {{error}}"
   }
 }

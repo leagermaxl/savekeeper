@@ -41,5 +41,23 @@
       "invalid": "the file format is not recognized",
       "drive_missing": "the drive is not connected"
     }
+  },
+  "system": {
+    "activation_query_failed": "Could not read the Windows activation status: {{error}}",
+    "bitlocker_needs_admin": "The BitLocker status of the drives can only be read with administrator rights, it is saved as “unknown”",
+    "bitlocker_query_failed": "Could not read the BitLocker status of the drives: {{error}}",
+    "drivers_export_exit_code": "pnputil finished with code {{code}}: some drivers may not have been exported",
+    "file_copy_failed": "Could not copy {{path}}: {{error}}",
+    "folder_read_failed": "Could not read the folder {{path}}: {{error}}",
+    "ps_module_not_copied": "PowerShell module “{{module}}” ({{edition}}, {{bytes}} bytes) did not fit into the size limit and is only listed in modules.json",
+    "registry_export_failed": "Could not export the registry key {{key}}: {{error}}",
+    "registry_key_missing": "The registry key {{key}} does not exist and was skipped",
+    "registry_read_failed": "Could not read the registry key {{key}}: {{error}}",
+    "task_export_failed": "Could not export the scheduled task “{{task}}”: {{error}}",
+    "tasks_hidden_without_admin": "Without administrator rights some scheduled tasks are not visible and were not saved",
+    "wifi_export_exit_code": "netsh finished with code {{code}}: some Wi-Fi profiles may not have been exported",
+    "wifi_key_protected": "The password in the Wi-Fi profile {{profile}} is protected and was not saved in clear text (administrator rights are needed)",
+    "winget_export_exit_code": "winget export finished with code {{code}}: some programs may be missing from winget.json",
+    "winget_json_unreadable": "Could not read winget.json, the “winget” column of the program list is empty: {{error}}"
   }
 }

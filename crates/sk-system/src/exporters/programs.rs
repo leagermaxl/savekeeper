@@ -15,7 +15,8 @@ use async_trait::async_trait;
 use sk_core::env::Environment;
 use sk_core::model::{Category, Finding, ScanIssue, Sensitivity};
 
-use self::render::{Lang, Page, Row};
+pub(crate) use self::render::Lang;
+use self::render::{Page, Row};
 use self::winget_ids::WingetIndex;
 use super::{plan_finding, unavailable, warning, winget, write_file, Plan, NOT_WINDOWS};
 use crate::error::ExportError;

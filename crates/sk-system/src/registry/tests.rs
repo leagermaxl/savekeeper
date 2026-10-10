@@ -95,6 +95,7 @@ fn registry_lists_exporters_in_catalogue_order() {
             "printers",
             "disks-info",
             "windows-info",
+            "checklist",
         ]
     );
 }

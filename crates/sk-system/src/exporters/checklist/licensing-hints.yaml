@@ -1,0 +1,248 @@
+# Programs whose license is tied to this computer or to an account (SPEC-06 §4.7).
+#
+# The `checklist` exporter matches `Environment.installed_programs` against this list and
+# adds one checklist item per entry that matched, with the text of `kind`. The list holds
+# no product keys and says nothing about bypassing a license: it only reminds the user to
+# free an activation or to keep what is needed to activate the program again (FR-06-05).
+#
+# Fields:
+#   name       product name shown in the checklist (not translated).
+#   match      patterns of the program name (`DisplayName`); `*` is any text, the whole
+#              name must match, case does not matter.
+#   publisher  patterns of the publisher, an alternative to `match`.
+#   exclude    patterns of program names that never match (free editions, launchers).
+#   kind       what the user does before reinstalling (texts `system.checklist.license.<kind>`):
+#                deactivate    the number of activations is limited: deactivate first;
+#                sign_out      account subscription with a limited number of computers;
+#                account       the license is in the account: know the login;
+#                key           a product key or serial number is needed again;
+#                license_file  the license is a file, named in `file`.
+#   file       license file name (only for `license_file`).
+
+programs:
+  # Graphics, photo and design
+  - name: Adobe Creative Cloud
+    match:
+      - Adobe Creative Cloud
+      - Adobe Photoshop*
+      - Adobe Illustrator*
+      - Adobe InDesign*
+      - Adobe Premiere Pro*
+      - Adobe After Effects*
+      - Adobe Lightroom*
+      - Adobe Audition*
+      - Adobe Animate*
+      - Adobe Dreamweaver*
+      - Adobe Media Encoder*
+    exclude: ["*Elements*"]
+    kind: sign_out
+  # The free Reader of the unified 64-bit installer is listed as "Adobe Acrobat (64-bit)",
+  # the same entry as a paid Acrobat: only names of paid editions match.
+  - name: Adobe Acrobat
+    match:
+      - Adobe Acrobat Pro*
+      - Adobe Acrobat Standard*
+      - Adobe Acrobat DC
+      - Adobe Acrobat 20*
+    exclude: ["*Reader*", "Adobe Acrobat (64-bit)"]
+    kind: sign_out
+  - name: Adobe Photoshop Elements / Premiere Elements
+    match: ["Adobe Photoshop Elements*", "Adobe Premiere Elements*"]
+    kind: sign_out
+  - name: CorelDRAW Graphics Suite
+    match: ["CorelDRAW*"]
+    kind: key
+  - name: Corel PaintShop Pro
+    match: ["Corel PaintShop Pro*", "PaintShop Pro*"]
+    kind: key
+  - name: Affinity
+    match: ["Affinity Photo*", "Affinity Designer*", "Affinity Publisher*"]
+    kind: account
+  - name: Capture One
+    match: ["Capture One*"]
+    kind: deactivate
+  - name: DxO PhotoLab
+    match: ["DxO PhotoLab*"]
+    kind: deactivate
+  - name: ON1 Photo RAW
+    match: ["ON1 Photo RAW*"]
+    kind: deactivate
+  - name: Topaz Labs
+    match:
+      - Topaz Photo AI*
+      - Topaz Video AI*
+      - Topaz Gigapixel AI*
+      - Topaz DeNoise AI*
+      - Topaz Sharpen AI*
+    kind: sign_out
+
+  # Video and screen recording
+  - name: DaVinci Resolve Studio
+    match: ["DaVinci Resolve Studio*"]
+    kind: deactivate
+  - name: VEGAS Pro
+    match: ["VEGAS Pro*"]
+    kind: deactivate
+  - name: TechSmith Camtasia / Snagit
+    match: ["Camtasia*", "TechSmith Camtasia*", "Snagit*", "TechSmith Snagit*"]
+    kind: sign_out
+  - name: Wondershare Filmora
+    match: ["Wondershare Filmora*"]
+    kind: account
+
+  # Music and audio
+  - name: Ableton Live
+    match: ["Ableton Live*"]
+    kind: deactivate
+  - name: FL Studio
+    match: ["FL Studio*"]
+    kind: account
+  - name: Steinberg
+    match:
+      - Cubase*
+      - Steinberg Cubase*
+      - Nuendo*
+      - Steinberg Nuendo*
+      - WaveLab*
+      - Steinberg WaveLab*
+      - Dorico*
+      - Steinberg Dorico*
+    kind: deactivate
+  - name: Bitwig Studio
+    match: ["Bitwig Studio*"]
+    kind: deactivate
+  - name: Reason
+    publisher: ["Reason Studios*", "Propellerhead*"]
+    kind: deactivate
+  - name: Avid Pro Tools
+    match: ["Pro Tools*", "Avid Pro Tools*"]
+    kind: deactivate
+  - name: iLok License Manager
+    match: ["iLok License Manager*"]
+    kind: deactivate
+  - name: Waves
+    match: ["Waves Central*"]
+    kind: deactivate
+  - name: Native Instruments
+    match: ["Native Access*"]
+    kind: account
+  - name: REAPER
+    match: ["REAPER*"]
+    kind: license_file
+    file: reaper-license.rk
+  - name: Guitar Pro
+    match: ["Guitar Pro*"]
+    kind: deactivate
+
+  # Office and documents
+  - name: Microsoft 365
+    match: ["Microsoft 365*", "Microsoft Office 365*"]
+    kind: sign_out
+  - name: Microsoft Office
+    match:
+      - Microsoft Office Professional*
+      - Microsoft Office Standard*
+      - Microsoft Office Home*
+      - Microsoft Office LTSC*
+    kind: key
+  - name: Microsoft Visio
+    match: ["Microsoft Visio*"]
+    kind: key
+  - name: Microsoft Project
+    match: ["Microsoft Project*"]
+    kind: key
+  - name: ABBYY FineReader
+    match: ["ABBYY FineReader*"]
+    kind: deactivate
+  - name: ABBYY Lingvo
+    match: ["ABBYY Lingvo*"]
+    kind: deactivate
+  - name: Foxit PDF Editor
+    match: ["Foxit PDF Editor*", "Foxit PhantomPDF*"]
+    kind: deactivate
+  - name: Nitro PDF Pro
+    match: ["Nitro Pro*", "Nitro PDF Pro*"]
+    kind: deactivate
+  - name: PDF-XChange
+    match: ["PDF-XChange Editor*", "PDF-XChange PRO*"]
+    kind: key
+  - name: 1C:Enterprise
+    match: ["1C:Enterprise*", "1C:Предприятие*", "1С:Предприятие*"]
+    kind: key
+  - name: CryptoPro CSP
+    match: ["CryptoPro CSP*", "КриптоПро CSP*"]
+    kind: key
+
+  # Engineering and development
+  - name: Autodesk
+    match:
+      - AutoCAD*
+      - Autodesk AutoCAD*
+      - Autodesk 3ds Max*
+      - Autodesk Maya*
+      - Autodesk Revit*
+      - Revit*
+      - Autodesk Inventor*
+      - Autodesk Fusion*
+    kind: account
+  - name: SOLIDWORKS
+    match: ["SOLIDWORKS*"]
+    kind: deactivate
+  - name: MATLAB
+    match: ["MATLAB*"]
+    kind: deactivate
+  - name: Rhino
+    match: ["Rhino *", "Rhinoceros*"]
+    kind: account
+  - name: JetBrains IDEs
+    publisher: ["JetBrains*"]
+    exclude: ["*Community*", "JetBrains Toolbox*", "*dotPeek*"]
+    kind: account
+  - name: Visual Studio Professional / Enterprise
+    match: ["Visual Studio Professional*", "Visual Studio Enterprise*"]
+    kind: account
+  - name: Navicat
+    match: ["Navicat*"]
+    kind: deactivate
+  - name: Sublime Text
+    match: ["Sublime Text*"]
+    kind: key
+  - name: Beyond Compare
+    match: ["Beyond Compare*"]
+    kind: key
+
+  # File managers and utilities
+  - name: WinRAR
+    match: ["WinRAR*"]
+    kind: license_file
+    file: rarreg.key
+  - name: Total Commander
+    match: ["Total Commander*"]
+    kind: license_file
+    file: wincmd.key
+  - name: Directory Opus
+    match: ["Directory Opus*"]
+    kind: key
+  - name: Acronis True Image
+    match: ["Acronis True Image*", "Acronis Cyber Protect Home Office*"]
+    kind: sign_out
+
+  # Security
+  - name: ESET
+    match: ["ESET *"]
+    kind: sign_out
+  - name: Kaspersky
+    match: ["Kaspersky*"]
+    exclude: ["*Free*"]
+    kind: sign_out
+  - name: Norton
+    match: ["Norton*"]
+    kind: sign_out
+  - name: Bitdefender
+    match: ["Bitdefender*"]
+    exclude: ["*Free*"]
+    kind: sign_out
+  - name: Dr.Web
+    match: ["Dr.Web*"]
+    kind: license_file
+    file: drweb32.key

@@ -7,5 +7,6 @@
     "install_dir": "Каталог установки игры «{{name}}»: её можно заново установить из $t(games.launcher.{{launcher}})",
     "xbox_wgs": "Сохранения игры Xbox / Microsoft Store из пакета {{package}}",
     "ubisoft_savegames": "Локальные сохранения игр Ubisoft Connect"
-  }
+  },
+  "system_export": "Состояние системы, которое не хранится в обычных файлах: SaveKeeper экспортирует его при бэкапе"
 }

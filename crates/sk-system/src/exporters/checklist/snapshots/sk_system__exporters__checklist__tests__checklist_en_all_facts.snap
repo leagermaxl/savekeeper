@@ -1,0 +1,44 @@
+---
+source: crates/sk-system/src/exporters/checklist/tests.rs
+expression: "render::render(&all_facts(Lang::En))"
+---
+# Checklist before reinstalling Windows
+
+Computer: HOME\_PC. These things are not saved as files: go through the list before reinstalling Windows.
+
+## Accounts and two-factor authentication
+
+- [ ] Passwords, keys or tokens were found on this computer. Make sure you have the backup codes for two-factor authentication (2FA) of your important accounts: without them you may not be able to sign in after reinstalling.
+- [ ] Authenticator apps are installed: Twilio Authy Desktop. If their codes are not synced with a cloud account, move the accounts to another device or save the backup codes: the codes are lost together with the app data.
+- [ ] Turn on sync in your browsers and wait until it finishes. Passwords saved in Chromium-based browsers (Chrome, Edge, Opera, Yandex Browser and others) are encrypted for this Windows user and do not work when copied as files.
+
+## Drive encryption
+
+- [ ] Drives with BitLocker encryption on: C:. Save the recovery key before reinstalling: check whether it is in your Microsoft account at account.microsoft.com/devices/recoverykey; if it is not there, save it from the BitLocker settings (“Back up your recovery key”).
+- [ ] Drives whose BitLocker status could not be read without administrator rights: D:, E:. If a drive is encrypted, save its recovery key: account.microsoft.com/devices/recoverykey.
+
+## Program licenses
+
+These programs have a license tied to this computer or to an account. SaveKeeper does not save license keys: keep the purchase emails. Games bought outside launchers need their keys too.
+
+- [ ] **Ableton Live** (Ableton Live 12 Suite): the number of activations is limited, so deactivate the license in the program or in your account on the vendor's website before reinstalling, then activate it again.
+- [ ] **Adobe Creative Cloud** (Adobe Photoshop 2024): the subscription is tied to your account and works on a limited number of computers, so sign out in the program (or remove this computer in your account) before reinstalling, then sign in again.
+- [ ] **JetBrains IDEs** (PyCharm 2024.2.1): the license is tied to your account; make sure you know the login and password, and sign in again after reinstalling.
+- [ ] **MATLAB** (MATLAB R2024a): the number of activations is limited, so deactivate the license in the program or in your account on the vendor's website before reinstalling, then activate it again.
+- [ ] **Microsoft 365** (Microsoft 365 Apps for business - en-us): the subscription is tied to your account and works on a limited number of computers, so sign out in the program (or remove this computer in your account) before reinstalling, then sign in again.
+- [ ] **WinRAR** (WinRAR 7.01 (64-bit)): the license is the file rarreg.key (in the program folder or its settings folder); keep a copy of it or the purchase email.
+
+## Windows activation
+
+- [ ] Windows is activated. After reinstalling the same edition on this computer, it activates again by itself through the digital license. Linking the license to your Microsoft account (in the activation settings) helps to activate it again after a hardware change.
+- [ ] The computer's firmware holds the manufacturer's Windows product key: the same edition of Windows activates automatically, you do not need to enter the key.
+
+## Data that was not saved completely
+
+- [ ] Git repositories with unpushed changes: 2. Push them to the server or make sure their findings are selected for the backup.
+- [ ] Files that are only in the cloud (OneDrive and others) and were not copied: 15. Make sure they are synced and available online.
+
+## Drivers and programs
+
+- [ ] Drivers were not exported (this needs administrator rights). Download the network adapter driver (Wi-Fi or Ethernet) for the new system in advance, so that you can get online after reinstalling.
+- [ ] The program list for winget was not saved (winget is missing or the export was not selected). Reinstall the programs by hand from programs.html; on the new system winget comes with App Installer from Microsoft Store.

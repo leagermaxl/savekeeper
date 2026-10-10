@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-backup` (оркестрация — `sk-engine::BackupJob`) |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03, SPEC-06, SPEC-09 |
 | Используется в | SPEC-11, SPEC-13, SPEC-14 |
-| Последнее изменение | 2026-10-10 (FR-10-15: cloud-only файлы не открываются и не скачиваются); 2026-10-10 (имя файла экспорта winget — `winget.json`, как в SPEC-06 §4.3); 2026-10-01 (пример `environment` в манифесте по SPEC-02 §6; закрыт вопрос по `EnvironmentSnapshot`) |
+| Последнее изменение | 2026-10-10 (T-10-09: `params` экспортёра `checklist` из находок — SPEC-06 §4.7); 2026-10-10 (FR-10-15: cloud-only файлы не открываются и не скачиваются); 2026-10-10 (имя файла экспорта winget — `winget.json`, как в SPEC-06 §4.3); 2026-10-01 (пример `environment` в манифесте по SPEC-02 §6; закрыт вопрос по `EnvironmentSnapshot`) |
 
 ## 1. Цель
 
@@ -384,7 +384,7 @@ pub struct LockingProcess { pub pid: u32, pub name: String, pub app_name: String
 - [ ] **T-10-06** — Restart Manager `find_lockers` (`sk-backup::win::rm`) + заглушка для не-Windows. *Готово, когда:* Windows-тест с блокирующим дочерним процессом.
 - [ ] **T-10-07** — Фаза файлов: ленивое перечисление через `FsScanner::walk` (SPEC-03), порядок по категории и score, дедуп, проверка отмены, `entries.jsonl`. *Зависит:* T-10-05, SPEC-03 T-03-xx (walk).
 - [ ] **T-10-08** — Фаза реестра: `reg.exe export` + `write_reg_values` для нерекурсивного случая. *Готово, когда:* Windows-тест.
-- [ ] **T-10-09** — Фаза экспортов через `ExportRunner`, обработка `requires_elevation` (вызов хелпера SPEC-14 через колбэк `ElevationBroker`). *Зависит:* SPEC-06 §4.1, SPEC-14 T-14-05.
+- [ ] **T-10-09** — Фаза экспортов через `ExportRunner`, обработка `requires_elevation` (вызов хелпера SPEC-14 через колбэк `ElevationBroker`). Перед `checklist` (выполняется последним) заполняет его `params` по выбранным находкам (SPEC-06 §4.7): `credentials`, `browsers`, `unpushed_repos`, `cloud_only_files`. *Зависит:* SPEC-06 §4.1, SPEC-14 T-14-05.
 - [ ] **T-10-10** — `BackupSession`: `begin/retry_locked/finalize/abort`, атомарность `.partial` → rename, суффиксы имён, `StalePartial`. *Зависит:* T-10-07..09.
 - [ ] **T-10-11** — Верификация (повторное чтение zip/dir, сравнение blake3). *Зависит:* T-10-10.
 - [ ] **T-10-12** — Шифрование age (потоковое) + файл-инструкция рядом. *Зависит:* T-10-11.
