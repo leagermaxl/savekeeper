@@ -6,6 +6,7 @@
 //! each seeing the paths claimed so far (SPEC-07 §4.1).
 
 mod collector;
+mod data;
 mod heuristic;
 
 pub use collector::HeuristicsCollector;

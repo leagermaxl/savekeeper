@@ -1,0 +1,53 @@
+# Vendor containers (SPEC-07 §4.2.2).
+#
+# When a top-level folder of a search zone (`{APPDATA}`, `{LOCALAPPDATA}` ...) has one of
+# these names, its child folders become the H-UNK candidates instead of the folder itself.
+# One name per line, compared without regard to case; `#` starts a comment line.
+# Duplicates (also by case) and path separators are rejected when the list is loaded.
+
+# Named in SPEC-07 §4.2.2
+Microsoft
+Google
+Adobe
+JetBrains
+Mozilla
+Autodesk
+NVIDIA Corporation
+Packages
+Programs
+Ubisoft
+EpicGamesLauncher
+
+# Software vendors with several products under one folder
+AMD
+Apple
+Apple Computer
+Bentley
+Corel
+Dassault Systemes
+Embarcadero
+Intel
+Native Instruments
+NVIDIA
+Oracle
+Steinberg
+Unity
+Unity Technologies
+VMware
+Yandex
+
+# Hardware vendors (utilities and drivers)
+ASUS
+Corsair
+Dell
+HP
+Lenovo
+Logitech
+Razer
+Realtek
+Samsung
+
+# Game publishers
+Blizzard Entertainment
+Electronic Arts
+Riot Games

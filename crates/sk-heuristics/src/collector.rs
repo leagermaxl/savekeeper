@@ -1,5 +1,6 @@
 //! `HeuristicsCollector`: the `heuristics` post-collector (SPEC-07 §4.1).
 
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -7,9 +8,10 @@ use sk_core::collector::{CollectContext, CollectOutput, PostCollector, PriorResu
 use sk_core::config::{HeuristicToggles, HeuristicsConfig};
 use sk_core::error::CollectorError;
 use sk_core::events::{Event, ScanPhase, ThrottledSink};
-use sk_core::model::{Finding, FolderSummary};
+use sk_core::model::{Finding, FolderSummary, IssueSeverity, ScanIssue};
 use sk_core::path::PathSet;
 
+use crate::data::{self, DataError};
 use crate::heuristic::{Heuristic, HeuristicContext};
 
 #[cfg(test)]
@@ -118,6 +120,10 @@ pub(crate) fn run(
     };
     let prior_count = findings.len();
     let mut collected = Collected::default();
+    // The built-in data is parsed and validated once, when the first scan starts.
+    if let Err(err) = data::builtin() {
+        collected.output.issues.push(data_issue(err));
+    }
     for heuristic in heuristics.iter().filter(|h| enabled(&cfg.enabled, h.id())) {
         if ctx.cancel.is_cancelled() {
             break;
@@ -140,6 +146,18 @@ pub(crate) fn run(
     }
     collected.output.findings = findings.split_off(prior_count);
     collected
+}
+
+/// The issue `heuristic.data_invalid` for broken built-in data (`vendors.txt`,
+/// `extensions.yaml`); the heuristics still run, without that data.
+pub(crate) fn data_issue(err: &DataError) -> ScanIssue {
+    ScanIssue {
+        severity: IssueSeverity::Error,
+        source: COLLECTOR_ID.to_owned(),
+        path: None,
+        message_key: "heuristic.data_invalid".to_owned(),
+        message_args: BTreeMap::from([("error".to_owned(), err.to_string())]),
+    }
 }
 
 /// Position of the heuristic `id` in [`ORDER`]; unknown ids go last.

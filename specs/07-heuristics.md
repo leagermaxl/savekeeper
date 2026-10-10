@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-heuristics` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03, SPEC-04, SPEC-05 |
 | Используется в | SPEC-08, SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-01 (`HeuristicsConfig` — в `sk-core::config`) |
+| Последнее изменение | 2026-10-10 (T-07-02: форматы `vendors.txt` §4.2.2 и `extensions.yaml` §4.3.2, issue `heuristic.data_invalid` §5); 2026-10-01 (`HeuristicsConfig` — в `sk-core::config`) |
 
 ## 1. Цель
 
@@ -136,6 +136,8 @@ Electron-профиль не станет `Unknown`. `h-git` и `h-usr` деля
 файл `crates/sk-heuristics/data/vendors.txt`), кандидатами становятся её дочерние папки.
 Глубина при этом увеличивается на 1.
 
+Формат `vendors.txt`: одно имя на строку, `#` начинает комментарий, пустые строки пропускаются; сравнение без учёта регистра, дубли и разделители пути запрещены.
+
 #### 4.2.3 UWP / Microsoft Store (`{LOCALAPPDATA}\Packages\<PFN>`)
 Для каждого пакета берутся только `LocalState`, `RoamingState`, `Settings`, `SystemAppData\wgs`
 (сохранения Xbox/Game Pass). `LocalCache`, `TempState`, `AC` отправляются в exclude.
@@ -180,7 +182,7 @@ for zone in zones:
 
 #### 4.3.2 Таблица расширений → вид контента
 
-Файл `crates/sk-heuristics/data/extensions.yaml`, встраивается в бинарник.
+Файл `crates/sk-heuristics/data/extensions.yaml`, встраивается в бинарник. Формат: `groups: [{ kind, category, weight, extensions }]` — `kind` (`ContentKind`) и `category` (`Category`) в snake_case, `weight` ∈ [−1, 1], `extensions` — строчные, без точки (`[a-z0-9_-]+`). Каждый `ContentKind` ровно один раз, расширение — не более чем в одной группе. Валидация при старте; данные проверяются тестами T-07-02.
 
 | Группа (`ContentKind`) | Расширения (фрагмент) | Категория | Вес |
 |---|---|---|---|
@@ -363,6 +365,7 @@ fn make_finding(root: &Path, v: &MarkerVerdict, s: &FolderSummary, h: &'static s
 | `.git` — файл (worktree / submodule gitlink) | Анализ через gix по gitdir. Если gitdir вне обхода, всё равно открываем. |
 | Отмена | Эвристики проверяют токен на каждом кандидате / каждые 1000 записей обхода, возвращают частичный `HeuristicOutput`, пайплайн отдаёт `Cancelled`. |
 | Кандидат уже в `claimed` частично (правило взяло `Foo\config`) | Находка на остаток с `exclude` (§4.2.4), если остаток ≥ 10% или ≥ 1 МБ. Иначе пропуск. |
+| Встроенные `vendors.txt`/`extensions.yaml` не прошли валидацию (сломанная сборка, исключается тестами T-07-02) | `ScanIssue::Error heuristic.data_invalid {error}`, source `heuristics`; эвристики работают без этих данных. |
 | Имя папки — GUID/хэш (`{3F2504E0-...}`, `a8f3c9...`) | Title получает суффикс `(неизвестно)`, confidence понижается на 0.1. Кандидат для LLM. |
 
 ## 6. Тестирование
@@ -381,7 +384,7 @@ fn make_finding(root: &Path, v: &MarkerVerdict, s: &FolderSummary, h: &'static s
 ## 7. Задачи
 
 - [x] **T-07-01** — Каркас `sk-heuristics`: `HeuristicsCollector`, трейт `Heuristic`, `HeuristicContext`, порядок выполнения и накопление `claimed`, реэкспорт `HeuristicsConfig` (тип и дефолты §4.9 реализуются в SPEC-01 T-01-04). *Зависит:* T-01-03, T-01-04. *Готово, когда:* коллектор с пустыми эвристиками встроен в `ScanPipeline` и проходит интеграционный тест.
-- [ ] **T-07-02** — Данные: `vendors.txt`, `extensions.yaml` + загрузчик (include_bytes, валидация при старте). *Готово, когда:* unit-тест: все группы парсятся, нет дублей расширений.
+- [x] **T-07-02** — Данные: `vendors.txt`, `extensions.yaml` + загрузчик (include_bytes, валидация при старте). *Готово, когда:* unit-тест: все группы парсятся, нет дублей расширений.
 - [ ] **T-07-03** — `junk_verdict` (§4.5). *Зависит:* T-07-01. *Готово, когда:* тесты §6.
 - [ ] **T-07-04** — `classify_by_markers` (§4.7) с конфигурируемыми порогами. *Зависит:* T-07-03, T-02-07. *Готово, когда:* таблица ≥ 25 кейсов зелёная.
 - [ ] **T-07-05** — H-UNK: зоны, вендоры, UWP, частичное покрытие, `make_finding`, сбор `unknown`. *Зависит:* T-07-04, SPEC-03 `summarize`. *Готово, когда:* тесты H-UNK + FR-07-02 на фикстуре.

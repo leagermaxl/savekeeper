@@ -2870,8 +2870,11 @@ name = "sk-heuristics"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "serde",
+ "serde-saphyr",
  "sk-core",
  "sk-scan",
+ "thiserror",
  "tokio",
 ]
 

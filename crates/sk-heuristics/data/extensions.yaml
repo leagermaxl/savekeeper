@@ -1,0 +1,82 @@
+# File extensions by content kind (SPEC-07 §4.3.2), used by H-USR to weigh folders.
+#
+# Every content kind appears exactly once; an extension belongs to one group only.
+# Extensions are lowercase, without the leading dot. Extensions not listed weigh 0.
+# `category` is a `Category` of SPEC-02 §2.3, `weight` lies in [-1, 1].
+
+groups:
+  - kind: document
+    category: user_files
+    weight: 1.0
+    extensions: [doc, docx, docm, dotx, odt, rtf, pdf, txt, md, tex, xls, xlsx, xlsm, xlsb, ods,
+                 csv, ppt, pptx, pptm, odp, odg, one, epub, fb2, mobi, azw3, djvu, xps, vsdx,
+                 pages, numbers]
+
+  - kind: photo
+    category: user_files
+    weight: 0.6
+    extensions: [jpg, jpeg, jfif, png, heic, heif, avif, webp, gif, tif, tiff, bmp]
+
+  - kind: photo_raw
+    category: user_files
+    weight: 1.0
+    extensions: [cr2, cr3, crw, nef, nrw, arw, sr2, srf, dng, orf, rw2, raf, srw, pef, 3fr, iiq,
+                 x3f, rwl, kdc, mrw, erf]
+
+  - kind: video
+    category: user_files
+    weight: 0.4
+    extensions: [mp4, m4v, mov, mkv, avi, wmv, webm, m2ts, mts, mpg, mpeg, vob, 3gp, flv]
+
+  - kind: audio
+    category: user_files
+    weight: 0.4
+    extensions: [mp3, flac, wav, m4a, ogg, opus, aac, wma, ape, aiff, aif]
+
+  - kind: creative_project
+    category: user_files
+    weight: 1.0
+    extensions: [psd, psb, kra, xcf, clip, ai, indd, afphoto, afdesign, blend, c4d, max, ma, mb,
+                 ztl, spp, sbs, aep, prproj, drp, veg, fcpbundle, cdr, sketch, xd, dwg, skp, hip]
+
+  - kind: audio_project
+    category: user_files
+    weight: 1.0
+    extensions: [flp, als, ptx, ptf, cpr, npr, rpp, logicx, song, aup3, cwp, band, sesx, mmpz,
+                 dawproject]
+
+  - kind: dev_project
+    category: dev_environment
+    weight: 0.9
+    extensions: [sln, csproj, vcxproj, fsproj, vbproj, uproject, unity, godot, code-workspace]
+
+  - kind: code
+    category: dev_environment
+    weight: 0.5
+    extensions: [rs, py, js, jsx, ts, tsx, vue, cs, cpp, cc, cxx, c, h, hpp, go, java, kt, scala,
+                 swift, lua, gd, rb, php, dart, zig, hs, sh, ps1, sql]
+
+  - kind: credentials
+    category: credentials
+    weight: 1.0
+    extensions: [kdbx, kdb, psafe3, 1pux, pfx, p12, jks, keystore, pem, key, ppk, gpg, asc, ovpn]
+
+  - kind: ebook_mail
+    category: user_files
+    weight: 0.9
+    extensions: [pst, ost, mbox, eml, emlx, msg]
+
+  - kind: archive
+    category: user_files
+    weight: 0.2
+    extensions: [zip, 7z, rar, tar, gz, tgz, bz2, xz, zst]
+
+  - kind: vm_disk
+    category: user_files
+    weight: 0.3
+    extensions: [vhd, vhdx, vmdk, vdi, qcow2, ova, hdd]
+
+  - kind: binary
+    category: reinstallable
+    weight: -1.0
+    extensions: [exe, dll, msi, msp, msix, appx, sys, cab, ocx]
