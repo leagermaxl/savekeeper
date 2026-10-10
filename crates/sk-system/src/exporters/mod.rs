@@ -2,15 +2,19 @@
 //!
 //! Each exporter lives in its own module and is listed by [`all`] in catalogue order.
 
+mod disks_info;
+mod drivers;
 mod env_vars;
 mod fonts;
 mod hosts;
 mod partial;
 mod powershell_modules;
+mod printers;
 mod programs;
 mod registry_user;
 mod scheduled_tasks;
 mod wifi;
+mod windows_info;
 mod winget;
 
 #[cfg(test)]
@@ -32,14 +36,18 @@ use sk_core::model::{
 use crate::cmd::CmdOutput;
 use crate::exporter::{Availability, ExportedFile, SystemExporter};
 
+pub(crate) use disks_info::DisksInfoExporter;
+pub(crate) use drivers::DriversExporter;
 pub(crate) use env_vars::EnvVarsExporter;
 pub(crate) use fonts::FontsExporter;
 pub(crate) use hosts::HostsExporter;
 pub(crate) use powershell_modules::PowershellModulesExporter;
+pub(crate) use printers::PrintersExporter;
 pub(crate) use programs::ProgramsExporter;
 pub(crate) use registry_user::RegistryUserExporter;
 pub(crate) use scheduled_tasks::ScheduledTasksExporter;
 pub(crate) use wifi::WifiExporter;
+pub(crate) use windows_info::WindowsInfoExporter;
 pub(crate) use winget::WingetExporter;
 
 /// `reason_key` of every exporter outside Windows (SPEC-06 §5).
@@ -70,12 +78,16 @@ pub(crate) fn all() -> Vec<Arc<dyn SystemExporter>> {
         Arc::new(WingetExporter::new()),
         Arc::new(ProgramsExporter),
         Arc::new(WifiExporter::new()),
+        Arc::new(DriversExporter::new()),
         Arc::new(RegistryUserExporter::new()),
         Arc::new(EnvVarsExporter::new()),
         Arc::new(FontsExporter::new()),
         Arc::new(HostsExporter),
         Arc::new(ScheduledTasksExporter::new()),
         Arc::new(PowershellModulesExporter::new()),
+        Arc::new(PrintersExporter::new()),
+        Arc::new(DisksInfoExporter::new()),
+        Arc::new(WindowsInfoExporter::new()),
     ]
 }
 

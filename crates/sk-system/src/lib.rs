@@ -20,6 +20,7 @@ mod exporters;
 mod installed;
 mod reg_export;
 mod registry;
+mod wql;
 
 pub use cmd::{Cmd, CmdOutput, OutputEncoding, DEFAULT_TIMEOUT, OUTPUT_LIMIT};
 pub use collector::SystemCollector;

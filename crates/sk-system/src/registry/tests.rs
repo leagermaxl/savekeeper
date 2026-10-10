@@ -85,12 +85,16 @@ fn registry_lists_exporters_in_catalogue_order() {
             "winget",
             "programs",
             "wifi",
+            "drivers",
             "registry-user",
             "env-vars",
             "fonts",
             "hosts",
             "scheduled-tasks",
             "powershell-modules",
+            "printers",
+            "disks-info",
+            "windows-info",
         ]
     );
 }

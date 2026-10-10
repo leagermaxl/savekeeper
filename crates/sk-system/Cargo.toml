@@ -25,6 +25,10 @@ tokio = { workspace = true, features = ["io-util", "macros", "process", "rt", "t
 # `Cmd` logs the command, exit code and time (SPEC-06 §4.6).
 tracing.workspace = true
 
+[target.'cfg(windows)'.dependencies]
+# WMI: `Win32_Printer`, `Win32_EncryptableVolume`, `SoftwareLicensingProduct` (SPEC-06 §4.3, T-06-09).
+wmi.workspace = true
+
 [dev-dependencies]
 # Target folders of exporter tests, created under `target/tmp` (not the system temp dir).
 tempfile.workspace = true

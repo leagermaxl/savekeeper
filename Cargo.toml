@@ -67,6 +67,9 @@ uuid = "1"
 zstd = "0.14"
 windows = "0.62"
 winreg = "0.56"
+# WMI queries of sk-system exporters `printers`, `disks-info`, `windows-info` (SPEC-06 T-06-09);
+# no `chrono`: dates are not read. Its `windows` range (>=0.59, <0.63) unifies with `windows` above.
+wmi = { version = "0.18", default-features = false }
 
 # Test-only
 assert_cmd = "2"
