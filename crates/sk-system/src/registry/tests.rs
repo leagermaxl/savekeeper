@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use sk_core::config::SystemConfig;
 use sk_core::env::Environment;
 use sk_core::model::Finding;
 use sk_core::CancellationToken;
@@ -122,6 +123,7 @@ async fn exporter_runs_through_trait_object() {
         cancel: &cancel,
         events: &events,
         elevated: false,
+        config: &SystemConfig::default(),
     };
     let Some(exp) = find(fakes(), "hosts") else {
         panic!("fake exporter not found");

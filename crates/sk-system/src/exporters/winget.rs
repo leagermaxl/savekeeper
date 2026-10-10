@@ -44,9 +44,6 @@ const MIN_VERSION: (u32, u32) = (1, 4);
 /// start of the App Installer alias can take longer).
 const VERSION_TIMEOUT: Duration = Duration::from_secs(2);
 
-/// Default timeout of `winget export` (SPEC-06 §4.3, `system.winget_timeout_s`).
-const EXPORT_TIMEOUT: Duration = Duration::from_secs(180);
-
 /// Size estimate of `winget.json`: fixed part plus a part per installed program.
 const ESTIMATE_BASE_BYTES: u64 = 512;
 const ESTIMATE_BYTES_PER_PROGRAM: u64 = 120;
@@ -54,17 +51,15 @@ const ESTIMATE_BYTES_PER_PROGRAM: u64 = 120;
 /// `winget export` into `winget.json`.
 pub(crate) struct WingetExporter {
     runner: Arc<dyn CmdRunner>,
-    timeout: Duration,
     /// `PATH` to search for `winget.exe`; `None` means the `PATH` of this process.
     path_var: Option<OsString>,
 }
 
 impl WingetExporter {
-    /// The exporter with real processes and the default timeout.
+    /// The exporter with real processes.
     pub(crate) fn new() -> Self {
         Self {
             runner: Arc::new(SystemCmdRunner),
-            timeout: EXPORT_TIMEOUT,
             path_var: None,
         }
     }
@@ -74,7 +69,6 @@ impl WingetExporter {
     pub(crate) fn with_runner(runner: Arc<dyn CmdRunner>, path_var: &str) -> Self {
         Self {
             runner,
-            timeout: EXPORT_TIMEOUT,
             path_var: Some(path_var.into()),
         }
     }
@@ -160,7 +154,8 @@ impl SystemExporter for WingetExporter {
     }
 
     /// Runs `winget export -o <target_dir>\winget.json --include-versions
-    /// --accept-source-agreements --disable-interactivity`.
+    /// --accept-source-agreements --disable-interactivity` with the timeout
+    /// `ctx.config.winget_timeout_s` (`system.winget_timeout_s`, SPEC-06 §4.3).
     ///
     /// A written, non-empty `winget.json` is a success, even with a non-zero exit code
     /// (then with a warning): winget skips packages that are not available from any
@@ -185,7 +180,7 @@ impl SystemExporter for WingetExporter {
         ];
         let cmd = Cmd::new(program)
             .args(args)
-            .timeout(self.timeout)
+            .timeout(export_timeout(ctx))
             .encoding(OutputEncoding::Utf8);
         let output = self.runner.run(cmd, ctx.cancel).await?;
 
@@ -209,6 +204,11 @@ impl SystemExporter for WingetExporter {
             restore_hint: restore_hint(),
         })
     }
+}
+
+/// Timeout of `winget export` from the configuration (`system.winget_timeout_s`).
+fn export_timeout(ctx: &ExportContext<'_>) -> Duration {
+    Duration::from_secs(u64::from(ctx.config.winget_timeout_s))
 }
 
 /// `winget import` of the export (SPEC-13 FR-13-10); the file path is relative to the

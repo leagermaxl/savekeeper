@@ -32,3 +32,5 @@ pub use exporter::{
 pub use installed::{enrich, enrich_with_registry};
 pub use reg_export::export_registry;
 pub use registry::{exporter, registry};
+/// The `system` configuration section (SPEC-01 §4.8.2), defined in `sk-core`.
+pub use sk_core::config::SystemConfig;

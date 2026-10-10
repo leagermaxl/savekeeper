@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use sk_core::config::SystemConfig;
 use sk_core::model::{AppKind, EvidenceSource, Target};
 use sk_core::CancellationToken;
 
@@ -288,6 +289,7 @@ async fn without_copy_files_only_the_list_is_written() {
         cancel: &cancel,
         events: &events,
         elevated: false,
+        config: &SystemConfig::default(),
     };
     let result = PowershellModulesExporter::new()
         .run(&ctx, &json!({ "copy_files": false }))

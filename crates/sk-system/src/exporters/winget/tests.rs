@@ -1,13 +1,14 @@
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
+use sk_core::config::SystemConfig;
 use sk_core::env::{Environment, KnownFolder};
 use sk_core::model::{AppKind, Category, EvidenceSource, FindingId, Sensitivity, Target};
 use sk_core::CancellationToken;
 
 use super::*;
 use crate::cmd::{CmdOutput, FakeCmdRunner};
-use crate::exporters::test_util::{files_under, run_export, temp_dir};
+use crate::exporters::test_util::{files_under, run_export, run_export_with_config, temp_dir};
 
 /// A fake machine under `root` with `winget.exe` in `{LOCALAPPDATA}\Microsoft\WindowsApps`.
 fn env_with_winget(root: &Path) -> Environment {
@@ -330,6 +331,37 @@ async fn timeout_and_cancellation_are_passed_on() {
     let result = run_export(&exporter, &env, &target, &cancel).await;
     assert!(matches!(result, Err(ExportError::Cancelled)), "{result:?}");
     assert!(!target.join(EXPORT_FILE).exists());
+}
+
+#[tokio::test]
+async fn export_timeout_comes_from_config() {
+    let dir = temp_dir();
+    let env = env_with_winget(dir.path());
+    let target = dir.path().join("out");
+    let seen = Arc::new(Mutex::new(Vec::new()));
+    let runner = {
+        let seen = Arc::clone(&seen);
+        FakeCmdRunner::new().on(EXE, move |cmd| {
+            seen.lock().unwrap().push(cmd.get_timeout());
+            Err(ExportError::Timeout)
+        })
+    };
+    let (exporter, _) = exporter(runner);
+
+    let config = SystemConfig {
+        winget_timeout_s: 7,
+        ..SystemConfig::default()
+    };
+    let cancel = CancellationToken::new();
+    let result = run_export_with_config(&exporter, &env, &target, &cancel, &config).await;
+    assert!(matches!(result, Err(ExportError::Timeout)), "{result:?}");
+    let result = run_export(&exporter, &env, &target, &cancel).await;
+    assert!(matches!(result, Err(ExportError::Timeout)), "{result:?}");
+
+    assert_eq!(
+        *seen.lock().unwrap(),
+        [Duration::from_secs(7), Duration::from_secs(180)]
+    );
 }
 
 /// Manual run on a machine with winget (SPEC-06 §6): detection only.

@@ -131,6 +131,12 @@ impl Cmd {
         &self.args
     }
 
+    /// The timeout of the process (fake runners in tests check it).
+    #[cfg(test)]
+    pub(crate) fn get_timeout(&self) -> Duration {
+        self.timeout
+    }
+
     /// Runs the command to completion and collects its output.
     ///
     /// A non-zero exit code is not an error: it is returned in [`CmdOutput::code`].

@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use sk_core::config::SystemConfig;
 use sk_core::env::{Environment, KnownFolder};
 use sk_core::model::{AppKind, Category, EvidenceSource, FindingId, Sensitivity, Target};
 use sk_core::CancellationToken;
@@ -109,6 +110,7 @@ async fn run_with(
         cancel,
         events: &events,
         elevated: false,
+        config: &SystemConfig::default(),
     };
     exporter.run(&ctx, &params).await
 }

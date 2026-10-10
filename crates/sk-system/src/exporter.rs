@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use async_trait::async_trait;
+use sk_core::config::SystemConfig;
 use sk_core::env::Environment;
 use sk_core::events::EventSink;
 use sk_core::model::{Finding, ScanIssue};
@@ -87,6 +88,9 @@ pub struct ExportContext<'a> {
     pub events: &'a EventSink,
     /// Whether the exporter runs inside the elevated helper (SPEC-14).
     pub elevated: bool,
+    /// The `system` section of the configuration (SPEC-01 §4.8.2), e.g. the timeout of
+    /// `winget export` (`winget_timeout_s`).
+    pub config: &'a SystemConfig,
 }
 
 /// Successful result of [`SystemExporter::run`].

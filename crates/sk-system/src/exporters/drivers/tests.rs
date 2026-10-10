@@ -1,6 +1,7 @@
 //! Tests of the `drivers` exporter on a fake `pnputil`. No test starts the real
 //! `pnputil /export-driver` (it needs administrator rights).
 
+use sk_core::config::SystemConfig;
 use sk_core::CancellationToken;
 
 use super::*;
@@ -56,6 +57,7 @@ async fn run(
         cancel,
         events: &events,
         elevated,
+        config: &SystemConfig::default(),
     };
     exporter.run(&ctx, &default_params()).await
 }

@@ -3,6 +3,7 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
+use sk_core::config::SystemConfig;
 use sk_core::env::Environment;
 use sk_core::model::{AppKind, Category, EvidenceSource, FindingId, Sensitivity, Target};
 use sk_core::CancellationToken;
@@ -23,12 +24,25 @@ pub(crate) fn temp_dir() -> TempDir {
         .unwrap()
 }
 
-/// Runs `exporter` into `target_dir` with empty parameters.
+/// Runs `exporter` into `target_dir` with empty parameters and the default `system`
+/// configuration.
 pub(crate) async fn run_export(
     exporter: &dyn SystemExporter,
     env: &Environment,
     target_dir: &Path,
     cancel: &CancellationToken,
+) -> Result<ExportResult, ExportError> {
+    run_export_with_config(exporter, env, target_dir, cancel, &SystemConfig::default()).await
+}
+
+/// Runs `exporter` into `target_dir` with empty parameters and the `system`
+/// configuration `config`.
+pub(crate) async fn run_export_with_config(
+    exporter: &dyn SystemExporter,
+    env: &Environment,
+    target_dir: &Path,
+    cancel: &CancellationToken,
+    config: &SystemConfig,
 ) -> Result<ExportResult, ExportError> {
     let (events, _rx) = tokio::sync::mpsc::unbounded_channel();
     let ctx = ExportContext {
@@ -37,6 +51,7 @@ pub(crate) async fn run_export(
         cancel,
         events: &events,
         elevated: false,
+        config,
     };
     exporter.run(&ctx, &serde_json::json!({})).await
 }
