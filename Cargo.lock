@@ -2827,6 +2827,7 @@ dependencies = [
  "serde_json",
  "sk-core",
  "sk-games",
+ "sk-heuristics",
  "sk-rules",
  "sk-scan",
  "sk-system",
@@ -2867,6 +2868,12 @@ dependencies = [
 [[package]]
 name = "sk-heuristics"
 version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "sk-core",
+ "sk-scan",
+ "tokio",
+]
 
 [[package]]
 name = "sk-llm"

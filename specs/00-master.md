@@ -98,7 +98,7 @@
 | SPEC-04 | [04-rules-engine.md](04-rules-engine.md) | Правила известных мест (YAML) + встроенная база | P1 | `sk-rules` | in-progress |
 | SPEC-05 | [05-games.md](05-games.md) | Сохранения игр: манифест Ludusavi, лаунчеры | P1 | `sk-games` | in-progress |
 | SPEC-06 | [06-system-export.md](06-system-export.md) | winget, реестр, Wi-Fi, драйверы, прочие системные экспорты | P1 | `sk-system` | in-progress |
-| SPEC-07 | [07-heuristics.md](07-heuristics.md) | Неизвестные папки, git-репозитории, пользовательские файлы, отсев мусора | P2 | `sk-heuristics` | approved |
+| SPEC-07 | [07-heuristics.md](07-heuristics.md) | Неизвестные папки, git-репозитории, пользовательские файлы, отсев мусора | P2 | `sk-heuristics` | in-progress |
 | SPEC-08 | [08-llm-classifier.md](08-llm-classifier.md) | Абстракция LLM, провайдеры, промпт, приватность, кэш | P2 | `sk-llm` | approved |
 | SPEC-09 | [09-scoring.md](09-scoring.md) | Оценка важности, выбор по умолчанию, слияние находок | P2 | `sk-score` | approved |
 | SPEC-10 | [10-backup.md](10-backup.md) | Запись бэкапа, манифест, отчёт, шифрование, верификация | P3 | `sk-backup` | approved |

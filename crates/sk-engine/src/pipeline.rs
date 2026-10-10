@@ -3,6 +3,7 @@
 mod builtin;
 mod environment;
 mod games;
+mod heuristics;
 mod system;
 
 use std::collections::{BTreeMap, HashMap};
@@ -53,6 +54,8 @@ pub struct ScanOptions {
 pub struct ScanPipeline {
     config: Arc<Config>,
     collectors: Vec<Arc<dyn Collector>>,
+    /// The built-in `heuristics` post-collector; `None` once replaced.
+    heuristics: Option<Arc<dyn PostCollector>>,
     post_collectors: Vec<Arc<dyn PostCollector>>,
     /// `None`: `RealFs` for the environment of each run.
     scanner: Option<Arc<dyn FsScanner>>,
@@ -73,10 +76,11 @@ pub struct ScanPipeline {
 impl ScanPipeline {
     /// A pipeline with the built-in collectors for `config`: `rules`
     /// (SPEC-04), with the built-in rules only until [`Self::with_rules_dir`],
-    /// `system` (SPEC-06), and `games` (SPEC-05) once [`Self::with_data_dir`]
-    /// is called.
+    /// `system` (SPEC-06), `games` (SPEC-05) once [`Self::with_data_dir`]
+    /// is called, and the `heuristics` post-collector (SPEC-07).
     pub fn new(config: Arc<Config>) -> Self {
         Self {
+            heuristics: heuristics::builtin(&config),
             config,
             collectors: Vec::new(),
             post_collectors: Vec::new(),
@@ -89,12 +93,6 @@ impl ScanPipeline {
             system: BuiltinSystem::default(),
             app_version: env!("CARGO_PKG_VERSION").to_owned(),
         }
-    }
-
-    /// Adds a post-collector.
-    pub fn with_post_collector(mut self, collector: Arc<dyn PostCollector>) -> Self {
-        self.post_collectors.push(collector);
-        self
     }
 
     /// Replaces the file system scanner.
@@ -243,8 +241,7 @@ impl ScanPipeline {
         let mut claimed = acc.claimed.clone();
         let mut outcomes = Vec::new();
         for collector in self
-            .post_collectors
-            .iter()
+            .all_post_collectors()
             .filter(|c| enabled(toggles, c.id()))
         {
             let collector = Arc::clone(collector);
