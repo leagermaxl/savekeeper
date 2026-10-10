@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-restore` (оркестрация — `sk-engine::RestoreJob`), экран в `app/` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-06, SPEC-10, SPEC-11, SPEC-14 |
 | Используется в | — |
-| Последнее изменение | 2026-10-10 (FR-13-10: файл `winget.json`, как в SPEC-06 §4.3); 2026-10-03 (T-04-05: §4.2 — шаблон содержит конкретный id3 Steam); 2026-10-01 (закрыт вопрос по `environment.drives`: SPEC-02 §6) |
+| Последнее изменение | 2026-10-10 (§4.5, FR-13-11: профили Wi-Fi без `<sharedKey>`, если ключи не выгружались — SPEC-06 T-06-07); 2026-10-10 (FR-13-10: файл `winget.json`, как в SPEC-06 §4.3); 2026-10-03 (T-04-05: §4.2 — шаблон содержит конкретный id3 Steam); 2026-10-01 (закрыт вопрос по `environment.drives`: SPEC-02 §6) |
 
 ## 1. Цель
 
@@ -144,7 +144,7 @@ pub async fn rollback_files(log: &RestoreLog, events: EventSink, cancel: Cancell
 
 ### 4.5 Программы, Wi-Fi, драйверы
 - **winget:** проверка наличия `winget` (`winget --version`). Если нет, подсказка установить «App Installer» из Microsoft Store, путь отображается текстом. Фильтрация JSON по выбранным `PackageIdentifier`. Прогресс строится по stdout (`Found`, `Successfully installed`), парсинг best-effort. Итог по каждому пакету: installed / already_installed / failed (код).
-- **Wi-Fi:** XML-профили из `system/wifi/*.xml` (экспорт с `key=clear`, SPEC-06). После импорта ничего не удаляется. UI предупреждает, что XML содержит пароли в открытом виде (они же и восстанавливаются).
+- **Wi-Fi:** XML-профили из `system/wifi/*.xml` (SPEC-06). Если пользователь согласился на выгрузку ключей (`include_keys = true`), профили экспортированы с `key=clear`; иначе в них нет `<sharedKey>` — `netsh wlan add profile` такой профиль принимает (`sharedKey` необязателен), а пароль Windows спросит при первом подключении. После импорта ничего не удаляется. Предупреждение UI о паролях в открытом виде — только для профилей, экспортированных с `include_keys = true`.
 - **Драйверы:** `system/drivers/` → задача хелпера `{ "task": "restore_drivers", "dir": "<abs>" }` (whitelist SPEC-14 §4.5). Результат — вывод `pnputil` (число добавленных/установленных пакетов). Требуется перезагрузка → флаг `reboot_required` в отчёте.
 
 ### 4.6 RestoreReport и журнал

@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-backup` (оркестрация — `sk-engine::BackupJob`) |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03, SPEC-06, SPEC-09 |
 | Используется в | SPEC-11, SPEC-13, SPEC-14 |
-| Последнее изменение | 2026-10-10 (имя файла экспорта winget — `winget.json`, как в SPEC-06 §4.3); 2026-10-01 (пример `environment` в манифесте по SPEC-02 §6; закрыт вопрос по `EnvironmentSnapshot`) |
+| Последнее изменение | 2026-10-10 (FR-10-15: cloud-only файлы не открываются и не скачиваются); 2026-10-10 (имя файла экспорта winget — `winget.json`, как в SPEC-06 §4.3); 2026-10-01 (пример `environment` в манифесте по SPEC-02 §6; закрыт вопрос по `EnvironmentSnapshot`) |
 
 ## 1. Цель
 
@@ -53,6 +53,7 @@
 - **FR-10-12** — В бэкап пишется `README.txt` (ru+en): что это, как восстановить SaveKeeper'ом, как вручную.
 - **FR-10-13** — Прогресс: `Event::BackupProgress` (SPEC-01 §4.5) с троттлингом, по байтам и файлам. Системные экспорты считаются как 1 «файл» с неизвестным размером до выполнения.
 - **FR-10-14** — Имя по умолчанию: `SaveKeeper-<MACHINE>-<YYYYMMDD-HHMM>.zip` (или папка без расширения). Недопустимые символы заменяются на `_`.
+- **FR-10-15** — Cloud-only файлы (OneDrive Files On-Demand и т. п.; признак — SPEC-03 §4.2, `CloudState::CloudOnly` из `FsScanner::walk` или `sk_core::fs::cloud_state`, SPEC-02 §3.5) не открываются и не скачиваются: файл пропускается, в манифест — `errors[code=cloud_only]`, находка `partial`, в отчёте — число и размер пропущенных файлов. То же правило соблюдают копирующие экспортёры SPEC-06 (`fonts`, `hosts`, `powershell-modules`; warning `issue.system.cloud_only` {path}).
 
 ### 3.2 Нефункциональные
 - **NFR-10-01** — Пропускная способность ≥ 80% от скорости последовательного копирования диска для крупных файлов (уровень сжатия 6). Уже сжатые форматы (`.zip .7z .rar .jpg .png .mp4 .mkv .mp3 .gz .zst .pak`) пишутся методом `Stored`.
@@ -336,6 +337,7 @@ pub struct LockingProcess { pub pid: u32, pub name: String, pub app_name: String
 | Ситуация | Поведение |
 |---|---|
 | Файл удалён между сканом и бэкапом | `errors[code=not_found]`, находка `partial`, бэкап продолжается. |
+| Файл только в облаке (cloud-only) | Не открывается (FR-10-15): `errors[code=cloud_only]`, находка `partial`, бэкап продолжается. |
 | Путь > 260 символов | Всегда `sk-core::path::to_extended`. В zip пишется относительный путь (без ограничений). В `dir` целевой путь тоже расширенный. |
 | Access denied | `errors[code=access_denied]`. Если находка `requires_elevation`, в UI подсказка «перезапустить с правами администратора» (SPEC-14 §4.5 — для файлов не делаем хелпер в MVP). |
 | Диск назначения заполнился во время записи | `ERROR_DISK_FULL` → остановка, `status: incomplete`, `.partial` сохраняется для диагностики, если `keep_partial_on_cancel`, иначе удаляется. Сообщение с требуемым объёмом. |
