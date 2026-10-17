@@ -4,7 +4,8 @@
 //! marks work trees and bare repositories) and, when that walk does not reach
 //! `{HOME}`, by a walk of `{HOME}` down to `git.max_depth`. Each one is read
 //! through gix ([`analyze`], read-only) and gives one `FileSet` finding of the
-//! whole repository without its heavy ignored folders (§4.4.4).
+//! whole repository without its heavy ignored folders (§4.4.4); an unsaved
+//! one also gives a `git-bundle` system export as an alternative child.
 //!
 //! A repository inside another one is a submodule when the outer index has a
 //! gitlink at its path: its state is added to the outer one and it gives no
@@ -19,7 +20,7 @@ use std::sync::Arc;
 use sk_core::fs::{EntryKind, Exclusion, PathFilter, WalkControl, WalkOptions};
 use sk_core::path::{eq_ci, PathSet};
 
-use crate::git_finding::{failed_issue, repo_finding, truncated_issue, Outcome};
+use crate::git_finding::{bundle_finding, failed_issue, repo_finding, truncated_issue, Outcome};
 use crate::git_state::analyze;
 use crate::heuristic::{Heuristic, HeuristicContext, HeuristicOutput};
 use crate::unk::{relative_glob, topmost};
@@ -33,6 +34,10 @@ mod tests;
 #[cfg(test)]
 #[path = "git_repo_tests.rs"]
 mod repo_tests;
+
+#[cfg(test)]
+#[path = "git_bundle_tests.rs"]
+mod bundle_tests;
 
 #[cfg(test)]
 #[path = "git_test_repo.rs"]
@@ -406,8 +411,11 @@ fn build(
             }
         }
         let node = &repo.walk.dirs[repo.node];
-        out.findings
-            .push(repo_finding(hctx, node, repo.bare, outcome, exclude));
+        let mut finding = repo_finding(hctx, node, repo.bare, outcome, exclude);
+        // The `git-bundle` alternative goes right after its repository.
+        let bundle = bundle_finding(hctx, &mut finding, path);
+        out.findings.push(finding);
+        out.findings.extend(bundle);
         out.claimed.push(path.to_path_buf());
     }
 }

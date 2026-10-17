@@ -17,6 +17,8 @@ gix = { workspace = true, features = ["sha1", "status"] }
 # Built-in `data/extensions.yaml` (SPEC-07 §4.3.2, T-07-02).
 serde.workspace = true
 serde-saphyr.workspace = true
+# `params` of the `git-bundle` child finding (SPEC-07 §4.4.4, T-07-10).
+serde_json.workspace = true
 sk-core.workspace = true
 # `summarize` and the global exclusions of H-UNK (SPEC-07 §4.2.4, SPEC-03 §4.4).
 sk-scan.workspace = true

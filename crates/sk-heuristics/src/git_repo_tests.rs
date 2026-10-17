@@ -24,10 +24,18 @@ use crate::git_state::analyze;
 use crate::git_state::GitState;
 
 const MIB: u64 = 1024 * 1024;
-const REMOTE: &str = "https://user:secret@example.com/team/repo.git";
+pub(super) const REMOTE: &str = "https://user:secret@example.com/team/repo.git";
+/// Tags of an unsaved repository and of one without remotes (§4.4.3, §4.4.4).
+const UNSAVED_TAGS: [&str; 3] = ["git", "git-unsaved", "git-bundle-available"];
+const NO_REMOTE_TAGS: [&str; 4] = [
+    "git",
+    "git-no-remote",
+    "git-unsaved",
+    "git-bundle-available",
+];
 
 /// A fresh temporary folder under `<workspace>/target/tmp`.
-fn temp_dir() -> TempDir {
+pub(super) fn temp_dir() -> TempDir {
     let base = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target/tmp");
     fs::create_dir_all(&base).unwrap();
     tempfile::Builder::new()
@@ -65,7 +73,7 @@ fn visit(dir: &Path, prefix: &str, out: &mut Snapshot) {
 
 /// Runs H-GIT over `root` (inside `base`) on the real file system and checks
 /// that nothing under `base` changed.
-fn run(base: &Path, root: &Path) -> HeuristicOutput {
+pub(super) fn run(base: &Path, root: &Path) -> HeuristicOutput {
     run_with_depth(base, root, 32)
 }
 
@@ -75,7 +83,7 @@ fn run_with_depth(base: &Path, root: &Path, depth: u32) -> HeuristicOutput {
 }
 
 /// [`run`] with the case changed by `setup`.
-fn run_case(base: &Path, root: &Path, setup: impl FnOnce(&mut Case)) -> HeuristicOutput {
+pub(super) fn run_case(base: &Path, root: &Path, setup: impl FnOnce(&mut Case)) -> HeuristicOutput {
     let before = snapshot(base);
     let mut case = Case::new(base, vec![root.to_path_buf()]);
     setup(&mut case);
@@ -106,14 +114,14 @@ fn state(path: &Path) -> GitState {
     analyze(path, true, &RealFs::new(&env)).unwrap().state
 }
 
-fn finding<'a>(out: &'a HeuristicOutput, path: &Path) -> &'a Finding {
+pub(super) fn finding<'a>(out: &'a HeuristicOutput, path: &Path) -> &'a Finding {
     out.findings
         .iter()
         .find(|f| matches!(&f.target, Target::FileSet { resolved, .. } if resolved == path))
         .unwrap_or_else(|| panic!("no finding for {}: {:#?}", path.display(), out.findings))
 }
 
-fn arg<'a>(f: &'a Finding, key: &str) -> &'a str {
+pub(super) fn arg<'a>(f: &'a Finding, key: &str) -> &'a str {
     f.evidence[0].message_args[key].as_str()
 }
 
@@ -123,7 +131,7 @@ fn readme(n: usize) -> String {
 }
 
 /// A repository with `commits` commits, pushed to `origin` up to `pushed`.
-fn repo(path: &Path, commits: usize, pushed: Option<usize>) -> TestRepo {
+pub(super) fn repo(path: &Path, commits: usize, pushed: Option<usize>) -> TestRepo {
     let mut repo = TestRepo::init(path);
     for n in 1..=commits {
         repo.commit(&[("README.md", &readme(n))]);
@@ -208,7 +216,8 @@ fn state_of_repositories() {
 
     let out = run(dir.path(), &root);
     assert!(out.issues.is_empty(), "{:?}", out.issues);
-    assert_eq!(out.findings.len(), 9);
+    // Eight unsaved repositories, each with its `git-bundle` child.
+    assert_eq!(out.findings.len(), 17);
     let clean = finding(&out, &root.join("clean"));
     assert_eq!(clean.category, Category::Reinstallable);
     assert_eq!(clean.evidence[0].confidence, 0.85);
@@ -216,7 +225,7 @@ fn state_of_repositories() {
     assert_eq!(arg(clean, "remote"), "example.com");
     let no_remote = finding(&out, &root.join("no-remote"));
     assert_eq!(no_remote.category, Category::DevEnvironment);
-    assert_eq!(no_remote.tags, ["git", "git-no-remote", "git-unsaved"]);
+    assert_eq!(no_remote.tags, NO_REMOTE_TAGS);
     assert_eq!(arg(no_remote, "remote"), "");
     for (name, key, value) in [
         ("dirty", "dirty", "1"),
@@ -227,7 +236,7 @@ fn state_of_repositories() {
         ("detached", "unpushed", "1"),
     ] {
         let f = finding(&out, &root.join(name));
-        assert_eq!(f.tags, ["git", "git-unsaved"], "{name}");
+        assert_eq!(f.tags, UNSAVED_TAGS, "{name}");
         assert_eq!(f.evidence[0].message_key, REASON_UNSAVED, "{name}");
         assert_eq!(f.evidence[0].confidence, 0.95, "{name}");
         assert_eq!(arg(f, key), value, "{name}");
@@ -280,7 +289,7 @@ fn gitlink_work_tree_with_its_repository_outside_the_walk() {
 
     let out = run(dir.path(), &root);
     assert!(out.issues.is_empty(), "{:?}", out.issues);
-    let [f] = out.findings.as_slice() else {
+    let [f, _bundle] = out.findings.as_slice() else {
         panic!("{:#?}", out.findings)
     };
     assert_eq!(f.evidence[0].message_key, REASON_NO_REMOTE);
@@ -320,7 +329,7 @@ fn bare_repository() {
 
     let out = run(dir.path(), &root);
     assert!(out.issues.is_empty(), "{:?}", out.issues);
-    let [f] = out.findings.as_slice() else {
+    let [f, _bundle] = out.findings.as_slice() else {
         panic!("{:#?}", out.findings)
     };
     assert_eq!(f.evidence[0].message_key, REASON_NO_REMOTE);
@@ -341,13 +350,13 @@ fn submodule_is_part_of_the_outer_repository() {
 
     let out = run(dir.path(), &root);
     assert!(out.issues.is_empty(), "{:?}", out.issues);
-    let [f] = out.findings.as_slice() else {
+    let [f, _bundle] = out.findings.as_slice() else {
         panic!("{:#?}", out.findings)
     };
     assert!(exclude_of(f).is_empty());
     assert_eq!(arg(f, "untracked"), "1");
     assert_eq!(arg(f, "dirty"), "0");
-    assert_eq!(f.tags, ["git", "git-unsaved"]);
+    assert_eq!(f.tags, UNSAVED_TAGS);
     assert_eq!(out.claimed, [outer_path]);
 }
 
@@ -368,7 +377,7 @@ fn nested_repository_is_excluded_from_the_outer_one() {
     assert_eq!(outer.tags, ["git", "git-clean"]);
     let inner = finding(&out, &outer_path.join("inner"));
     assert_eq!(arg(inner, "untracked"), "1");
-    assert_eq!(inner.tags, ["git", "git-no-remote", "git-unsaved"]);
+    assert_eq!(inner.tags, NO_REMOTE_TAGS);
 }
 
 #[test]
@@ -387,7 +396,7 @@ fn submodule_found_only_by_the_home_walk_is_merged() {
     // walk of `{HOME}` finds the submodule.
     let out = run_with_depth(dir.path(), &projects, 2);
     assert!(out.issues.is_empty(), "{:?}", out.issues);
-    let [f] = out.findings.as_slice() else {
+    let [f, _bundle] = out.findings.as_slice() else {
         panic!("{:#?}", out.findings)
     };
     assert!(exclude_of(f).is_empty());
@@ -413,9 +422,9 @@ fn repository_inside_a_submodule_is_excluded_from_the_outer_one() {
     let roots: Vec<&Path> = out
         .findings
         .iter()
-        .map(|f| match &f.target {
-            Target::FileSet { resolved, .. } => resolved.as_path(),
-            other => panic!("{other:?}"),
+        .filter_map(|f| match &f.target {
+            Target::FileSet { resolved, .. } => Some(resolved.as_path()),
+            _ => None,
         })
         .collect();
     assert_eq!(roots, [outer_path.as_path(), inner_path.as_path()]);
@@ -447,11 +456,11 @@ fn clean_repository_with_an_unreadable_submodule_is_unsaved() {
     );
 
     let out = run(dir.path(), &root);
-    let [f] = out.findings.as_slice() else {
+    let [f, _bundle] = out.findings.as_slice() else {
         panic!("{:#?}", out.findings)
     };
     assert_eq!(arg(f, "dirty"), "0");
-    assert_eq!(f.tags, ["git", "git-unsaved"]);
+    assert_eq!(f.tags, UNSAVED_TAGS);
     assert_eq!(f.evidence[0].message_key, REASON_UNSAVED);
     assert_eq!(f.category, Category::DevEnvironment);
     let [issue] = out.issues.as_slice() else {
@@ -475,10 +484,10 @@ fn clean_repository_with_a_submodule_beyond_the_limit_is_unsaved() {
     assert_eq!(f.tags, ["git", "git-clean"]);
 
     let out = run_case(dir.path(), &root, |case| case.cfg.git.max_repos = 1);
-    let [f] = out.findings.as_slice() else {
+    let [f, _bundle] = out.findings.as_slice() else {
         panic!("{:#?}", out.findings)
     };
-    assert_eq!(f.tags, ["git", "git-unsaved"]);
+    assert_eq!(f.tags, UNSAVED_TAGS);
     assert_eq!(f.evidence[0].message_key, REASON_UNSAVED);
     let [issue] = out.issues.as_slice() else {
         panic!("{:?}", out.issues)

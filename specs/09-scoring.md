@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-score` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-04, SPEC-05, SPEC-06, SPEC-07, SPEC-08 |
 | Используется в | SPEC-10, SPEC-11 |
-| Последнее изменение | 2026-10-01 (`ScoringConfig` — в `sk-core::config`) |
+| Последнее изменение | 2026-10-17 (§4.7 правило 1a и FR-09-08: тег `alternative`; §4.9: находки `alternative` не входят в `Totals` — SPEC-07 T-07-10); 2026-10-01 (`ScoringConfig` — в `sk-core::config`) |
 
 ## 1. Цель
 
@@ -46,7 +46,7 @@
 - **FR-09-05** — `Cache` и `Reinstallable` никогда не выбираются по умолчанию.
 - **FR-09-06** — Находка больше `scoring.max_default_item_bytes` (по умолчанию 2 ГиБ) не выбирается по умолчанию и получает тег `too_large_default`.
 - **FR-09-07** — `Credentials` и находки с `Sensitivity::High` выбираются по умолчанию (если проходят порог), но порождают `ScanIssue::Warning scoring.sensitive_selected` и рекомендацию шифрования (SPEC-10).
-- **FR-09-08** — Каждая причина невыбора отражается тегом (`too_large_default`, `needs_elevation`, `below_threshold`, `nested`, `restorable`) для UI-фильтров.
+- **FR-09-08** — Каждая причина невыбора отражается тегом (`too_large_default`, `needs_elevation`, `below_threshold`, `nested`, `restorable`, `alternative`) для UI-фильтров.
 - **FR-09-09** — `Totals` считаются по «верхнеуровневым» находкам (без `nested`).
 
 ### 3.2 Нефункциональные
@@ -199,6 +199,7 @@ adjustments, base, value`. Все значения округляются до 3
 | # | Условие | selected | reason_tag |
 |---|---|---|---|
 | 1 | тег `nested` | false | `nested` (выбор следует за родителем в UI) |
+| 1a | тег `alternative` (альтернативный способ сохранить данные родителя, задан коллектором, например `git-bundle` SPEC-07 §4.4.4) | false | `alternative` |
 | 2 | категория `Cache` или `Reinstallable` | false | `restorable` |
 | 3 | `requires_elevation && !env.is_elevated` | false | `needs_elevation` |
 | 4 | `stats.total_bytes > max_default_item_bytes` | false | `too_large_default` |
@@ -236,7 +237,7 @@ pub struct Totals {
 }
 pub struct CategoryTotals { pub count: u32, pub bytes: u64, pub selected_count: u32, pub selected_bytes: u64 }
 ```
-- Учитываются только находки без тега `nested`.
+- Учитываются только находки без тегов `nested` и `alternative`.
 - `bytes` = `stats.total_bytes` (0, если stats нет, например у `SystemExport` до выполнения).
 - Функция `totals()` принимает предикат выбора, поэтому UI использует её же для пересчёта при ручном выборе (через IPC, SPEC-11).
 

@@ -3,7 +3,10 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use sk_core::model::{Category, Finding, IssueSeverity, ScanIssue, Target};
+use sk_core::model::{
+    AppKind, AppRef, Category, Evidence, Finding, FindingId, IssueSeverity, ScanIssue, Sensitivity,
+    Target,
+};
 use sk_core::privacy::{redact, redact_path};
 use sk_core::template::PathTemplate;
 
@@ -36,6 +39,18 @@ pub(crate) const TAG_UNSAVED: &str = "git-unsaved";
 pub(crate) const TAG_CLEAN: &str = "git-clean";
 /// Tag of a repository that was not read because of the limit (NFR-07-03).
 pub(crate) const TAG_TRUNCATED: &str = "truncated";
+/// Tag of a repository that has a `git-bundle` child finding (§4.4.4).
+pub(crate) const TAG_BUNDLE_AVAILABLE: &str = "git-bundle-available";
+/// Tag of the `git-bundle` child: an alternative, not selected by default
+/// (SPEC-09 §4.7 rule 1a).
+pub(crate) const TAG_ALTERNATIVE: &str = "alternative";
+/// Reason of the `git-bundle` child (§4.4.4).
+pub(crate) const REASON_BUNDLE: &str = "heuristic.git.bundle";
+/// The exporter of the child (SPEC-06 §4.3).
+pub(crate) const BUNDLE_EXPORTER_ID: &str = "git-bundle";
+/// The application of system exports (as `sk-system` findings, SPEC-06 §4.1).
+const SYSTEM_APP_ID: &str = "windows";
+const SYSTEM_APP_NAME: &str = "Windows";
 const TAG_CLOUD_SYNCED: &str = "cloud-synced";
 const TAG_HUGE: &str = "huge";
 /// Confidence of the rows of §4.4.3.
@@ -103,6 +118,61 @@ pub(crate) fn repo_finding(
     // A repository is the user's project, not an application.
     finding.app = None;
     finding
+}
+
+/// The `git-bundle` child of an unsaved repository (§4.4.4): a system export
+/// of the repository at `path`, with the title, arguments and confidence of
+/// `parent`. `parent` gets the tag `git-bundle-available` and the child's
+/// id in its `children`. Returns `None` for a repository that is not unsaved.
+pub(crate) fn bundle_finding(
+    hctx: &HeuristicContext<'_>,
+    parent: &mut Finding,
+    path: &Path,
+) -> Option<Finding> {
+    if !parent.tags.iter().any(|t| t == TAG_UNSAVED) {
+        return None;
+    }
+    let template = PathTemplate::from_path(path, hctx.env);
+    let target = Target::SystemExport {
+        exporter_id: BUNDLE_EXPORTER_ID.to_owned(),
+        params: serde_json::json!({ "repo": template.as_str() }),
+    };
+    let id = FindingId::for_target(&target);
+    let evidence = parent
+        .evidence
+        .first()
+        .map(|e| Evidence {
+            message_key: REASON_BUNDLE.to_owned(),
+            ..e.clone()
+        })
+        .into_iter()
+        .collect();
+    let child = Finding {
+        id: id.clone(),
+        target,
+        category: Category::DevEnvironment,
+        app: Some(AppRef {
+            id: SYSTEM_APP_ID.to_owned(),
+            name: SYSTEM_APP_NAME.to_owned(),
+            kind: AppKind::System,
+            source_ids: BTreeMap::new(),
+            installed: None,
+            process_names: Vec::new(),
+        }),
+        title: parent.title.clone(),
+        evidence,
+        stats: None,
+        sensitivity: Sensitivity::Low,
+        score: None,
+        default_selected: false,
+        requires_elevation: false,
+        tags: vec![TAG_GIT.to_owned(), TAG_ALTERNATIVE.to_owned()],
+        children: Vec::new(),
+        notes_key: None,
+    };
+    parent.tags.push(TAG_BUNDLE_AVAILABLE.to_owned());
+    parent.children.push(id);
+    Some(child)
 }
 
 /// The row of §4.4.3 and its tags. A repository without remotes is unsaved
