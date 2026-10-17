@@ -26,6 +26,9 @@ pub(crate) const ISSUE_TRUNCATED: &str = "heuristic.git_truncated";
 pub(crate) const REASON_NO_REMOTE: &str = "heuristic.git.no_remote";
 /// Reason: changes, unpushed commits or stash entries (§4.4.3).
 pub(crate) const REASON_UNSAVED: &str = "heuristic.git.unsaved";
+/// Reason: unsaved because not fully checked: files only in the cloud or an
+/// unread submodule, the repository has remotes (§4.4.3).
+pub(crate) const REASON_UNCHECKED: &str = "heuristic.git.unchecked";
 /// Reason: everything is committed and pushed (§4.4.3).
 pub(crate) const REASON_CLEAN: &str = "heuristic.git.clean";
 /// Reason: gix could not read the repository (§4.4.2).
@@ -190,7 +193,14 @@ pub(crate) fn classify(
             REASON_NO_REMOTE,
         );
         (v, &[TAG_NO_REMOTE, TAG_UNSAVED])
-    } else if state.unsaved() > 0 || worktree_unknown {
+    } else if worktree_unknown {
+        let v = MarkerVerdict::whole(
+            Category::DevEnvironment,
+            UNSAVED_CONFIDENCE,
+            REASON_UNCHECKED,
+        );
+        (v, &[TAG_UNSAVED])
+    } else if state.unsaved() > 0 {
         let v = MarkerVerdict::whole(Category::DevEnvironment, UNSAVED_CONFIDENCE, REASON_UNSAVED);
         (v, &[TAG_UNSAVED])
     } else {

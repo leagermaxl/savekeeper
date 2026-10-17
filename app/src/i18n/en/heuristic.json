@@ -1,0 +1,54 @@
+{
+  "access_denied": "Access to the folder is denied, its contents were not checked",
+  "read_failed": "Could not read the folder: {{error}}",
+  "data_invalid": "The built-in heuristics data is damaged, the heuristics work without it: {{error}}",
+  "dotfile": "Settings file in the root of the user profile: usually the config of a developer tool",
+  "dotfolder": "Hidden settings folder in the root of the user profile: usually created by a developer tool",
+  "uwp_saves": "Saves of an Xbox / Microsoft Store game",
+  "uwp_package": "Data of a Microsoft Store app",
+  "saved_games": "The folder is in “Saved Games”: most likely these are game saves",
+  "unreal_saves": "Looks like saves of an Unreal Engine game (SaveGames folder)",
+  "unity_game": "Looks like data of a Unity game, it may contain saves",
+  "save_ext": "Many files with game save extensions (.sav, .save, .sl2, .ess)",
+  "config_like": "Small folder with program settings files",
+  "sqlite_recent": "Recently changed SQLite databases: the program keeps its data here",
+  "user_content": "Mostly documents, photos or other media files",
+  "project_like": "Looks like a developer project",
+  "empty": "Empty folder",
+  "unknown": "Could not tell what this folder contains",
+  "junk": {
+    "cache_name": "Cache, temporary files or logs: no need to save them",
+    "cache_like": "Looks like a cache: the program creates these files again",
+    "restorable": "Dependencies or build output (node_modules, .venv, target and the like): they are restored from the project, no need to save them",
+    "installed_program": "Files of an installed program: it can be installed again after reinstalling Windows",
+    "uniform_binaries": "Looks like program files: executables with the same modification time, no settings or databases. The program can be installed again",
+    "launcher": "Launcher or game library folder: the games can be downloaded again through the launcher",
+    "downloadable": "Downloaded installers, updates or shader cache: all of it can be downloaded again"
+  },
+  "web": {
+    "electron": "Data of an Electron app: local storage, databases and settings. The cache is not saved",
+    "chromium": "Chromium browser profile: bookmarks, settings and site data. The cache is not saved"
+  },
+  "title": {
+    "app_data": "app data",
+    "unrecognized": "(unrecognized)"
+  },
+  "dpapi_bound": "Passwords and cookies are encrypted by Windows (DPAPI) for this user account: after reinstalling they cannot be decrypted, so you will have to sign in to all accounts again",
+  "usr": {
+    "cluster": "Folder with user files outside the standard locations (files: {{files}})",
+    "user_folder": "Standard user folder (files: {{files}})",
+    "valuable_file": "Valuable file outside the folders with user files: a key, a certificate, a password database or a mail archive"
+  },
+  "usr_truncated": "Too many folders with user files were found, only the most valuable ones are shown ({{limit}}). Folders not shown: {{count}}",
+  "git": {
+    "no_remote": "Git repository without a remote: its whole history exists only on this computer",
+    "unsaved": "The git repository has unsaved work. Changed files: {{dirty}}, new files: {{untracked}}, unpushed commits: {{unpushed}}, stash entries: {{stash}}",
+    "unchecked": "Could not fully check the git repository (some files are only in the cloud or a submodule was not read), so it is treated as having unsaved work. Found: changed files: {{dirty}}, new files: {{untracked}}, unpushed commits: {{unpushed}}, stash entries: {{stash}}",
+    "clean": "All changes are committed and pushed to the server: the repository can be cloned again with git clone",
+    "failed": "Could not read the state of the git repository: it may be damaged",
+    "not_analyzed": "The git repository was not checked: more repositories were found than one scan checks",
+    "bundle": "Alternative: save the whole history of the repository as one file (git bundle) together with the uncommitted files"
+  },
+  "git_failed": "Could not read the git repository: {{error}}",
+  "git_truncated": "Too many git repositories were found, only the first ones were checked ({{limit}}). Repositories not checked: {{count}}"
+}

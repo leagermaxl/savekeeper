@@ -343,9 +343,22 @@ fn rows_of_the_classification() {
         );
         assert_eq!(tags, [TAG_UNSAVED]);
     }
-    // A work tree that was not looked at is not taken for clean.
-    let (v, _) = classify(&clean, true);
-    assert_eq!(v.reason_key, REASON_UNSAVED);
+    // A work tree that was not looked at is not taken for clean: unchecked,
+    // with or without changes found; no remote still wins.
+    for state in std::iter::once(&clean).chain(&unsaved) {
+        let (v, tags) = classify(state, true);
+        assert_eq!(
+            (v.category, v.confidence, v.reason_key),
+            (Category::DevEnvironment, 0.95, REASON_UNCHECKED)
+        );
+        assert_eq!(tags, [TAG_UNSAVED]);
+    }
+    let no_remote = GitState {
+        remotes: Vec::new(),
+        ..clean.clone()
+    };
+    let (v, _) = classify(&no_remote, true);
+    assert_eq!(v.reason_key, REASON_NO_REMOTE);
 }
 
 #[test]

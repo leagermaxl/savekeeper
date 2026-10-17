@@ -461,7 +461,7 @@ fn clean_repository_with_an_unreadable_submodule_is_unsaved() {
     };
     assert_eq!(arg(f, "dirty"), "0");
     assert_eq!(f.tags, UNSAVED_TAGS);
-    assert_eq!(f.evidence[0].message_key, REASON_UNSAVED);
+    assert_eq!(f.evidence[0].message_key, REASON_UNCHECKED);
     assert_eq!(f.category, Category::DevEnvironment);
     let [issue] = out.issues.as_slice() else {
         panic!("{:?}", out.issues)
@@ -488,7 +488,7 @@ fn clean_repository_with_a_submodule_beyond_the_limit_is_unsaved() {
         panic!("{:#?}", out.findings)
     };
     assert_eq!(f.tags, UNSAVED_TAGS);
-    assert_eq!(f.evidence[0].message_key, REASON_UNSAVED);
+    assert_eq!(f.evidence[0].message_key, REASON_UNCHECKED);
     let [issue] = out.issues.as_slice() else {
         panic!("{:?}", out.issues)
     };
