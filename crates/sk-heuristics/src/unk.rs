@@ -22,6 +22,7 @@ use crate::data;
 use crate::finding::{file_name, is_opaque_name, make_finding, new_finding};
 use crate::heuristic::{Heuristic, HeuristicContext, HeuristicOutput};
 use crate::junk::is_specific;
+use crate::junk_exclude;
 use crate::unk_zones::{candidates, is_dir, read_issue, read_reason, Candidate, Kind};
 use crate::verdict::MarkerVerdict;
 
@@ -40,6 +41,10 @@ mod edge_tests;
 #[cfg(test)]
 #[path = "unk_fixture_tests.rs"]
 mod fixture_tests;
+
+#[cfg(test)]
+#[path = "unk_junk_tests.rs"]
+mod junk_tests;
 
 /// `Heuristic::id` of H-UNK.
 pub(crate) const HEURISTIC_ID: &str = "h-unk";
@@ -184,6 +189,13 @@ impl Run<'_, '_> {
             verdict.confidence = (verdict.confidence - OPAQUE_PENALTY).max(0.0);
         }
         verdict.exclude.extend(rest_excludes);
+        // Junk subfolders (§4.5, T-07-13); a Store package has its own exclude.
+        if cand.kind != Kind::Package && junk_exclude::enabled(self.hctx) {
+            let junk = junk_exclude::summary_junk_excludes(
+                self.hctx, path, &summary, &verdict, &self.seen,
+            );
+            verdict.exclude.extend(junk);
+        }
         let mut finding = make_finding(path, &verdict, &summary, HEURISTIC_ID, env);
         if verdict.confidence < self.hctx.cfg.unknown_threshold {
             finding.category = Category::Unknown;

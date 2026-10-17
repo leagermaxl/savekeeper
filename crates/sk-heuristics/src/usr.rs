@@ -21,12 +21,11 @@ use sk_core::path::{eq_ci, starts_with_ci, PathSet};
 
 use crate::collector::COLLECTOR_ID;
 use crate::data::{self, ExtensionTable};
-use crate::finding::file_name;
 use crate::heuristic::{Heuristic, HeuristicContext, HeuristicOutput};
-use crate::junk::junk_verdict_with_siblings;
+use crate::junk_exclude;
 use crate::unk::{relative_glob, topmost};
 use crate::usr_finding::{
-    cluster_verdict, file_finding, folder_finding, positive_weight, summary_of, REASON_CLUSTER,
+    cluster_verdict, file_finding, folder_finding, positive_weight, REASON_CLUSTER,
     REASON_USER_FOLDER,
 };
 use crate::verdict::MarkerVerdict;
@@ -43,6 +42,10 @@ mod cluster_tests;
 #[cfg(test)]
 #[path = "usr_fixture_tests.rs"]
 mod fixture_tests;
+
+#[cfg(test)]
+#[path = "usr_junk_tests.rs"]
+mod junk_tests;
 
 /// `Heuristic::id` of H-USR.
 pub(crate) const HEURISTIC_ID: &str = "h-usr";
@@ -259,20 +262,8 @@ impl<'a, 'b> Select<'a, 'b> {
     }
 
     /// §4.5 for a folder: its name, its neighbours and the environment.
-    /// The walk keeps the names of folders only, so `siblings` are the other
-    /// subfolders of its parent (the `target`/`bin`/`obj` rows are global
-    /// exclusions of the walk anyway, SPEC-03 §4.5).
     fn junk(&self, i: usize, agg: &DirAggregate) -> Option<MarkerVerdict> {
-        let walk = self.walk;
-        let node = &walk.dirs[i];
-        let siblings: Vec<String> = node.parent.map_or_else(Vec::new, |p| {
-            walk.children(p)
-                .filter(|&c| c != i)
-                .map(|c| file_name(&walk.dirs[c].path))
-                .collect()
-        });
-        let summary = summary_of(&node.path, agg, self.hctx.env);
-        junk_verdict_with_siblings(&summary, self.hctx.env, &siblings)
+        junk_exclude::walked_verdict(self.hctx, self.walk, i, agg)
     }
 
     /// Aggregates of the subtree of `i` without the claimed folders in it.
@@ -344,7 +335,8 @@ fn truncated_issue(dropped: usize, max: usize) -> ScanIssue {
 
 /// The findings of the kept picks, in walk order, then those of the
 /// valuable files outside them (step 5), by path. A valuable file inside a
-/// junk cluster gets its own finding and is excluded from the cluster.
+/// junk cluster, or inside a junk subfolder excluded from a cluster or a
+/// standard folder (§4.5, T-07-13), gets its own finding.
 fn build(
     hctx: &HeuristicContext<'_>,
     walk: &RootsWalk,
@@ -353,6 +345,19 @@ fn build(
     out: &mut HeuristicOutput,
 ) {
     let env = hctx.env;
+    let junk_dirs: Vec<Vec<usize>> = kept
+        .iter()
+        .map(|p| match p.kind {
+            PickKind::Junk(_) => Vec::new(),
+            _ if !junk_exclude::enabled(hctx) => Vec::new(),
+            _ => junk_exclude::walked_junk_dirs(hctx, walk, p.node),
+        })
+        .collect();
+    let excluded: PathSet = junk_dirs
+        .iter()
+        .flatten()
+        .map(|&i| walk.dirs[i].path.clone())
+        .collect();
     let covered: PathSet = kept
         .iter()
         .filter(|p| !matches!(p.kind, PickKind::Junk(_)))
@@ -361,14 +366,21 @@ fn build(
     let files: Vec<_> = walk
         .valuable_files
         .iter()
-        .filter(|f| !hctx.claimed.covers(&f.path) && !covered.covers(&f.path))
+        .filter(|f| {
+            !hctx.claimed.covers(&f.path) && (!covered.covers(&f.path) || excluded.covers(&f.path))
+        })
         .collect();
-    for pick in kept {
+    for (pick, junk_dirs) in kept.iter().zip(&junk_dirs) {
         let path = walk.dirs[pick.node].path.as_path();
         let mut exclude: Vec<String> = topmost(hctx.claimed.descendants(path))
             .iter()
             .map(|p| relative_glob(p, path))
             .collect();
+        exclude.extend(
+            junk_dirs
+                .iter()
+                .map(|&i| relative_glob(&walk.dirs[i].path, path)),
+        );
         let verdict = match &pick.kind {
             PickKind::Cluster => cluster_verdict(&pick.agg, table, REASON_CLUSTER),
             PickKind::UserFolder => cluster_verdict(&pick.agg, table, REASON_USER_FOLDER),
