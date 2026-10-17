@@ -30,7 +30,6 @@ const GIT_FILE: u8 = 1 << 1;
 const BARE_HEAD: u8 = 1 << 2;
 const BARE_OBJECTS: u8 = 1 << 3;
 const BARE_REFS: u8 = 1 << 4;
-#[cfg_attr(not(test), allow(dead_code))] // read by H-GIT (T-07-09)
 const BARE: u8 = BARE_HEAD | BARE_OBJECTS | BARE_REFS;
 
 /// Files of one content kind (SPEC-07 §4.3.2) in a folder.
@@ -154,7 +153,6 @@ pub(crate) struct DirNode {
     git: u8,
 }
 
-#[cfg_attr(not(test), allow(dead_code))] // read by H-GIT (T-07-09)
 impl DirNode {
     /// The folder holds `.git` (a folder or a gitlink file): the working copy
     /// of a repository (SPEC-07 §4.4.1). The `.git` folder is not walked.

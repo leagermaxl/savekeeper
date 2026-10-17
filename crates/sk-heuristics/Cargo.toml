@@ -11,6 +11,9 @@ publish.workspace = true
 [dependencies]
 # `PostCollector::collect` is async (SPEC-01 §4.3).
 async-trait.workspace = true
+# H-GIT (SPEC-07 §4.4.2): read-only repository state. `status` brings the index,
+# the directory walk and ignore rules; no network, no credentials, no writes.
+gix = { workspace = true, features = ["sha1", "status"] }
 # Built-in `data/extensions.yaml` (SPEC-07 §4.3.2, T-07-02).
 serde.workspace = true
 serde-saphyr.workspace = true
@@ -27,6 +30,8 @@ tokio = { workspace = true, features = ["rt"] }
 [dev-dependencies]
 # `mem_fixture`: `fixtures/fs/heuristics/*` trees in `MemFs` (SPEC-07 §6).
 sk-testkit.workspace = true
+# Git test repositories in `<workspace>/target/tmp` (SPEC-07 §6).
+tempfile.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "sync"] }
 
 [lints]

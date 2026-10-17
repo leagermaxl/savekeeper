@@ -13,6 +13,7 @@ use sk_core::path::PathSet;
 use sk_scan::ExcludeSet;
 
 use crate::data::{self, DataError};
+use crate::git::HGit;
 use crate::heuristic::{Heuristic, HeuristicContext};
 use crate::unk::HUnk;
 use crate::usr::HUsr;
@@ -41,10 +42,10 @@ pub struct HeuristicsCollector {
 impl HeuristicsCollector {
     /// The collector with the built-in heuristics, configured by `cfg`.
     pub fn new(cfg: HeuristicsConfig) -> Self {
-        // h-git comes with T-07-09.
         Self::with_heuristics(
             cfg,
             vec![
+                Box::new(HGit::new()),
                 Box::new(HWeb::new()),
                 Box::new(HUnk::new()),
                 Box::new(HUsr::new()),

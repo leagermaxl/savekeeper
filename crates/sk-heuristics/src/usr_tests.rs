@@ -265,5 +265,5 @@ fn max_candidates_gives_an_issue() {
 #[test]
 fn default_collector_runs_h_usr() {
     let collector = HeuristicsCollector::new(HeuristicsConfig::default());
-    assert_eq!(collector.ids(), ["h-web", "h-unk", "h-usr"]);
+    assert_eq!(collector.ids(), ["h-git", "h-web", "h-unk", "h-usr"]);
 }
