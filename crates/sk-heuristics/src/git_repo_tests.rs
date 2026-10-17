@@ -71,9 +71,14 @@ fn run(base: &Path, root: &Path) -> HeuristicOutput {
 
 /// [`run`] with a depth limit of the shared walk.
 fn run_with_depth(base: &Path, root: &Path, depth: u32) -> HeuristicOutput {
+    run_case(base, root, |case| case.depth = depth)
+}
+
+/// [`run`] with the case changed by `setup`.
+fn run_case(base: &Path, root: &Path, setup: impl FnOnce(&mut Case)) -> HeuristicOutput {
     let before = snapshot(base);
     let mut case = Case::new(base, vec![root.to_path_buf()]);
-    case.depth = depth;
+    setup(&mut case);
     let fs = RealFs::new(&case.env);
     let out = case.run(&fs);
     assert_unchanged(&before, &snapshot(base));
@@ -416,4 +421,67 @@ fn repository_inside_a_submodule_is_excluded_from_the_outer_one() {
     assert_eq!(roots, [outer_path.as_path(), inner_path.as_path()]);
     assert_eq!(exclude_of(finding(&out, &outer_path)), ["sub/inner"]);
     assert_eq!(out.claimed, [outer_path, inner_path]);
+}
+
+/// A clean outer repository with the clean submodule `sub`.
+fn outer_with_submodule(outer_path: &Path) -> TestRepo {
+    let mut outer = repo(outer_path, 1, Some(1));
+    let sub = repo(&outer_path.join("sub"), 1, Some(1));
+    let id = outer.add_gitlink("sub", sub.commits[0]);
+    outer.remote(REMOTE, Some(id));
+    sub
+}
+
+#[test]
+fn clean_repository_with_an_unreadable_submodule_is_unsaved() {
+    let dir = temp_dir();
+    let root = dir.path().join("root");
+    let outer_path = root.join("outer");
+    let sub = outer_with_submodule(&outer_path);
+    // A broken remote branch: the status of the outer one, which compares
+    // the commit of the submodule, sees no change; reading its branches fails.
+    write(
+        &sub.git_dir,
+        "refs/remotes/origin/broken",
+        "not a reference\n",
+    );
+
+    let out = run(dir.path(), &root);
+    let [f] = out.findings.as_slice() else {
+        panic!("{:#?}", out.findings)
+    };
+    assert_eq!(arg(f, "dirty"), "0");
+    assert_eq!(f.tags, ["git", "git-unsaved"]);
+    assert_eq!(f.evidence[0].message_key, REASON_UNSAVED);
+    assert_eq!(f.category, Category::DevEnvironment);
+    let [issue] = out.issues.as_slice() else {
+        panic!("{:?}", out.issues)
+    };
+    assert_eq!(issue.message_key, ISSUE_FAILED);
+}
+
+#[test]
+fn clean_repository_with_a_submodule_beyond_the_limit_is_unsaved() {
+    let dir = temp_dir();
+    let root = dir.path().join("root");
+    let outer_path = root.join("outer");
+    outer_with_submodule(&outer_path);
+
+    // Both clean when both are read.
+    let out = run(dir.path(), &root);
+    let [f] = out.findings.as_slice() else {
+        panic!("{:#?}", out.findings)
+    };
+    assert_eq!(f.tags, ["git", "git-clean"]);
+
+    let out = run_case(dir.path(), &root, |case| case.cfg.git.max_repos = 1);
+    let [f] = out.findings.as_slice() else {
+        panic!("{:#?}", out.findings)
+    };
+    assert_eq!(f.tags, ["git", "git-unsaved"]);
+    assert_eq!(f.evidence[0].message_key, REASON_UNSAVED);
+    let [issue] = out.issues.as_slice() else {
+        panic!("{:?}", out.issues)
+    };
+    assert_eq!(issue.message_key, ISSUE_TRUNCATED);
 }

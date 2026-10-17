@@ -68,7 +68,8 @@ pub(crate) fn repo_finding(
     let verdict = match outcome {
         Outcome::Analyzed(a) => {
             let cloud_only = node.subtree.cloud_only_files;
-            let (verdict, row_tags) = classify(&a.state, cloud_only > 0 && !bare);
+            let (verdict, row_tags) =
+                classify(&a.state, (cloud_only > 0 && !bare) || a.unread_submodules);
             tags.extend(row_tags.iter().map(|t| (*t).to_owned()));
             args = state_args(&a.state, &a.remote_host);
             if cloud_only > 0 {
@@ -105,8 +106,9 @@ pub(crate) fn repo_finding(
 }
 
 /// The row of §4.4.3 and its tags. A repository without remotes is unsaved
-/// as a whole (FR-07-05); a work tree that could not be looked at
-/// (`worktree_unknown`) is not taken for clean.
+/// as a whole (FR-07-05); a work tree that could not be looked at or with a
+/// submodule that could not be read (`worktree_unknown`) is not taken for
+/// clean.
 pub(crate) fn classify(
     state: &GitState,
     worktree_unknown: bool,

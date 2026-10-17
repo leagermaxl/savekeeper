@@ -337,11 +337,18 @@ fn merge_submodules(repos: &[Repo<'_>], outcomes: &mut [Outcome]) -> Vec<bool> {
         }
         merged[j] = true;
         let sub = match &outcomes[j] {
-            Outcome::Analyzed(sub) => sub.state.clone(),
-            _ => continue,
+            Outcome::Analyzed(sub) => Some((sub.state.clone(), sub.unread_submodules)),
+            _ => None,
         };
         if let Outcome::Analyzed(outer) = &mut outcomes[p] {
-            outer.state.add_submodule(&sub, &rel);
+            match sub {
+                Some((state, unread)) => {
+                    outer.state.add_submodule(&state, &rel);
+                    outer.unread_submodules |= unread;
+                }
+                // An unread submodule may hold changes (SPEC-07 §4.4).
+                None => outer.unread_submodules = true,
+            }
         }
     }
     merged

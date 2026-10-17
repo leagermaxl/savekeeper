@@ -111,6 +111,10 @@ pub(crate) struct Analysis {
     pub ignored_dirs: Vec<String>,
     /// Submodules: paths of the gitlinks of the index, relative with `/`.
     pub gitlinks: Vec<String>,
+    /// A submodule (or one of its own) could not be read: gix failed or the
+    /// limit of repositories was reached. Set by H-GIT; the repository is
+    /// then not taken for clean.
+    pub unread_submodules: bool,
 }
 
 /// Reads the state of the repository at `path`: a work tree (holding `.git`)
