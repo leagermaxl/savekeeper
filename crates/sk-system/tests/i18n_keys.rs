@@ -26,7 +26,7 @@ const LANGUAGES: [&str; 2] = ["ru", "en"];
 const PREFIXES: [&str; 3] = ["system.", "issue.system.", "evidence.system_export"];
 
 /// Arguments of every warning (SPEC-06 §4.3).
-const ISSUE_ARGS: [(&str, &[&str]); 17] = [
+const ISSUE_ARGS: [(&str, &[&str]); 20] = [
     ("issue.system.activation_query_failed", &["error"]),
     ("issue.system.bitlocker_needs_admin", &[]),
     ("issue.system.bitlocker_query_failed", &["error"]),
@@ -34,6 +34,9 @@ const ISSUE_ARGS: [(&str, &[&str]); 17] = [
     ("issue.system.drivers_export_exit_code", &["code"]),
     ("issue.system.file_copy_failed", &["path", "error"]),
     ("issue.system.folder_read_failed", &["path", "error"]),
+    ("issue.system.git_bundle_failed", &["error"]),
+    ("issue.system.git_status_failed", &["error"]),
+    ("issue.system.git_worktree_cloud_only", &["path"]),
     (
         "issue.system.ps_module_not_copied",
         &["module", "edition", "bytes"],

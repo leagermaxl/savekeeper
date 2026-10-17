@@ -30,6 +30,9 @@
     "missing": "winget is not installed (it comes with App Installer from Microsoft Store)",
     "outdated": "winget is too old (version 1.4 or newer is needed): update App Installer"
   },
+  "git_bundle": {
+    "missing": "git is not installed or not in PATH: the repository bundle cannot be created"
+  },
   "wifi": {
     "no_profiles": "No saved Wi-Fi networks"
   },

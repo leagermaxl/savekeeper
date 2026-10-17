@@ -59,6 +59,8 @@ pub struct Cmd {
     timeout: Duration,
     cwd: Option<PathBuf>,
     env: Vec<(OsString, OsString)>,
+    /// Inherited variables removed from the environment of the process.
+    env_removed: Vec<OsString>,
     encoding: OutputEncoding,
 }
 
@@ -84,6 +86,7 @@ impl Cmd {
             timeout: DEFAULT_TIMEOUT,
             cwd: None,
             env: Vec::new(),
+            env_removed: Vec::new(),
             encoding: OutputEncoding::default(),
         }
     }
@@ -115,6 +118,13 @@ impl Cmd {
         self
     }
 
+    /// Removes an inherited environment variable from the process; variables set with
+    /// [`env`](Self::env) are kept.
+    pub(crate) fn env_remove(mut self, key: impl AsRef<OsStr>) -> Self {
+        self.env_removed.push(key.as_ref().to_os_string());
+        self
+    }
+
     /// Sets the encoding of the output; [`OutputEncoding::Oem`] by default.
     pub fn encoding(mut self, encoding: OutputEncoding) -> Self {
         self.encoding = encoding;
@@ -129,6 +139,18 @@ impl Cmd {
     /// The arguments of the program.
     pub fn get_args(&self) -> &[OsString] {
         &self.args
+    }
+
+    /// The environment variables added to the process (fake runners in tests check them).
+    #[cfg(test)]
+    pub(crate) fn get_envs(&self) -> &[(OsString, OsString)] {
+        &self.env
+    }
+
+    /// The inherited environment variables removed from the process (tests).
+    #[cfg(test)]
+    pub(crate) fn get_env_removed(&self) -> &[OsString] {
+        &self.env_removed
     }
 
     /// The timeout of the process (fake runners in tests check it).
@@ -246,6 +268,9 @@ impl Cmd {
             .kill_on_drop(true);
         if let Some(cwd) = &self.cwd {
             command.current_dir(cwd);
+        }
+        for key in &self.env_removed {
+            command.env_remove(key);
         }
         for (key, value) in &self.env {
             command.env(key, value);

@@ -97,6 +97,7 @@ fn registry_lists_exporters_in_catalogue_order() {
             "disks-info",
             "windows-info",
             "checklist",
+            "git-bundle",
         ]
     );
 }

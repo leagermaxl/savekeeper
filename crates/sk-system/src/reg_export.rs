@@ -240,7 +240,7 @@ pub(crate) fn reg_file_name(key: &str, taken: &mut BTreeSet<String>) -> String {
 }
 
 /// Lowercase alphanumeric words of `key` joined by `-`.
-fn slug(key: &str) -> String {
+pub(crate) fn slug(key: &str) -> String {
     let mut out = String::with_capacity(key.len());
     for c in key.chars() {
         if c.is_alphanumeric() {

@@ -7,6 +7,7 @@ mod disks_info;
 mod drivers;
 mod env_vars;
 mod fonts;
+mod git_bundle;
 mod hosts;
 mod partial;
 mod powershell_modules;
@@ -46,6 +47,7 @@ pub(crate) use disks_info::DisksInfoExporter;
 pub(crate) use drivers::DriversExporter;
 pub(crate) use env_vars::EnvVarsExporter;
 pub(crate) use fonts::FontsExporter;
+pub(crate) use git_bundle::GitBundleExporter;
 pub(crate) use hosts::HostsExporter;
 pub(crate) use powershell_modules::PowershellModulesExporter;
 pub(crate) use printers::PrintersExporter;
@@ -96,6 +98,7 @@ pub(crate) fn all() -> Vec<Arc<dyn SystemExporter>> {
         Arc::new(DisksInfoExporter::new()),
         Arc::new(WindowsInfoExporter::new()),
         Arc::new(ChecklistExporter),
+        Arc::new(GitBundleExporter::new()),
     ]
 }
 
