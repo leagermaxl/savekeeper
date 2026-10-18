@@ -24,6 +24,8 @@ serde_json.workspace = true
 sk-core.workspace = true
 # `LlmError` (SPEC-08 §4.1).
 thiserror.workspace = true
+# Truncating summary timestamps to the day (SPEC-08 §4.3, §4.7).
+time.workspace = true
 # `MockClassifier`: simulated delay racing the cancellation token.
 tokio = { workspace = true, features = ["macros", "time"], optional = true }
 

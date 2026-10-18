@@ -9,14 +9,21 @@ mod classifier;
 mod error;
 #[cfg(any(test, feature = "mock"))]
 pub mod mock;
+pub mod privacy;
 mod prompt;
+mod request;
 mod types;
 pub mod validate;
 
 pub use apply::{apply_classification, LLM_EVIDENCE_KEY};
 pub use classifier::Classifier;
 pub use error::LlmError;
+pub use privacy::{final_check, PrivacyViolation};
 pub use prompt::{PROMPT_VERSION, RESPONSE_SCHEMA, SYSTEM_PROMPT};
+pub use request::{
+    item_for_prompt, summary_for_prompt, user_message, RequestPreview, MAX_NAME_CHARS,
+    MAX_SUMMARY_CHARS, PREVIEW_SAMPLE_ITEMS,
+};
 pub use types::{Classification, ClassifierInfo, ClassifyItem, ContentPeek, HealthReport};
 pub use validate::{parse_response, ParsedResponse};
 

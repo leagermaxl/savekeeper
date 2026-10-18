@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-llm` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-07 |
 | Используется в | SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-18 (T-08-03: порог `min_confidence_to_apply` — аргумент `apply_classification`, §4.1); 2026-10-18 (T-08-01: поля `HealthReport` в §4.1 — FR-08-08; статус in-progress); 2026-10-02 (промпт: `sample_names` — пути файлов и папок, SPEC-03 §4.4; 2026-10-01: `LlmConfig` — в `sk-core::config`; `MockClassifier` в `sk-llm` под feature `mock`) |
+| Последнее изменение | 2026-10-18 (T-08-04: формат усечения дат, `null` опускаются, лимит 4 000 на `summary` и порядок отбрасывания — §4.3, §5; правила `final_check` и API приватности — §4.1, §4.8); 2026-10-18 (T-08-03: порог `min_confidence_to_apply` — аргумент `apply_classification`, §4.1); 2026-10-18 (T-08-01: поля `HealthReport` в §4.1 — FR-08-08; статус in-progress); 2026-10-02 (промпт: `sample_names` — пути файлов и папок, SPEC-03 §4.4; 2026-10-01: `LlmConfig` — в `sk-core::config`; `MockClassifier` в `sk-llm` под feature `mock`) |
 
 ## 1. Цель
 
@@ -249,8 +249,11 @@ Rules:
 ```
 
 Сообщение `user` — компактный JSON `{"items":[{id, summary, peek?, hint?}, …]}` (serde, без
-форматирования, поля с пустыми массивами опускаются). Метки времени усекаются до дня, чтобы
-кэш-ключ не менялся из-за секунд (§4.7).
+форматирования, поля с пустыми массивами и `null` опускаются). Метки времени усекаются до дня, чтобы
+кэш-ключ не менялся из-за секунд (§4.7): перевод в UTC, затем полночь UTC в RFC 3339
+(`2026-10-18T00:00:00Z`); дата с годом вне 0..=9999 опускается. Имена в `sample_names` и
+`top_children[].name` обрезаются до 120 символов. Строит JSON `sk_llm::summary_for_prompt`
+(вход уже обезличен, повторной обезлички нет; страховка — `final_check`, §4.8).
 
 ### 4.4 Конфигурация
 
@@ -333,7 +336,8 @@ Rules:
 
 - `RequestPreview { provider, model, is_local, item_count, sample: Vec<serde_json::Value> /* первые 3 элемента, ровно как уйдут */, total_bytes_to_send, est_cost_usd }`.
 - Для `cloud` UI показывает превью в модальном окне (SPEC-11) до первого запроса скана, если `confirm_cloud_each_scan = true`. Отказ → фаза `Classify` пропускается с issue `llm.cloud_declined`.
-- Перед отправкой каждого элемента выполняется **повторная** проверка (defense in depth): если в сериализованном JSON найдено `env.user_name`, `env.machine_name`, абсолютный путь (`[A-Za-z]:\\` вне `{DRIVE:X}`), email или строка, похожая на токен, элемент исключается и выдаётся issue `llm.privacy_blocked`. Функция `sk_llm::privacy::final_check(&str, &Environment) -> Result<(), PrivacyViolation>`.
+- Перед отправкой каждого элемента выполняется **повторная** проверка (defense in depth): если в сериализованном JSON найдено `env.user_name`, `env.machine_name`, абсолютный путь (`[A-Za-z]:\\` вне `{DRIVE:X}`), email или строка, похожая на токен, элемент исключается и выдаётся issue `llm.privacy_blocked`. Функция `sk_llm::privacy::final_check(&str, &Environment) -> Result<(), PrivacyViolation>`. `PrivacyViolation { UserName, MachineName, AbsolutePath, Email, Token }` (сообщения без найденного текста). Проверяются три версии текста (первое нарушение побеждает): сырой текст; текст с мягко раскодированными JSON-экранированиями (`\n`, `\"`, `\`, `\uXXXX` с суррогатными парами, одиночный суррогат → U+FFFD; работает и на невалидном JSON); при валидном JSON — каждая раскодированная строка, включая ключи. Правила: `user_name`, затем `machine_name` — целым словом (соседние символы не Unicode-буквы/цифры), без учёта регистра, имена короче 2 символов игнорируются; путь — `[A-Za-z]:\` в любом месте, `[A-Za-z]:/` — только без ASCII-буквы/цифры перед буквой диска (URL вида `https://` не срабатывают); email и токен (≥ 24 символа `[A-Za-z0-9_-]`) — те же правила, что у `sk_core::privacy::redact`.
+- Построение запроса: `summary_for_prompt(&FolderSummary) -> serde_json::Value` (§4.3, §5), `item_for_prompt(&ClassifyItem) -> Value` (`{id, summary, peek?, hint?}`), `user_message(&[ClassifyItem]) -> String` (компактный `{"items":[…]}`), `RequestPreview::new(&ClassifierInfo, &[ClassifyItem], est_cost_usd: Option<f64>)`; константы `MAX_NAME_CHARS = 120`, `MAX_SUMMARY_CHARS = 4_000`, `PREVIEW_SAMPLE_ITEMS = 3`. В `RequestPreview` `provider: String`, `total_bytes_to_send` — UTF-8 длина `user_message` по всем элементам без системного промпта, `est_cost_usd` передаёт вызывающий (цены — T-08-08); `final_check` превью не делает (нет `Environment`).
 - Логи содержат только количество элементов, модель, длительность и usage, без содержимого запросов.
 
 ### 4.9 Content peek (опционально)
@@ -391,7 +395,7 @@ Rules:
 | Два элемента с одинаковой сводкой (одна и та же структура у разных папок) | Один запрос, результат дублируется по id (кэш-ключ одинаковый). |
 | Отмена посреди батча | Drop future, уже полученные результаты сохранены в кэш, `RunOutput` частичный. |
 | Корпоративный прокси | `reqwest` уважает `HTTPS_PROXY`. Локальные endpoint'ы идут в обход прокси (`no_proxy` для 127.0.0.1/localhost). |
-| Сводка слишком большая (например, длинные имена) | `sample_names` обрезаются до 120 символов каждое, общий лимит 4 000 символов на элемент. |
+| Сводка слишком большая (например, длинные имена) | `sample_names` и `top_children[].name` обрезаются до 120 символов каждое. Общий лимит 4 000 символов на компактный JSON `summary` (`peek` и `hint` не считаются, у них свои лимиты §4.9). При превышении отбрасываются с конца элементы `sample_names`, затем `top_children`, затем `ext_histogram`. `path`, скаляры и `markers` не обрезаются, поэтому при очень длинном `path` (≈ 3 800+ символов) лимит может быть превышен. |
 
 ## 6. Тестирование
 
@@ -419,7 +423,7 @@ Rules:
 - [x] **T-08-01** — Каркас `sk-llm`: типы §4.1, `LlmError`, реэкспорт `LlmConfig` (тип и дефолты §4.4 реализуются в SPEC-01 T-01-04), `MockClassifier` под feature `mock` (§4.2.4). *Зависит:* T-02-01, T-01-04. *Готово, когда:* компилируется, unit-тесты mock.
 - [x] **T-08-02** — Промпт `classify_v1.txt`, `PROMPT_VERSION`, JSON-схема §4.5 как константа + тест соответствия `Category`. *Зависит:* T-08-01.
 - [x] **T-08-03** — Валидация и нормализация §4.6 + `apply_classification`. *Зависит:* T-08-01.
-- [ ] **T-08-04** — Приватность: `final_check`, построение `summary_for_prompt` (усечение дат, лимиты длины), `RequestPreview`. *Зависит:* T-02-04. *Готово, когда:* тесты §6.1.
+- [x] **T-08-04** — Приватность: `final_check`, построение `summary_for_prompt` (усечение дат, лимиты длины), `RequestPreview`. *Зависит:* T-02-04. *Готово, когда:* тесты §6.1.
 - [ ] **T-08-05** — Кэш JSONL §4.7. *Зависит:* T-08-04.
 - [ ] **T-08-06** — Провайдер Ollama + health + авто-детект. *Зависит:* T-08-02, T-08-03. *Готово, когда:* wiremock-тесты.
 - [ ] **T-08-07** — Провайдер OpenAI-compat + fallback на `json_object`. *Зависит:* T-08-06.

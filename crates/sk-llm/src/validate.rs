@@ -34,8 +34,10 @@ struct RawResponse {
     results: Vec<serde_json::Value>,
 }
 
-/// One result before validation. Fields are lenient: a wrong type or a
-/// missing value is normalized instead of rejecting the whole response.
+/// One result before validation. A missing field (or `null` in an `Option`
+/// field) is normalized to its default. A field of the wrong type makes the whole result unreadable:
+/// it is skipped and its id goes to [`ParsedResponse::missing`]; the rest of
+/// the response is still used.
 #[derive(Deserialize)]
 struct RawResult {
     id: String,
