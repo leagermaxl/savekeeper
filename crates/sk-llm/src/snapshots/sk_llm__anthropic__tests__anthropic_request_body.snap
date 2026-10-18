@@ -1,0 +1,29 @@
+---
+source: crates/sk-llm/src/anthropic_tests.rs
+expression: body
+---
+{
+  "max_tokens": 4096,
+  "messages": [
+    {
+      "content": "{\"items\":[{\"hint\":\"electron\",\"id\":\"f1\",\"summary\":{\"dir_count\":1,\"ext_histogram\":[{\"bytes\":2048,\"count\":3,\"ext\":\"json\"}],\"file_count\":3,\"markers\":[\"config_like\"],\"max_depth\":1,\"path\":\"{APPDATA}\\\\App\",\"sample_names\":[\"settings.json\"],\"total_bytes\":2048,\"truncated\":false}},{\"hint\":\"electron\",\"id\":\"f2\",\"summary\":{\"dir_count\":1,\"ext_histogram\":[{\"bytes\":2048,\"count\":3,\"ext\":\"json\"}],\"file_count\":3,\"markers\":[\"config_like\"],\"max_depth\":1,\"path\":\"{APPDATA}\\\\App\",\"sample_names\":[\"settings.json\"],\"total_bytes\":2048,\"truncated\":false}}]}",
+      "role": "user"
+    }
+  ],
+  "model": "claude-haiku-4-5",
+  "output_config": {
+    "format": {
+      "schema": "<RESPONSE_SCHEMA>",
+      "type": "json_schema"
+    }
+  },
+  "system": [
+    {
+      "cache_control": {
+        "type": "ephemeral"
+      },
+      "text": "<SYSTEM_PROMPT>",
+      "type": "text"
+    }
+  ]
+}

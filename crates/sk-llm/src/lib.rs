@@ -4,6 +4,7 @@
 //! [`Category::Unknown`](sk_core::model::Category::Unknown). It is optional
 //! (principle P4): with `llm.mode = off` it makes no network requests.
 
+mod anthropic;
 mod apply;
 mod cache;
 mod classifier;
@@ -18,8 +19,13 @@ pub mod privacy;
 mod prompt;
 mod request;
 mod types;
+mod usage;
 pub mod validate;
 
+pub use anthropic::{
+    AnthropicClassifier, ANTHROPIC_ENDPOINT, ANTHROPIC_MAX_TOKENS, ANTHROPIC_PROVIDER,
+    ANTHROPIC_VERSION,
+};
 pub use apply::{apply_classification, LLM_EVIDENCE_KEY};
 pub use cache::{
     cache_key, LlmCache, CACHE_FILE, CACHE_TTL_DAYS, COMPACT_MAX_LINES, COMPACT_STALE_RATIO,
@@ -41,6 +47,9 @@ pub use request::{
     MAX_SUMMARY_CHARS, PREVIEW_SAMPLE_ITEMS,
 };
 pub use types::{Classification, ClassifierInfo, ClassifyItem, ContentPeek, HealthReport};
+pub use usage::{
+    CostEstimate, ModelPricing, UsageStats, EST_INPUT_TOKENS_PER_ITEM, EST_OUTPUT_TOKENS_PER_ITEM,
+};
 pub use validate::{parse_response, ParsedResponse};
 
 /// The `llm` config section (SPEC-08 §4.4); defined in `sk-core::config`.

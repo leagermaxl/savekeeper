@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-llm` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-07 |
 | Используется в | SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-18 (T-08-07: детали OpenAI-compat — fallback, health, `is_local` по loopback, внешний URL через секцию `local` — §4.2.2, §4.4); 2026-10-18 (T-08-06: детали Ollama, health без модели, авто-детект — §4.2.1; общий маппинг HTTP-ошибок — §4.12; прокси для loopback — §5); 2026-10-18 (T-08-05: `peek_digest`, формат `result`, условия компакции, TTL и API кэша — §4.7); 2026-10-18 (T-08-04: формат усечения дат, `null` опускаются, лимит 4 000 на `summary` и порядок отбрасывания — §4.3, §5; правила `final_check` и API приватности — §4.1, §4.8); 2026-10-18 (T-08-03: порог `min_confidence_to_apply` — аргумент `apply_classification`, §4.1); 2026-10-18 (T-08-01: поля `HealthReport` в §4.1 — FR-08-08; статус in-progress); 2026-10-02 (промпт: `sample_names` — пути файлов и папок, SPEC-03 §4.4; 2026-10-01: `LlmConfig` — в `sk-core::config`; `MockClassifier` в `sk-llm` под feature `mock`) |
+| Последнее изменение | 2026-10-18 (T-08-08: `LlmError::{MaxTokens, Refusal}`, `Classifier::usage`, `UsageStats`/`ModelPricing`/`CostEstimate` — §4.1; детали Anthropic — §4.2.3; NFR-08-03: $0.05 → $0.40, исправлена арифметика); 2026-10-18 (T-08-07: детали OpenAI-compat — fallback, health, `is_local` по loopback, внешний URL через секцию `local` — §4.2.2, §4.4); 2026-10-18 (T-08-06: детали Ollama, health без модели, авто-детект — §4.2.1; общий маппинг HTTP-ошибок — §4.12; прокси для loopback — §5); 2026-10-18 (T-08-05: `peek_digest`, формат `result`, условия компакции, TTL и API кэша — §4.7); 2026-10-18 (T-08-04: формат усечения дат, `null` опускаются, лимит 4 000 на `summary` и порядок отбрасывания — §4.3, §5; правила `final_check` и API приватности — §4.1, §4.8); 2026-10-18 (T-08-03: порог `min_confidence_to_apply` — аргумент `apply_classification`, §4.1); 2026-10-18 (T-08-01: поля `HealthReport` в §4.1 — FR-08-08; статус in-progress); 2026-10-02 (промпт: `sample_names` — пути файлов и папок, SPEC-03 §4.4; 2026-10-01: `LlmConfig` — в `sk-core::config`; `MockClassifier` в `sk-llm` под feature `mock`) |
 
 ## 1. Цель
 
@@ -54,7 +54,7 @@
 ### 3.2 Нефункциональные
 - **NFR-08-01** — Local (7–8B, GPU): ≤ 3 с на батч из 8 элементов. Cloud (Haiku 4.5): ≤ 5 с на батч из 20.
 - **NFR-08-02** — Accuracy по категории на eval-наборе (§6.3): ≥ 0.80 для `claude-haiku-4-5`, ≥ 0.70 для `qwen2.5:7b-instruct`.
-- **NFR-08-03** — Стоимость облачного скана из 300 элементов на Haiku 4.5 ≤ $0.05 (≈ 300 × 600 входных токенов + 300 × 120 выходных; оценка и фактическое значение показываются в UI).
+- **NFR-08-03** — Стоимость облачного скана из 300 элементов на Haiku 4.5 ≤ $0.40 (≈ 300 × 600 входных токенов × $1/MTok + 300 × 120 выходных × $5/MTok ≈ $0.36; оценка и фактическое значение показываются в UI).
 - **NFR-08-04** — API-ключ не попадает в логи, отчёты, `scans/*.json` и сообщения об ошибках.
 
 ## 4. Дизайн
@@ -104,7 +104,19 @@ pub trait Classifier: Send + Sync {
     /// Классифицирует ОДИН батч (≤ info().max_batch). Порядок ответа не гарантирован — сопоставление по id.
     async fn classify(&self, items: &[ClassifyItem], cancel: &CancellationToken)
         -> Result<Vec<Classification>, LlmError>;
+    /// Накопленный usage с создания (общий с клонами). Учитывается каждый 2xx-ответ, включая
+    /// обрезанные и отказы (они оплачены). Runner берёт разницу до/после для `RunOutput.usage`.
+    fn usage(&self) -> UsageStats { UsageStats::default() }
 }
+
+pub struct UsageStats { pub requests: u64, pub input_tokens: u64, pub output_tokens: u64,
+    pub cache_creation_input_tokens: u64, pub cache_read_input_tokens: u64, pub cost_usd: f64 } // + add(&mut self, &UsageStats)
+/// Цены за 1 млн токенов. for_model: только provider "anthropic", точный id без учёта регистра,
+/// иначе None (стоимость 0). cache write = 1.25 × input, cache read = 0.1 × input.
+pub struct ModelPricing { pub input_per_mtok: f64, pub output_per_mtok: f64, pub cache_write_per_mtok: f64, pub cache_read_per_mtok: f64 }
+// ModelPricing::for_model(provider, model) -> Option<Self>; cost_usd(&UsageStats) -> f64
+/// Оценка: n × EST_INPUT_TOKENS_PER_ITEM (600) входа + n × EST_OUTPUT_TOKENS_PER_ITEM (120) выхода, без скидки кэша.
+pub struct CostEstimate { pub items: usize, pub input_tokens: u64, pub output_tokens: u64, pub usd: f64 } // CostEstimate::new(&ModelPricing, n)
 
 /// Оркестратор фазы Classify: кэш, отбор, батчинг, параллелизм, ретраи, прогресс.
 pub struct ClassifyRunner { classifier: Arc<dyn Classifier>, cache: LlmCache, cfg: LlmConfig }
@@ -114,7 +126,7 @@ impl ClassifyRunner {
     pub fn preview(&self, items: &[ClassifyItem]) -> RequestPreview;             // §4.8
     pub async fn run(&self, items: Vec<ClassifyItem>, events: &EventSink, cancel: &CancellationToken)
         -> RunOutput;                                                            // never Err: ошибки → issues
-    pub fn estimate_cost(&self, n_items: usize) -> Option<CostEstimate>;         // только cloud
+    pub fn estimate_cost(&self, n_items: usize) -> Option<CostEstimate>;         // только cloud: ModelPricing::for_model(info.provider, &info.model).map(|p| CostEstimate::new(&p, n))
 }
 
 pub struct RunOutput { pub results: Vec<Classification>, pub issues: Vec<ScanIssue>, pub usage: UsageStats }
@@ -129,6 +141,10 @@ pub enum LlmError {
     #[error("bad response: {0}")] BadResponse(String),
     #[error("timeout")] Timeout,
     #[error("cancelled")] Cancelled,
+    /// stop_reason max_tokens / model_context_window_exceeded: runner делит батч пополам (§5).
+    #[error("response truncated at max_tokens")] MaxTokens,
+    /// stop_reason refusal: элементы остаются Unknown, issue llm.refusal, без ретраев.
+    #[error("model refused to answer")] Refusal,
 }
 ```
 
@@ -185,11 +201,12 @@ Rust не имеет официального Anthropic SDK, поэтому вс
   ```
 - Модели: по умолчанию `claude-haiku-4-5` (дёшево, поддерживает structured outputs). Опция качества — `claude-sonnet-5`. Для Sonnet 5 дополнительно передаётся `"output_config": { "effort": "low", "format": … }`: классификация не требует глубокого рассуждения. Для Haiku 4.5 параметр `effort` **не передаётся** (ошибка API). Model id — только точные строки без суффиксов дат.
 - Structured outputs (`output_config.format`) гарантируют валидный JSON по схеме. Числовые и строковые ограничения (`minimum`, `maximum`, `maxLength`) схемой API **не поддерживаются**, поэтому в отправляемой схеме их нет, а проверка идёт на клиенте (§4.6). Каждый объект схемы должен иметь `additionalProperties: false`.
-- Ответ: `content[]` → первый блок `type = "text"` → JSON. Обязательно проверяется `stop_reason`: `end_turn` — ок; `max_tokens` — батч делится пополам и повторяется; `refusal` — элементы батча остаются `Unknown` с issue `llm.refusal`.
+- Ответ: `content[]` → первый блок `type = "text"` → JSON (блоки thinking пропускаются; нет text-блока → `BadResponse`). Обязательно проверяется `stop_reason`: `end_turn` — ок; `max_tokens` (и `model_context_window_exceeded`) → `LlmError::MaxTokens` — батч делится пополам и повторяется; `refusal` → `LlmError::Refusal` — элементы батча остаются `Unknown` с issue `llm.refusal`; иной или отсутствующий `stop_reason` → `BadResponse`. HTTP 404 с упоминанием модели → `ModelNotFound`, как у других провайдеров.
 - Prompt caching: `cache_control` на системном промпте. Минимальный кэшируемый префикс зависит от модели: для Haiku 4.5 — 4096 токенов, для Sonnet 5 — 1024. Системный промпт (~1500 токенов) на Haiku кэшироваться не будет, и это допустимо. Проверяется по `usage.cache_read_input_tokens`, значение пишется в `UsageStats`.
 - Ошибки: `429 rate_limit_error` → ждать `retry-after` (секунды), иначе backoff. `529 overloaded_error` и `5xx` → backoff. `401/403` → `LlmError::Auth` без ретраев. `400` → `BadResponse` без ретраев.
-- Health: минимальный запрос `max_tokens: 1` с текстом `"ping"` (стоит доли цента) **или** `GET /v1/models/{model}` (бесплатно, предпочтительно).
-- `max_batch = 20`, `max_concurrency = 4`.
+- Health: минимальный запрос `max_tokens: 1` с текстом `"ping"` (стоит доли цента) **или** `GET /v1/models/{model}` (бесплатно, предпочтительно). Реализован `GET /v1/models/{model}`, таймаут `min(timeout_s, HEALTH_TIMEOUT)`: 2xx → `model_available = true`; 404 → `Ok` с `model_available = false`; прочие статусы — по §4.12; нет соединения → `Unreachable`; `server_version = None`.
+- `max_batch = 20`, `max_concurrency = 4`. `is_local = false`. `effort: "low"` передаётся для `claude-sonnet-5` и `claude-sonnet-5-*`, для прочих моделей — никогда.
+- API: `AnthropicClassifier::new(&CloudLlmConfig, api_key: impl Into<String>) -> Result<Self, LlmError>` (пустой ключ или недопустимый в заголовке → `Auth`; ключ — redacted `Debug`, заголовок sensitive), `with_endpoint(self, &str)` (тесты, шлюзы); константы `ANTHROPIC_PROVIDER`, `ANTHROPIC_ENDPOINT`, `ANTHROPIC_VERSION = "2023-06-01"`, `ANTHROPIC_MAX_TOKENS = 4096`. Цены `ModelPricing::for_model`: `claude-haiku-4-5` $1/$5, `claude-sonnet-5` $2/$10 за 1 млн входных/выходных токенов.
 
 #### 4.2.4 Mock
 `MockClassifier` для тестов: возвращает ответы из таблицы (`HashMap<PathTemplate, Classification>`)
@@ -435,7 +452,7 @@ Rules:
 - [x] **T-08-05** — Кэш JSONL §4.7. *Зависит:* T-08-04.
 - [x] **T-08-06** — Провайдер Ollama + health + авто-детект. *Зависит:* T-08-02, T-08-03. *Готово, когда:* wiremock-тесты.
 - [x] **T-08-07** — Провайдер OpenAI-compat + fallback на `json_object`. *Зависит:* T-08-06.
-- [ ] **T-08-08** — Провайдер Anthropic: тело §4.2.3, structured outputs, prompt caching, обработка `stop_reason`, 429/529/5xx, health через `/v1/models/{model}`, `UsageStats`, оценка стоимости. *Зависит:* T-08-02, T-08-03. *Готово, когда:* wiremock-тесты для всех кодов.
+- [x] **T-08-08** — Провайдер Anthropic: тело §4.2.3, structured outputs, prompt caching, обработка `stop_reason`, 429/529/5xx, health через `/v1/models/{model}`, `UsageStats`, оценка стоимости. *Зависит:* T-08-02, T-08-03. *Готово, когда:* wiremock-тесты для всех кодов.
 - [ ] **T-08-09** — `SecretStore`: Credential Manager (`keyring`) + env, `secrecy`. *Готово, когда:* Windows-тест set/get/delete. Ключ не виден в `Debug` и логах.
 - [ ] **T-08-10** — `ClassifyRunner`: отбор, батчинг, `buffer_unordered`, ретраи с backoff, деление батча, прогресс, отмена, частичные результаты. *Зависит:* T-08-05, T-08-06. *Готово, когда:* интеграционные тесты §6.2.
 - [ ] **T-08-11** — Content peek + скраб секретов §4.9. *Зависит:* T-08-04.

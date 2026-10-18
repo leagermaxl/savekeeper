@@ -31,4 +31,12 @@ pub enum LlmError {
     /// The cancellation token fired.
     #[error("cancelled")]
     Cancelled,
+    /// The answer was cut off at the output limit (Anthropic `stop_reason:
+    /// max_tokens`): the caller splits the batch in half and retries (§5).
+    #[error("response truncated at max_tokens")]
+    MaxTokens,
+    /// The model declined to answer (Anthropic `stop_reason: refusal`): the
+    /// items stay `Unknown` with issue `llm.refusal` (§5), no retry.
+    #[error("model refused to answer")]
+    Refusal,
 }

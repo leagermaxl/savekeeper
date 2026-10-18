@@ -3,7 +3,7 @@
 use async_trait::async_trait;
 use sk_core::CancellationToken;
 
-use crate::{Classification, ClassifierInfo, ClassifyItem, HealthReport, LlmError};
+use crate::{Classification, ClassifierInfo, ClassifyItem, HealthReport, LlmError, UsageStats};
 
 /// An LLM provider that classifies batches of folder summaries.
 #[async_trait]
@@ -23,4 +23,11 @@ pub trait Classifier: Send + Sync {
         items: &[ClassifyItem],
         cancel: &CancellationToken,
     ) -> Result<Vec<Classification>, LlmError>;
+
+    /// Tokens and cost reported by the provider since this classifier (or the
+    /// one it was cloned from) was created. Providers that report nothing
+    /// return zeros (the default).
+    fn usage(&self) -> UsageStats {
+        UsageStats::default()
+    }
 }
