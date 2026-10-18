@@ -1,0 +1,26 @@
+---
+source: crates/sk-llm/src/openai_compat_tests.rs
+expression: body
+---
+{
+  "messages": [
+    {
+      "content": "<SYSTEM_PROMPT>",
+      "role": "system"
+    },
+    {
+      "content": "{\"items\":[{\"hint\":\"electron\",\"id\":\"f1\",\"summary\":{\"dir_count\":1,\"ext_histogram\":[{\"bytes\":2048,\"count\":3,\"ext\":\"json\"}],\"file_count\":3,\"markers\":[\"config_like\"],\"max_depth\":1,\"path\":\"{APPDATA}\\\\App\",\"sample_names\":[\"settings.json\"],\"total_bytes\":2048,\"truncated\":false}},{\"hint\":\"electron\",\"id\":\"f2\",\"summary\":{\"dir_count\":1,\"ext_histogram\":[{\"bytes\":2048,\"count\":3,\"ext\":\"json\"}],\"file_count\":3,\"markers\":[\"config_like\"],\"max_depth\":1,\"path\":\"{APPDATA}\\\\App\",\"sample_names\":[\"settings.json\"],\"total_bytes\":2048,\"truncated\":false}}]}",
+      "role": "user"
+    }
+  ],
+  "model": "qwen2.5-7b-instruct",
+  "response_format": {
+    "json_schema": {
+      "name": "classifications",
+      "schema": "<RESPONSE_SCHEMA>",
+      "strict": true
+    },
+    "type": "json_schema"
+  },
+  "temperature": 0
+}

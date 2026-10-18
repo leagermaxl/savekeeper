@@ -4,13 +4,13 @@ use std::time::{Duration, Instant};
 
 use async_trait::async_trait;
 use reqwest::header::CONTENT_TYPE;
-use reqwest::{StatusCode, Url};
+use reqwest::Url;
 use serde::Deserialize;
 use serde_json::{json, Value};
 use sk_core::config::LocalLlmConfig;
 use sk_core::CancellationToken;
 
-use crate::http::{self, HttpResponse};
+use crate::http::{self, parse_json, usize_of, HttpResponse};
 use crate::{
     parse_response, user_message, Classification, Classifier, ClassifierInfo, ClassifyItem,
     HealthReport, LlmError, RESPONSE_SCHEMA, SYSTEM_PROMPT,
@@ -88,10 +88,6 @@ impl OllamaClassifier {
     }
 }
 
-fn usize_of(n: u32) -> usize {
-    usize::try_from(n.max(1)).unwrap_or(usize::MAX)
-}
-
 /// `GET /api/version`.
 #[derive(Deserialize)]
 struct VersionResponse {
@@ -146,10 +142,6 @@ pub(crate) fn tag_names(tags: TagsResponse) -> Vec<String> {
         .collect()
 }
 
-fn parse_json<'a, T: Deserialize<'a>>(body: &'a [u8], what: &str) -> Result<T, LlmError> {
-    serde_json::from_slice(body).map_err(|e| LlmError::BadResponse(format!("{what}: {e}")))
-}
-
 #[async_trait]
 impl Classifier for OllamaClassifier {
     fn info(&self) -> ClassifierInfo {
@@ -190,7 +182,7 @@ impl Classifier for OllamaClassifier {
         let model_available = names.iter().any(|n| same_model(n, &self.model));
         Ok(HealthReport {
             model_available,
-            latency_ms: u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX),
+            latency_ms: http::elapsed_ms(started),
             server_version,
         })
     }
@@ -204,18 +196,8 @@ impl Classifier for OllamaClassifier {
         items: &[ClassifyItem],
         cancel: &CancellationToken,
     ) -> Result<Vec<Classification>, LlmError> {
-        if cancel.is_cancelled() {
-            return Err(LlmError::Cancelled);
-        }
-        if items.is_empty() {
+        if !http::check_batch(items.len(), self.max_batch, cancel)? {
             return Ok(Vec::new());
-        }
-        if items.len() > self.max_batch {
-            return Err(LlmError::BadResponse(format!(
-                "batch of {} items exceeds max_batch {}",
-                items.len(),
-                self.max_batch
-            )));
         }
         let body = self.request_body(items)?.to_string();
         let request = self
@@ -231,14 +213,10 @@ impl Classifier for OllamaClassifier {
             model = %self.model,
             items = items.len(),
             status = response.status.as_u16(),
-            elapsed_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX),
+            elapsed_ms = http::elapsed_ms(started),
             "llm request finished"
         );
-        if response.status == StatusCode::NOT_FOUND
-            && http::error_message(&response.body)
-                .to_lowercase()
-                .contains("model")
-        {
+        if http::is_model_not_found(&response) {
             return Err(LlmError::ModelNotFound(self.model.clone()));
         }
         if !response.status.is_success() {

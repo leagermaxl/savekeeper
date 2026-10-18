@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-llm` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-07 |
 | Используется в | SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-18 (T-08-06: детали Ollama, health без модели, авто-детект — §4.2.1; общий маппинг HTTP-ошибок — §4.12; прокси для loopback — §5); 2026-10-18 (T-08-05: `peek_digest`, формат `result`, условия компакции, TTL и API кэша — §4.7); 2026-10-18 (T-08-04: формат усечения дат, `null` опускаются, лимит 4 000 на `summary` и порядок отбрасывания — §4.3, §5; правила `final_check` и API приватности — §4.1, §4.8); 2026-10-18 (T-08-03: порог `min_confidence_to_apply` — аргумент `apply_classification`, §4.1); 2026-10-18 (T-08-01: поля `HealthReport` в §4.1 — FR-08-08; статус in-progress); 2026-10-02 (промпт: `sample_names` — пути файлов и папок, SPEC-03 §4.4; 2026-10-01: `LlmConfig` — в `sk-core::config`; `MockClassifier` в `sk-llm` под feature `mock`) |
+| Последнее изменение | 2026-10-18 (T-08-07: детали OpenAI-compat — fallback, health, `is_local` по loopback, внешний URL через секцию `local` — §4.2.2, §4.4); 2026-10-18 (T-08-06: детали Ollama, health без модели, авто-детект — §4.2.1; общий маппинг HTTP-ошибок — §4.12; прокси для loopback — §5); 2026-10-18 (T-08-05: `peek_digest`, формат `result`, условия компакции, TTL и API кэша — §4.7); 2026-10-18 (T-08-04: формат усечения дат, `null` опускаются, лимит 4 000 на `summary` и порядок отбрасывания — §4.3, §5; правила `final_check` и API приватности — §4.1, §4.8); 2026-10-18 (T-08-03: порог `min_confidence_to_apply` — аргумент `apply_classification`, §4.1); 2026-10-18 (T-08-01: поля `HealthReport` в §4.1 — FR-08-08; статус in-progress); 2026-10-02 (промпт: `sample_names` — пути файлов и папок, SPEC-03 §4.4; 2026-10-01: `LlmConfig` — в `sk-core::config`; `MockClassifier` в `sk-llm` под feature `mock`) |
 
 ## 1. Цель
 
@@ -165,10 +165,13 @@ Rust не имеет официального Anthropic SDK, поэтому вс
                          "json_schema": { "name": "classifications", "strict": true, "schema": { /* §4.5 */ } } } }
   ```
 - Ответ: `choices[0].message.content`.
-- Health: `GET /v1/models`.
-- Если сервер не поддерживает `json_schema` (HTTP 400 с упоминанием `response_format`), происходит fallback на `{"type":"json_object"}` + схема в промпте. Флаг кэшируется на сессию.
+- Health: `GET /v1/models` (таймаут `min(timeout_s, HEALTH_TIMEOUT)`): 401/403 → `Auth`; иной не-2xx или тело без массива `data` → `Unreachable`; `model_available` — есть `data[].id`, равный модели без учёта регистра, либо последний сегмент пути id без `.gguf` (llama.cpp); `server_version = None`.
+- Если сервер не поддерживает `json_schema` (HTTP 400 с упоминанием `response_format`), происходит fallback на `{"type":"json_object"}` + схема в промпте. Флаг кэшируется на сессию. Детали: fallback срабатывает при HTTP 400, если в теле ответа (без учёта регистра) есть `response_format`; повторный запрос с `json_object` делается сразу в том же вызове `classify` и не считается ретраем; если он тоже неуспешен, ошибка маппится по §4.12, второго fallback нет. Флаг живёт в экземпляре и его клонах (`Arc<AtomicBool>`). В режиме `json_object` к системному промпту дописывается `FALLBACK_SCHEMA_INTRO` и компактная схема §4.5; кэш-ключ от режима не зависит.
+- Ошибки: 404 с упоминанием model → `ModelNotFound`, как у Ollama; пустой или `null` `choices[0].message.content` → `BadResponse`; `finish_reason = length` отдельно не обрабатывается (обрезанный JSON → `BadResponse`).
 - `max_batch = 8`, `max_concurrency = 1` (настраивается).
-- API-ключ опционален (`Authorization: Bearer`).
+- API-ключ опционален (`Authorization: Bearer`, заголовок помечен sensitive, `Debug` не показывает ключ; пустой ключ — без заголовка).
+- `is_local = true` только для loopback-endpoint (127.0.0.0/8, `::1`, `localhost`). Облачный `openai_compat` с внешним URL (§4.4) задаётся секцией `local` с `kind = openai_compat` и внешним `endpoint`: такой классификатор имеет `is_local = false`, и к нему применяются все правила облака (подтверждение превью, `allow_content_peek_cloud`, предупреждение о приватности) — решение принимается по `info().is_local`, а не по секции конфига (T-08-10). Отдельного `endpoint` в `CloudLlmConfig` нет.
+- API: `OpenAiCompatClassifier::new(&LocalLlmConfig) -> Result<Self, LlmError>`, `with_api_key(self, impl Into<String>)`, `uses_json_object_fallback()`; константы `OPENAI_COMPAT_PROVIDER = "openai_compat"`, `JSON_SCHEMA_NAME = "classifications"`, `FALLBACK_SCHEMA_INTRO`.
 
 #### 4.2.3 Anthropic (Messages API)
 - `POST https://api.anthropic.com/v1/messages`, заголовки: `x-api-key`, `anthropic-version: 2023-06-01`, `content-type: application/json`.
@@ -275,7 +278,7 @@ Rules:
 }
 ```
 `kind` для local: `ollama | openai_compat`. Для cloud в v1 поддерживается только `anthropic`
-(а также `openai_compat` с внешним URL — только с явным предупреждением о приватности).
+(а также `openai_compat` с внешним URL — только с явным предупреждением о приватности; задаётся секцией `local`, см. §4.2.2).
 
 ### 4.5 JSON-схема ответа
 
@@ -431,7 +434,7 @@ Rules:
 - [x] **T-08-04** — Приватность: `final_check`, построение `summary_for_prompt` (усечение дат, лимиты длины), `RequestPreview`. *Зависит:* T-02-04. *Готово, когда:* тесты §6.1.
 - [x] **T-08-05** — Кэш JSONL §4.7. *Зависит:* T-08-04.
 - [x] **T-08-06** — Провайдер Ollama + health + авто-детект. *Зависит:* T-08-02, T-08-03. *Готово, когда:* wiremock-тесты.
-- [ ] **T-08-07** — Провайдер OpenAI-compat + fallback на `json_object`. *Зависит:* T-08-06.
+- [x] **T-08-07** — Провайдер OpenAI-compat + fallback на `json_object`. *Зависит:* T-08-06.
 - [ ] **T-08-08** — Провайдер Anthropic: тело §4.2.3, structured outputs, prompt caching, обработка `stop_reason`, 429/529/5xx, health через `/v1/models/{model}`, `UsageStats`, оценка стоимости. *Зависит:* T-08-02, T-08-03. *Готово, когда:* wiremock-тесты для всех кодов.
 - [ ] **T-08-09** — `SecretStore`: Credential Manager (`keyring`) + env, `secrecy`. *Готово, когда:* Windows-тест set/get/delete. Ключ не виден в `Debug` и логах.
 - [ ] **T-08-10** — `ClassifyRunner`: отбор, батчинг, `buffer_unordered`, ретраи с backoff, деление батча, прогресс, отмена, частичные результаты. *Зависит:* T-08-05, T-08-06. *Готово, когда:* интеграционные тесты §6.2.

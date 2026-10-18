@@ -13,6 +13,7 @@ mod http;
 #[cfg(any(test, feature = "mock"))]
 pub mod mock;
 mod ollama;
+mod openai_compat;
 pub mod privacy;
 mod prompt;
 mod request;
@@ -30,6 +31,9 @@ pub use detect::{
 };
 pub use error::LlmError;
 pub use ollama::{OllamaClassifier, HEALTH_TIMEOUT, OLLAMA_PROVIDER};
+pub use openai_compat::{
+    OpenAiCompatClassifier, FALLBACK_SCHEMA_INTRO, JSON_SCHEMA_NAME, OPENAI_COMPAT_PROVIDER,
+};
 pub use privacy::{final_check, PrivacyViolation};
 pub use prompt::{PROMPT_VERSION, RESPONSE_SCHEMA, SYSTEM_PROMPT};
 pub use request::{

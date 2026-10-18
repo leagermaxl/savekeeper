@@ -170,6 +170,53 @@ pub(crate) fn error_message(body: &[u8]) -> String {
     cleaned.trim().to_owned()
 }
 
+/// The checks every provider runs before a classification request (§4.12):
+/// a cancelled token is [`LlmError::Cancelled`], a batch larger than
+/// `max_batch` is [`LlmError::BadResponse`]. `Ok(false)` for an empty batch,
+/// which needs no request.
+pub(crate) fn check_batch(
+    len: usize,
+    max_batch: usize,
+    cancel: &CancellationToken,
+) -> Result<bool, LlmError> {
+    if cancel.is_cancelled() {
+        return Err(LlmError::Cancelled);
+    }
+    if len > max_batch {
+        return Err(LlmError::BadResponse(format!(
+            "batch of {len} items exceeds max_batch {max_batch}"
+        )));
+    }
+    Ok(len > 0)
+}
+
+/// HTTP 404 whose error text mentions the model: the configured model is
+/// not on the server ([`LlmError::ModelNotFound`]).
+pub(crate) fn is_model_not_found(response: &HttpResponse) -> bool {
+    response.status == StatusCode::NOT_FOUND
+        && error_message(&response.body)
+            .to_lowercase()
+            .contains("model")
+}
+
+/// Parses a JSON response body; failure is [`LlmError::BadResponse`] prefixed with `what`.
+pub(crate) fn parse_json<'a, T: serde::Deserialize<'a>>(
+    body: &'a [u8],
+    what: &str,
+) -> Result<T, LlmError> {
+    serde_json::from_slice(body).map_err(|e| LlmError::BadResponse(format!("{what}: {e}")))
+}
+
+/// A config count (`max_batch`, `max_concurrency`): at least 1.
+pub(crate) fn usize_of(n: u32) -> usize {
+    usize::try_from(n.max(1)).unwrap_or(usize::MAX)
+}
+
+/// Milliseconds since `started`, saturating.
+pub(crate) fn elapsed_ms(started: std::time::Instant) -> u64 {
+    u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX)
+}
+
 #[cfg(test)]
 #[path = "http_tests.rs"]
 mod tests;
