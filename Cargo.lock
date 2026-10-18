@@ -3051,6 +3051,7 @@ name = "sk-llm"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "globset",
  "serde",
  "serde_json",
  "sk-core",

@@ -16,7 +16,11 @@ mock = ["dep:tokio"]
 [dependencies]
 # `Classifier` is an async trait object (SPEC-08 §4.1).
 async-trait.workspace = true
+# Validating suggested globs (SPEC-08 §4.6).
+globset.workspace = true
 serde.workspace = true
+# Parsing the model response (SPEC-08 §4.6).
+serde_json.workspace = true
 sk-core.workspace = true
 # `LlmError` (SPEC-08 §4.1).
 thiserror.workspace = true
@@ -24,8 +28,6 @@ thiserror.workspace = true
 tokio = { workspace = true, features = ["macros", "time"], optional = true }
 
 [dev-dependencies]
-# Parsing `RESPONSE_SCHEMA` in tests (SPEC-08 §4.5).
-serde_json.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "time"] }
 
 [lints]

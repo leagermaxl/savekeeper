@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-llm` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-07 |
 | Используется в | SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-18 (T-08-01: поля `HealthReport` в §4.1 — FR-08-08; статус in-progress); 2026-10-02 (промпт: `sample_names` — пути файлов и папок, SPEC-03 §4.4; 2026-10-01: `LlmConfig` — в `sk-core::config`; `MockClassifier` в `sk-llm` под feature `mock`) |
+| Последнее изменение | 2026-10-18 (T-08-03: порог `min_confidence_to_apply` — аргумент `apply_classification`, §4.1); 2026-10-18 (T-08-01: поля `HealthReport` в §4.1 — FR-08-08; статус in-progress); 2026-10-02 (промпт: `sample_names` — пути файлов и папок, SPEC-03 §4.4; 2026-10-01: `LlmConfig` — в `sk-core::config`; `MockClassifier` в `sk-llm` под feature `mock`) |
 
 ## 1. Цель
 
@@ -134,7 +134,7 @@ pub enum LlmError {
 
 Интеграция в `sk-engine` (SPEC-01 §4.4, фаза `Classify`): engine собирает `ClassifyItem` из
 находок `Unknown` + `ScanReport::unknown_summaries`, вызывает `ClassifyRunner::run` и применяет
-результаты через `apply_classification(&mut Finding, &Classification, &ClassifierInfo)`.
+результаты через `apply_classification(&mut Finding, &Classification, &ClassifierInfo, min_confidence_to_apply: f32)` (порог — `LlmConfig::min_confidence_to_apply`, §4.6 п. 8).
 
 ### 4.2 Провайдеры
 
@@ -418,7 +418,7 @@ Rules:
 
 - [x] **T-08-01** — Каркас `sk-llm`: типы §4.1, `LlmError`, реэкспорт `LlmConfig` (тип и дефолты §4.4 реализуются в SPEC-01 T-01-04), `MockClassifier` под feature `mock` (§4.2.4). *Зависит:* T-02-01, T-01-04. *Готово, когда:* компилируется, unit-тесты mock.
 - [x] **T-08-02** — Промпт `classify_v1.txt`, `PROMPT_VERSION`, JSON-схема §4.5 как константа + тест соответствия `Category`. *Зависит:* T-08-01.
-- [ ] **T-08-03** — Валидация и нормализация §4.6 + `apply_classification`. *Зависит:* T-08-01.
+- [x] **T-08-03** — Валидация и нормализация §4.6 + `apply_classification`. *Зависит:* T-08-01.
 - [ ] **T-08-04** — Приватность: `final_check`, построение `summary_for_prompt` (усечение дат, лимиты длины), `RequestPreview`. *Зависит:* T-02-04. *Готово, когда:* тесты §6.1.
 - [ ] **T-08-05** — Кэш JSONL §4.7. *Зависит:* T-08-04.
 - [ ] **T-08-06** — Провайдер Ollama + health + авто-детект. *Зависит:* T-08-02, T-08-03. *Готово, когда:* wiremock-тесты.
