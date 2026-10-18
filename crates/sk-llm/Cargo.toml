@@ -21,6 +21,9 @@ globset.workspace = true
 # Cache keys of `llm-cache.jsonl` (SPEC-08 §4.7).
 blake3.workspace = true
 serde.workspace = true
+# HTTP of the providers (SPEC-08 §4.2): rustls with the `ring` provider, no OpenSSL.
+reqwest.workspace = true
+rustls.workspace = true
 # Parsing the model response (SPEC-08 §4.6).
 serde_json.workspace = true
 sk-core.workspace = true
@@ -34,9 +37,13 @@ tracing.workspace = true
 tokio = { workspace = true, features = ["macros", "time"], optional = true }
 
 [dev-dependencies]
+# Snapshot of provider request bodies (SPEC-08 §6.1).
+insta.workspace = true
 # Cache files in temporary folders under `target/tmp` (SPEC-08 §6.1).
 tempfile.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "time"] }
+# Local mock HTTP server emulating the providers (SPEC-08 §6.2); no real network.
+wiremock.workspace = true
 
 [lints]
 workspace = true

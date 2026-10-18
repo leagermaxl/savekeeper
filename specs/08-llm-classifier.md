@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-llm` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-07 |
 | Используется в | SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-18 (T-08-05: `peek_digest`, формат `result`, условия компакции, TTL и API кэша — §4.7); 2026-10-18 (T-08-04: формат усечения дат, `null` опускаются, лимит 4 000 на `summary` и порядок отбрасывания — §4.3, §5; правила `final_check` и API приватности — §4.1, §4.8); 2026-10-18 (T-08-03: порог `min_confidence_to_apply` — аргумент `apply_classification`, §4.1); 2026-10-18 (T-08-01: поля `HealthReport` в §4.1 — FR-08-08; статус in-progress); 2026-10-02 (промпт: `sample_names` — пути файлов и папок, SPEC-03 §4.4; 2026-10-01: `LlmConfig` — в `sk-core::config`; `MockClassifier` в `sk-llm` под feature `mock`) |
+| Последнее изменение | 2026-10-18 (T-08-06: детали Ollama, health без модели, авто-детект — §4.2.1; общий маппинг HTTP-ошибок — §4.12; прокси для loopback — §5); 2026-10-18 (T-08-05: `peek_digest`, формат `result`, условия компакции, TTL и API кэша — §4.7); 2026-10-18 (T-08-04: формат усечения дат, `null` опускаются, лимит 4 000 на `summary` и порядок отбрасывания — §4.3, §5; правила `final_check` и API приватности — §4.1, §4.8); 2026-10-18 (T-08-03: порог `min_confidence_to_apply` — аргумент `apply_classification`, §4.1); 2026-10-18 (T-08-01: поля `HealthReport` в §4.1 — FR-08-08; статус in-progress); 2026-10-02 (промпт: `sample_names` — пути файлов и папок, SPEC-03 §4.4; 2026-10-01: `LlmConfig` — в `sk-core::config`; `MockClassifier` в `sk-llm` под feature `mock`) |
 
 ## 1. Цель
 
@@ -151,8 +151,10 @@ Rust не имеет официального Anthropic SDK, поэтому вс
     "keep_alive": "10m" }
   ```
 - Ответ: `message.content` — строка JSON.
-- Health: `GET /api/version` (доступность) + `GET /api/tags` (список моделей → есть ли настроенная).
-- `max_batch = 8`, `max_concurrency = 1` (локальная GPU, параллельность только мешает).
+- Health: `GET /api/version` (доступность) + `GET /api/tags` (список моделей → есть ли настроенная). `/api/version` не 200 → `Unreachable` (по адресу не Ollama); ошибка `/api/tags` маппится как HTTP-ошибка классификации (§4.12). `latency_ms` — обе проверки вместе, таймаут каждого запроса health — `min(timeout_s, 10 с)`. Модель не установлена → `Ok` с `model_available = false`; `classify` в этом случае даёт `ModelNotFound` (404 с упоминанием model в `error`). Имя модели без тега = `:latest`, сравнение без учёта регистра.
+- `max_batch = 8`, `max_concurrency = 1` (локальная GPU, параллельность только мешает); значения из конфига, минимум 1. `is_local = true`. Неверный URL endpoint → `Unreachable("invalid endpoint URL …")`.
+- API: `OllamaClassifier::new(&LocalLlmConfig) -> Result<Self, LlmError>`, `OLLAMA_PROVIDER = "ollama"`, `HEALTH_TIMEOUT = 10 с`.
+- Авто-детект (FR-08-09): `detect_local_providers() -> Vec<DetectedProvider { kind, endpoint, models, server_version }>` по `LOCAL_CANDIDATES`, кандидаты по очереди, таймаут `DETECT_TIMEOUT = 2 с` на запрос. Проба Ollama — `GET /api/version` (200 + строка `version`), модели из `/api/tags`; OpenAI-compat — `GET /v1/models` (200 + массив `data`), модели — `data[].id`. Кто вызывает детект (`from_config` при `mode = local` или UI) — T-08-10/T-08-13.
 
 #### 4.2.2 OpenAI-совместимый (llama.cpp `llama-server`, LM Studio, vLLM)
 - `POST {endpoint}/v1/chat/completions`:
@@ -379,7 +381,8 @@ Rules:
 
 - Порядок: dedupe по кэш-ключу → попадания в кэш → отбор (FR-08-06) → сортировка по `path` (детерминизм) → чанки по `max_batch`, дополнительно ограниченные ~12 000 символами входа на батч.
 - Параллелизм: `futures::stream::iter(batches).buffer_unordered(max_concurrency)`.
-- Таймаут на запрос: `timeout_s`. Общий бюджет фазы: `max(60 с, 2 × n_batches × timeout_s / concurrency)`.
+- HTTP-ошибки (общие для провайдеров): 401/403 → `Auth`; 429 → `RateLimited` (`retry-after` в секундах, HTTP-дата игнорируется); 529 и любые 5xx → `Overloaded`; прочие 4xx → `BadResponse("HTTP n: <error ≤ 200 символов>")`; нет ответа модели или невалидный JSON → `BadResponse`. Пустой батч — без запроса; батч > `max_batch` → `BadResponse`. Тело ответа ограничено 16 МБ. Сообщения ошибок не содержат URL.
+- Таймаут на запрос: `timeout_s` (минимум 1 с). Общий бюджет фазы: `max(60 с, 2 × n_batches × timeout_s / concurrency)`.
 - Ретраи: до 3 попыток, экспоненциальный backoff `1 с, 2 с, 4 с` + jitter ±20%. При 429 используется `retry-after`, если он есть (но не более 60 с). Если за фазу 3 батча подряд завершились `Unreachable`/`Auth`, фаза прерывается, остальные элементы остаются `Unknown`, выдаётся issue `llm.provider_failed`.
 - Прогресс: `Event::Progress { phase: Classify, done: items_done, total: Some(items_total), current: Some(app_guess or path) }`.
 
@@ -396,7 +399,7 @@ Rules:
 | Модель вернула результат для чужого id | Игнорируется. |
 | Два элемента с одинаковой сводкой (одна и та же структура у разных папок) | Один запрос, результат дублируется по id (кэш-ключ одинаковый). |
 | Отмена посреди батча | Drop future, уже полученные результаты сохранены в кэш, `RunOutput` частичный. |
-| Корпоративный прокси | `reqwest` уважает `HTTPS_PROXY`. Локальные endpoint'ы идут в обход прокси (`no_proxy` для 127.0.0.1/localhost). |
+| Корпоративный прокси | `reqwest` уважает `HTTPS_PROXY`. Прокси обходится, если хост endpoint — loopback (127.0.0.0/8, `::1`, `localhost`). |
 | Сводка слишком большая (например, длинные имена) | `sample_names` и `top_children[].name` обрезаются до 120 символов каждое. Общий лимит 4 000 символов на компактный JSON `summary` (`peek` и `hint` не считаются, у них свои лимиты §4.9). При превышении отбрасываются с конца элементы `sample_names`, затем `top_children`, затем `ext_histogram`. `path`, скаляры и `markers` не обрезаются, поэтому при очень длинном `path` (≈ 3 800+ символов) лимит может быть превышен. |
 
 ## 6. Тестирование
@@ -427,7 +430,7 @@ Rules:
 - [x] **T-08-03** — Валидация и нормализация §4.6 + `apply_classification`. *Зависит:* T-08-01.
 - [x] **T-08-04** — Приватность: `final_check`, построение `summary_for_prompt` (усечение дат, лимиты длины), `RequestPreview`. *Зависит:* T-02-04. *Готово, когда:* тесты §6.1.
 - [x] **T-08-05** — Кэш JSONL §4.7. *Зависит:* T-08-04.
-- [ ] **T-08-06** — Провайдер Ollama + health + авто-детект. *Зависит:* T-08-02, T-08-03. *Готово, когда:* wiremock-тесты.
+- [x] **T-08-06** — Провайдер Ollama + health + авто-детект. *Зависит:* T-08-02, T-08-03. *Готово, когда:* wiremock-тесты.
 - [ ] **T-08-07** — Провайдер OpenAI-compat + fallback на `json_object`. *Зависит:* T-08-06.
 - [ ] **T-08-08** — Провайдер Anthropic: тело §4.2.3, structured outputs, prompt caching, обработка `stop_reason`, 429/529/5xx, health через `/v1/models/{model}`, `UsageStats`, оценка стоимости. *Зависит:* T-08-02, T-08-03. *Готово, когда:* wiremock-тесты для всех кодов.
 - [ ] **T-08-09** — `SecretStore`: Credential Manager (`keyring`) + env, `secrecy`. *Готово, когда:* Windows-тест set/get/delete. Ключ не виден в `Debug` и логах.

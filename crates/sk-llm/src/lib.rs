@@ -7,9 +7,12 @@
 mod apply;
 mod cache;
 mod classifier;
+mod detect;
 mod error;
+mod http;
 #[cfg(any(test, feature = "mock"))]
 pub mod mock;
+mod ollama;
 pub mod privacy;
 mod prompt;
 mod request;
@@ -21,7 +24,12 @@ pub use cache::{
     cache_key, LlmCache, CACHE_FILE, CACHE_TTL_DAYS, COMPACT_MAX_LINES, COMPACT_STALE_RATIO,
 };
 pub use classifier::Classifier;
+pub use detect::{
+    detect_local_providers, detect_local_providers_at, DetectedProvider, DETECT_TIMEOUT,
+    LOCAL_CANDIDATES,
+};
 pub use error::LlmError;
+pub use ollama::{OllamaClassifier, HEALTH_TIMEOUT, OLLAMA_PROVIDER};
 pub use privacy::{final_check, PrivacyViolation};
 pub use prompt::{PROMPT_VERSION, RESPONSE_SCHEMA, SYSTEM_PROMPT};
 pub use request::{
