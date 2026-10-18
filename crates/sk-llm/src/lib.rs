@@ -8,10 +8,12 @@ mod classifier;
 mod error;
 #[cfg(any(test, feature = "mock"))]
 pub mod mock;
+mod prompt;
 mod types;
 
 pub use classifier::Classifier;
 pub use error::LlmError;
+pub use prompt::{PROMPT_VERSION, RESPONSE_SCHEMA, SYSTEM_PROMPT};
 pub use types::{Classification, ClassifierInfo, ClassifyItem, ContentPeek, HealthReport};
 
 /// The `llm` config section (SPEC-08 §4.4); defined in `sk-core::config`.
