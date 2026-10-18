@@ -3011,6 +3011,7 @@ dependencies = [
  "sk-core",
  "sk-games",
  "sk-heuristics",
+ "sk-llm",
  "sk-rules",
  "sk-scan",
  "sk-system",

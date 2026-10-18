@@ -1,16 +1,16 @@
 //! The scan pipeline (SPEC-01 §4.4).
 
 mod builtin;
+mod classify;
 mod environment;
 mod games;
 mod heuristics;
+mod run;
 mod system;
 
 use std::collections::{BTreeMap, HashMap};
-use std::future::Future;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::Instant;
 
 use sk_core::collector::{CollectContext, CollectOutput, Collector, PostCollector, PriorResults};
 use sk_core::config::Config;
@@ -34,7 +34,9 @@ use uuid::Uuid;
 
 use crate::reports;
 use crate::rules::BuiltinRules;
+use classify::BuiltinLlm;
 use games::BuiltinGames;
+use run::Run;
 use system::BuiltinSystem;
 
 /// What to scan.
@@ -70,6 +72,8 @@ pub struct ScanPipeline {
     games_registry: Option<Arc<dyn RegistryReader>>,
     /// The `system` collector and the registry of the installed programs.
     system: BuiltinSystem,
+    /// The classifier of the `Classify` phase (SPEC-08 T-08-12).
+    llm: BuiltinLlm,
     app_version: String,
 }
 
@@ -91,6 +95,7 @@ impl ScanPipeline {
             games: BuiltinGames::default(),
             games_registry: None,
             system: BuiltinSystem::default(),
+            llm: BuiltinLlm::default(),
             app_version: env!("CARGO_PKG_VERSION").to_owned(),
         }
     }
@@ -184,10 +189,13 @@ impl ScanPipeline {
         )
         .await?;
 
-        // Filled by SPEC-08 and SPEC-09.
-        for phase in [ScanPhase::Classify, ScanPhase::Score] {
-            run.phase(phase, async {}).await?;
-        }
+        run.phase(
+            ScanPhase::Classify,
+            self.classify(&ctx, opts.llm, &mut acc, &run),
+        )
+        .await?;
+        // Filled by SPEC-09.
+        run.phase(ScanPhase::Score, async {}).await?;
 
         run.phase(ScanPhase::Done, async {
             self.finish(&ctx.env, opts, max_depth, acc, started_at, &run)
@@ -459,39 +467,5 @@ impl Accumulated {
             self.issues.extend(out.issues);
             self.unknown_summaries.extend(out.unknown_summaries);
         }
-    }
-}
-
-/// Events and cancellation of one run.
-struct Run<'a> {
-    events: &'a EventSink,
-    cancel: &'a CancellationToken,
-}
-
-impl Run<'_> {
-    fn send(&self, event: Event) {
-        // Nobody listening is not an error.
-        let _ = self.events.send(event);
-    }
-
-    /// Runs `work` as `phase`: events around it, cancellation before and during it.
-    async fn phase<T>(
-        &self,
-        phase: ScanPhase,
-        work: impl Future<Output = T>,
-    ) -> Result<T, EngineError> {
-        if self.cancel.is_cancelled() {
-            return Err(EngineError::Cancelled);
-        }
-        self.send(Event::PhaseStarted { phase });
-        let start = Instant::now();
-        let out = tokio::select! {
-            biased;
-            () = self.cancel.cancelled() => return Err(EngineError::Cancelled),
-            out = work => out,
-        };
-        let elapsed_ms = u64::try_from(start.elapsed().as_millis()).unwrap_or(u64::MAX);
-        self.send(Event::PhaseFinished { phase, elapsed_ms });
-        Ok(out)
     }
 }

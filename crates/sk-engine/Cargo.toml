@@ -19,6 +19,8 @@ sk-core.workspace = true
 sk-games.workspace = true
 # The built-in `heuristics` post-collector (SPEC-07 T-07-01).
 sk-heuristics.workspace = true
+# The `Classify` phase (SPEC-08 T-08-12).
+sk-llm.workspace = true
 sk-rules.workspace = true
 sk-scan.workspace = true
 # `system` collector and `installed_programs` of the Environment phase (SPEC-06 T-06-14).
@@ -29,6 +31,8 @@ uuid = { workspace = true, features = ["v4"] }
 
 [dev-dependencies]
 async-trait.workspace = true
+# `MockClassifier` for the `Classify` phase tests (SPEC-08 §4.2.4), no network.
+sk-llm = { workspace = true, features = ["mock"] }
 sk-testkit.workspace = true
 tempfile.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "sync", "time"] }
