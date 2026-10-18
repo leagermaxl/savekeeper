@@ -15,6 +15,7 @@ mod http;
 pub mod mock;
 mod ollama;
 mod openai_compat;
+mod peek;
 pub mod privacy;
 mod prompt;
 mod request;
@@ -41,6 +42,10 @@ pub use error::LlmError;
 pub use ollama::{OllamaClassifier, HEALTH_TIMEOUT, OLLAMA_PROVIDER};
 pub use openai_compat::{
     OpenAiCompatClassifier, FALLBACK_SCHEMA_INTRO, JSON_SCHEMA_NAME, OPENAI_COMPAT_PROVIDER,
+};
+pub use peek::{
+    content_peek, is_secret_key, scrub_secrets, CREDENTIAL_EXTENSIONS, LONG_RUN_MIN_LEN,
+    PEEK_EXTENSIONS, PEEK_HEAD_BYTES, PEEK_MAX_FILES, PEEK_MAX_FILE_BYTES,
 };
 pub use privacy::{final_check, PrivacyViolation};
 pub use prompt::{PROMPT_VERSION, RESPONSE_SCHEMA, SYSTEM_PROMPT};

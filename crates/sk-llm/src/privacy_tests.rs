@@ -200,8 +200,13 @@ fn unicode_escapes_do_not_hide_data() {
         check(r#"{"a":"C\u003a\u005cUsers" broken"#),
         Err(PrivacyViolation::AbsolutePath)
     );
-    // An escaped backslash before a literal `u` is not an escape.
-    assert_eq!(check(r#"{"a":"\\u004dax"}"#), Ok(()));
+    // An escaped backslash before a literal `u`: the string holds the text
+    // `Max`, which the model can decode, so the second round catches it.
+    assert_eq!(
+        check(r#"{"a":"\\u004dax"}"#),
+        Err(PrivacyViolation::UserName)
+    );
+    assert_eq!(check(r#"{"a":"\\u004d"}"#), Ok(()));
 }
 
 #[test]
@@ -210,4 +215,50 @@ fn lenient_unescape() {
     assert_eq!(unescape_lenient(r"\u0041\uD83D\uDE00"), "A\u{1F600}");
     assert_eq!(unescape_lenient(r"\uD83D x"), "\u{FFFD} x");
     assert_eq!(unescape_lenient(r"\q \u12 end\"), r"\q \u12 end\");
+}
+
+#[test]
+fn catches_names_escaped_twice() {
+    let mut env = env();
+    env.user_name = "Макс".to_owned();
+    // The text of a file holding `C:\Users\Макс` as JSON escapes, sent
+    // inside a JSON string.
+    let head = r"{DRIVE:C}\\Users\\\u041c\u0430\u043a\u0441\\AppData";
+    let json = serde_json::json!({ "peek": [{ "file": "a.json", "head": head }] }).to_string();
+    assert_eq!(final_check(&json, &env), Err(PrivacyViolation::UserName));
+    let quad = serde_json::json!({ "x": json }).to_string();
+    assert_eq!(final_check(&quad, &env), Err(PrivacyViolation::UserName));
+}
+
+#[test]
+fn json_escapes_after_a_colon_are_not_paths_in_the_raw_view() {
+    for head in [
+        "services:\n  web:",
+        "a:\tb",
+        "a:\rb",
+        "x:\"",
+        "a:\u{8}b",
+        "a:\u{1}",
+    ] {
+        let json = serde_json::json!({ "head": head }).to_string();
+        assert_eq!(check(&json), Ok(()), "{json}");
+    }
+    // `\/` decodes to `/`: `ab:/` is not a drive (letter before the drive letter).
+    assert_eq!(check(r#"{"h":"ab:\/b"}"#), Ok(()));
+    assert_eq!(check(r#"{"h":"a:\u0041"}"#), Ok(()));
+    // Real paths are still caught: escaped backslash, `\u005C`, decoded views.
+    assert_eq!(
+        check(r#"{"h":"C:\\Users"}"#),
+        Err(PrivacyViolation::AbsolutePath)
+    );
+    assert_eq!(
+        check(r#"{"h":"C:\u005cUsers"}"#),
+        Err(PrivacyViolation::AbsolutePath)
+    );
+    assert_eq!(
+        check(r#"{"h":"C:\u005CUsers"}"#),
+        Err(PrivacyViolation::AbsolutePath)
+    );
+    assert_eq!(check(r"C:\q"), Err(PrivacyViolation::AbsolutePath));
+    assert_eq!(check(r"C:\"), Err(PrivacyViolation::AbsolutePath));
 }

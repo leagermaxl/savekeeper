@@ -42,14 +42,29 @@ pub enum PrivacyViolation {
 /// text (catches duplicate keys that a JSON parser drops), the raw text with
 /// JSON escapes decoded leniently (catches `Max` even in invalid JSON)
 /// and, if the text is valid JSON, every decoded string, keys included.
+/// Then the lenient decoding is repeated on its own result, up to
+/// [`UNESCAPE_ROUNDS`] rounds in all or until nothing changes, so text
+/// escaped twice (`\\u041c` inside a JSON string) is seen decoded too.
 pub fn final_check(json: &str, env: &Environment) -> Result<(), PrivacyViolation> {
-    check_text(json, env)?;
-    check_text(&unescape_lenient(json), env)?;
-    match serde_json::from_str::<Value>(json) {
-        Ok(value) => check_value(&value, env),
-        Err(_) => Ok(()),
+    check_view(json, env, true)?;
+    let mut view = unescape_lenient(json);
+    check_text(&view, env)?;
+    if let Ok(value) = serde_json::from_str::<Value>(json) {
+        check_value(&value, env)?;
     }
+    for _ in 1..UNESCAPE_ROUNDS {
+        let next = unescape_lenient(&view);
+        if next == view {
+            break;
+        }
+        check_text(&next, env)?;
+        view = next;
+    }
+    Ok(())
 }
+
+/// Rounds of lenient JSON unescaping checked by [`final_check`].
+const UNESCAPE_ROUNDS: usize = 4;
 
 fn check_value(value: &Value, env: &Environment) -> Result<(), PrivacyViolation> {
     match value {
@@ -64,13 +79,18 @@ fn check_value(value: &Value, env: &Environment) -> Result<(), PrivacyViolation>
 }
 
 fn check_text(text: &str, env: &Environment) -> Result<(), PrivacyViolation> {
+    check_view(text, env, false)
+}
+
+/// `raw`: `text` is the serialized JSON itself, see [`has_absolute_path`].
+fn check_view(text: &str, env: &Environment, raw: bool) -> Result<(), PrivacyViolation> {
     if contains_word(text, &env.user_name) {
         return Err(PrivacyViolation::UserName);
     }
     if contains_word(text, &env.machine_name) {
         return Err(PrivacyViolation::MachineName);
     }
-    if has_absolute_path(text) {
+    if has_absolute_path(text, raw) {
         return Err(PrivacyViolation::AbsolutePath);
     }
     if has_email(text) {
@@ -101,13 +121,28 @@ fn contains_word(text: &str, word: &str) -> bool {
 
 /// `X:\` anywhere; `X:/` only when no letter or digit is right before the
 /// drive letter, so URL schemes (`https://`) pass.
-fn has_absolute_path(text: &str) -> bool {
+///
+/// In the `raw` view (the serialized JSON itself) `X:\` does not count when
+/// the `\` starts a JSON escape other than `\\`: `\n \r \t \b \f \" \/`, or
+/// a valid `\uXXXX` that is not `\u005C`. `services:` before a line break is
+/// `s:\n` there; the decoded views still catch real paths.
+fn has_absolute_path(text: &str, raw: bool) -> bool {
     let b = text.as_bytes();
+    let escape_not_backslash = |at: usize| match b.get(at) {
+        Some(b'n' | b'r' | b't' | b'b' | b'f' | b'"' | b'/') => true,
+        Some(b'u') => b
+            .get(at + 1..at + 5)
+            .and_then(|h| std::str::from_utf8(h).ok())
+            .filter(|h| h.bytes().all(|c| c.is_ascii_hexdigit()))
+            .and_then(|h| u32::from_str_radix(h, 16).ok())
+            .is_some_and(|code| code != 0x5C),
+        _ => false,
+    };
     (0..b.len().saturating_sub(2)).any(|i| {
         b[i].is_ascii_alphabetic()
             && b[i + 1] == b':'
             && match b[i + 2] {
-                b'\\' => true,
+                b'\\' => !(raw && escape_not_backslash(i + 3)),
                 b'/' => i == 0 || !b[i - 1].is_ascii_alphanumeric(),
                 _ => false,
             }
