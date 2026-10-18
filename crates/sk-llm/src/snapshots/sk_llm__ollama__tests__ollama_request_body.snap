@@ -21,5 +21,6 @@ expression: body
     "seed": 42,
     "temperature": 0
   },
-  "stream": false
+  "stream": false,
+  "think": false
 }

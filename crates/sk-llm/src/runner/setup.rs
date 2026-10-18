@@ -8,7 +8,7 @@ use crate::{
 };
 
 /// `None` for `mode = off`: nothing is built, no client exists (FR-08-01).
-pub(super) fn classifier(
+pub(crate) fn classifier(
     cfg: &LlmConfig,
     secrets: &dyn SecretStore,
 ) -> Result<Option<Arc<dyn Classifier>>, LlmError> {

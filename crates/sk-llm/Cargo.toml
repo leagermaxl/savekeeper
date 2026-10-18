@@ -25,6 +25,8 @@ blake3.workspace = true
 # API keys (SPEC-08 §4.10): redacted `Debug`, exposed only when a request is built.
 secrecy.workspace = true
 serde.workspace = true
+# Built-in list of recommended models `data/recommended.yaml` (SPEC-08 §4.11, T-08-13).
+serde-saphyr.workspace = true
 # HTTP of the providers (SPEC-08 §4.2): rustls with the `ring` provider, no OpenSSL.
 reqwest.workspace = true
 rustls.workspace = true

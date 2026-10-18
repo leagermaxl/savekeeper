@@ -9,7 +9,7 @@
 mod exec;
 mod issues;
 mod plan;
-mod setup;
+pub(crate) mod setup;
 
 use std::collections::HashMap;
 use std::path::Path;

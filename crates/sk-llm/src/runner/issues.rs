@@ -46,7 +46,7 @@ pub(crate) fn unreachable(info: &ClassifierInfo, error: &str) -> ScanIssue {
 pub(crate) fn model_missing(info: &ClassifierInfo) -> ScanIssue {
     let mut args = provider_args(info);
     if info.provider == OLLAMA_PROVIDER {
-        args.push(("command", format!("ollama pull {}", info.model)));
+        args.push(("command", crate::ollama_pull_command(&info.model)));
     }
     issue(IssueSeverity::Error, "llm.model_missing", None, args)
 }

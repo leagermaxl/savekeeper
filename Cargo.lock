@@ -3082,6 +3082,7 @@ dependencies = [
  "rustls",
  "secrecy",
  "serde",
+ "serde-saphyr",
  "serde_json",
  "sk-core",
  "tempfile",

@@ -1,10 +1,12 @@
 //! Ollama provider (SPEC-08 §4.2.1).
 
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use async_trait::async_trait;
 use reqwest::header::CONTENT_TYPE;
-use reqwest::Url;
+use reqwest::{StatusCode, Url};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use sk_core::config::LocalLlmConfig;
@@ -31,6 +33,11 @@ const KEEP_ALIVE: &str = "10m";
 
 /// Classifier backed by an Ollama server: `POST {endpoint}/api/chat`
 /// with the response schema in `format` (structured outputs).
+///
+/// Requests carry `"think": false` (reasoning off, §4.2.1). A server that
+/// rejects it (HTTP 400 mentioning `think`) is asked again without the field;
+/// that choice is remembered for the lifetime of the classifier (and its
+/// clones), so later batches are sent without `think` right away.
 #[derive(Debug, Clone)]
 pub struct OllamaClassifier {
     client: reqwest::Client,
@@ -39,6 +46,8 @@ pub struct OllamaClassifier {
     timeout: Duration,
     max_batch: usize,
     max_concurrency: usize,
+    /// The server rejected `think`: send requests without it (session flag).
+    no_think: Arc<AtomicBool>,
 }
 
 impl OllamaClassifier {
@@ -58,14 +67,25 @@ impl OllamaClassifier {
             timeout: Duration::from_secs(u64::from(cfg.timeout_s.max(1))),
             max_batch: usize_of(cfg.max_batch),
             max_concurrency: usize_of(cfg.max_concurrency),
+            no_think: Arc::new(AtomicBool::new(false)),
         })
     }
 
-    /// The `/api/chat` body for one batch (§4.2.1).
-    pub(crate) fn request_body(&self, items: &[ClassifyItem]) -> Result<Value, LlmError> {
+    /// The server rejected `"think": false` earlier in this session, so
+    /// requests are sent without the field.
+    pub fn uses_no_think_fallback(&self) -> bool {
+        self.no_think.load(Ordering::Relaxed)
+    }
+
+    /// The `/api/chat` body for one batch (§4.2.1); `send_think` adds `"think": false`.
+    pub(crate) fn request_body(
+        &self,
+        items: &[ClassifyItem],
+        send_think: bool,
+    ) -> Result<Value, LlmError> {
         let schema: Value = serde_json::from_str(RESPONSE_SCHEMA)
             .map_err(|e| LlmError::BadResponse(format!("response schema: {e}")))?;
-        Ok(json!({
+        let mut body = json!({
             "model": self.model,
             "stream": false,
             "messages": [
@@ -75,7 +95,38 @@ impl OllamaClassifier {
             "format": schema,
             "options": { "temperature": 0, "num_ctx": NUM_CTX, "seed": SEED },
             "keep_alive": KEEP_ALIVE,
-        }))
+        });
+        if send_think {
+            body["think"] = Value::Bool(false);
+        }
+        Ok(body)
+    }
+
+    async fn chat(
+        &self,
+        items: &[ClassifyItem],
+        send_think: bool,
+        cancel: &CancellationToken,
+    ) -> Result<HttpResponse, LlmError> {
+        let body = self.request_body(items, send_think)?.to_string();
+        let request = self
+            .client
+            .post(http::join(&self.endpoint, "api/chat"))
+            .header(CONTENT_TYPE, "application/json")
+            .timeout(self.timeout)
+            .body(body);
+        let started = Instant::now();
+        let response = http::send(request, cancel).await?;
+        tracing::debug!(
+            provider = OLLAMA_PROVIDER,
+            model = %self.model,
+            items = items.len(),
+            send_think,
+            status = response.status.as_u16(),
+            elapsed_ms = http::elapsed_ms(started),
+            "llm request finished"
+        );
+        Ok(response)
     }
 
     async fn get(&self, path: &str, timeout: Duration) -> Result<HttpResponse, LlmError> {
@@ -109,7 +160,8 @@ pub(crate) struct TagEntry {
     pub model: String,
 }
 
-/// `POST /api/chat` with `stream: false`.
+/// `POST /api/chat` with `stream: false`. Unknown fields, among them
+/// `message.thinking`, are ignored.
 #[derive(Deserialize)]
 struct ChatResponse {
     message: Option<ChatMessage>,
@@ -118,6 +170,15 @@ struct ChatResponse {
 #[derive(Deserialize)]
 struct ChatMessage {
     content: String,
+}
+
+/// HTTP 400 that complains about `think`: the model has no reasoning mode or
+/// the server is too old (§4.2.1). The whole body is searched, case-insensitively.
+pub(crate) fn rejects_think(response: &HttpResponse) -> bool {
+    response.status == StatusCode::BAD_REQUEST
+        && String::from_utf8_lossy(&response.body)
+            .to_lowercase()
+            .contains("think")
 }
 
 /// Ollama model names without a tag mean `:latest`; names are compared case-insensitively.
@@ -187,9 +248,10 @@ impl Classifier for OllamaClassifier {
         })
     }
 
-    /// One `POST /api/chat`. An empty batch makes no request; a batch larger
-    /// than `max_batch` is [`LlmError::BadResponse`]. HTTP 404 about the model
-    /// is [`LlmError::ModelNotFound`]; other statuses are mapped as in §4.12.
+    /// One `POST /api/chat` (two on the first `think` rejection, see the
+    /// type docs). An empty batch makes no request; a batch larger than
+    /// `max_batch` is [`LlmError::BadResponse`]. HTTP 404 about the model is
+    /// [`LlmError::ModelNotFound`]; other statuses are mapped as in §4.12.
     /// The answer goes through [`parse_response`]: skipped ids are missing.
     async fn classify(
         &self,
@@ -199,23 +261,17 @@ impl Classifier for OllamaClassifier {
         if !http::check_batch(items.len(), self.max_batch, cancel)? {
             return Ok(Vec::new());
         }
-        let body = self.request_body(items)?.to_string();
-        let request = self
-            .client
-            .post(http::join(&self.endpoint, "api/chat"))
-            .header(CONTENT_TYPE, "application/json")
-            .timeout(self.timeout)
-            .body(body);
-        let started = Instant::now();
-        let response = http::send(request, cancel).await?;
-        tracing::debug!(
-            provider = OLLAMA_PROVIDER,
-            model = %self.model,
-            items = items.len(),
-            status = response.status.as_u16(),
-            elapsed_ms = http::elapsed_ms(started),
-            "llm request finished"
-        );
+        let send_think = !self.uses_no_think_fallback();
+        let mut response = self.chat(items, send_think, cancel).await?;
+        if send_think && rejects_think(&response) {
+            tracing::info!(
+                provider = OLLAMA_PROVIDER,
+                model = %self.model,
+                "server rejected think, sending requests without it"
+            );
+            self.no_think.store(true, Ordering::Relaxed);
+            response = self.chat(items, false, cancel).await?;
+        }
         if http::is_model_not_found(&response) {
             return Err(LlmError::ModelNotFound(self.model.clone()));
         }

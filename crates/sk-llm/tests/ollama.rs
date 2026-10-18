@@ -113,6 +113,7 @@ async fn classify_sends_the_spec_body_and_normalizes_the_answer() {
         .and(body_partial_json(json!({
             "model": MODEL,
             "stream": false,
+            "think": false,
             "options": { "temperature": 0, "num_ctx": 8192, "seed": 42 },
             "keep_alive": "10m",
             "format": { "type": "object", "required": ["results"] }

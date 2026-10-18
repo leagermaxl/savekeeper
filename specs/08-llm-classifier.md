@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-llm` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-07 |
 | Используется в | SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-18 (T-08-12: встраивание в engine — SPEC-01 §4.4; подтверждение облака без hook → `llm.cloud_declined`, §9); 2026-10-18 (T-08-11: детали content peek и скраба — §4.9; `final_check` — повторное раскодирование до 4 раундов и исключение JSON-экранирований из пути в сыром представлении, §4.8); 2026-10-18 (T-08-10: детали `ClassifyRunner` — отбор, ретраи, health, issues, `with_env` — §4.12); 2026-10-18 (T-08-09: детали `SecretStore`, `FallbackStore` — §4.10); 2026-10-18 (T-08-08: `LlmError::{MaxTokens, Refusal}`, `Classifier::usage`, `UsageStats`/`ModelPricing`/`CostEstimate` — §4.1; детали Anthropic — §4.2.3; NFR-08-03: $0.05 → $0.40, исправлена арифметика); 2026-10-18 (T-08-07: детали OpenAI-compat — fallback, health, `is_local` по loopback, внешний URL через секцию `local` — §4.2.2, §4.4); 2026-10-18 (T-08-06: детали Ollama, health без модели, авто-детект — §4.2.1; общий маппинг HTTP-ошибок — §4.12; прокси для loopback — §5); 2026-10-18 (T-08-05: `peek_digest`, формат `result`, условия компакции, TTL и API кэша — §4.7); 2026-10-18 (T-08-04: формат усечения дат, `null` опускаются, лимит 4 000 на `summary` и порядок отбрасывания — §4.3, §5; правила `final_check` и API приватности — §4.1, §4.8); 2026-10-18 (T-08-03: порог `min_confidence_to_apply` — аргумент `apply_classification`, §4.1); 2026-10-18 (T-08-01: поля `HealthReport` в §4.1 — FR-08-08; статус in-progress); 2026-10-02 (промпт: `sample_names` — пути файлов и папок, SPEC-03 §4.4; 2026-10-01: `LlmConfig` — в `sk-core::config`; `MockClassifier` в `sk-llm` под feature `mock`) |
+| Последнее изменение | 2026-10-19 (T-08-13: формат `recommended.yaml`, `llm_health`/`LlmHealth` — §4.11; API fallback без `think` — §4.2.1); 2026-10-19 (§4.2.1: `"think": false` и fallback без него; §4.11: `qwen3.5:9b`, `qwen3.5:4b`; §6.3: происхождение eval-набора); 2026-10-18 (T-08-12: встраивание в engine — SPEC-01 §4.4; подтверждение облака без hook → `llm.cloud_declined`, §9); 2026-10-18 (T-08-11: детали content peek и скраба — §4.9; `final_check` — повторное раскодирование до 4 раундов и исключение JSON-экранирований из пути в сыром представлении, §4.8); 2026-10-18 (T-08-10: детали `ClassifyRunner` — отбор, ретраи, health, issues, `with_env` — §4.12); 2026-10-18 (T-08-09: детали `SecretStore`, `FallbackStore` — §4.10); 2026-10-18 (T-08-08: `LlmError::{MaxTokens, Refusal}`, `Classifier::usage`, `UsageStats`/`ModelPricing`/`CostEstimate` — §4.1; детали Anthropic — §4.2.3; NFR-08-03: $0.05 → $0.40, исправлена арифметика); 2026-10-18 (T-08-07: детали OpenAI-compat — fallback, health, `is_local` по loopback, внешний URL через секцию `local` — §4.2.2, §4.4); 2026-10-18 (T-08-06: детали Ollama, health без модели, авто-детект — §4.2.1; общий маппинг HTTP-ошибок — §4.12; прокси для loopback — §5); 2026-10-18 (T-08-05: `peek_digest`, формат `result`, условия компакции, TTL и API кэша — §4.7); 2026-10-18 (T-08-04: формат усечения дат, `null` опускаются, лимит 4 000 на `summary` и порядок отбрасывания — §4.3, §5; правила `final_check` и API приватности — §4.1, §4.8); 2026-10-18 (T-08-03: порог `min_confidence_to_apply` — аргумент `apply_classification`, §4.1); 2026-10-18 (T-08-01: поля `HealthReport` в §4.1 — FR-08-08; статус in-progress); 2026-10-02 (промпт: `sample_names` — пути файлов и папок, SPEC-03 §4.4; 2026-10-01: `LlmConfig` — в `sk-core::config`; `MockClassifier` в `sk-llm` под feature `mock`) |
 
 ## 1. Цель
 
@@ -160,13 +160,14 @@ Rust не имеет официального Anthropic SDK, поэтому вс
 #### 4.2.1 Ollama
 - `POST {endpoint}/api/chat`:
   ```json
-  { "model": "qwen2.5:7b-instruct", "stream": false,
+  { "model": "qwen2.5:7b-instruct", "stream": false, "think": false,
     "messages": [{"role":"system","content":"<SYSTEM_PROMPT>"},{"role":"user","content":"<ITEMS_JSON>"}],
     "format": { /* JSON Schema §4.5 */ },
     "options": { "temperature": 0, "num_ctx": 8192, "seed": 42 },
     "keep_alive": "10m" }
   ```
 - Ответ: `message.content` — строка JSON.
+- `"think": false` выключает режим рассуждения у моделей, где он включён по умолчанию (Qwen3.5 и др.): классификации он не нужен, а замедляет ответ в разы. Если сервер отвечает 400 с упоминанием `think` (модель без режима рассуждения или старая версия Ollama), запрос повторяется без поля сразу в том же вызове `classify` (не считается ретраем); флаг «без `think`» кэшируется на экземпляр и его клоны, как fallback OpenAI-compat (§4.2.2). Поле `thinking` в ответе игнорируется. API: `OllamaClassifier::uses_no_think_fallback()`; fallback срабатывает на HTTP 400, тело которого (без учёта регистра) содержит `think`.
 - Health: `GET /api/version` (доступность) + `GET /api/tags` (список моделей → есть ли настроенная). `/api/version` не 200 → `Unreachable` (по адресу не Ollama); ошибка `/api/tags` маппится как HTTP-ошибка классификации (§4.12). `latency_ms` — обе проверки вместе, таймаут каждого запроса health — `min(timeout_s, 10 с)`. Модель не установлена → `Ok` с `model_available = false`; `classify` в этом случае даёт `ModelNotFound` (404 с упоминанием model в `error`). Имя модели без тега = `:latest`, сравнение без учёта регистра.
 - `max_batch = 8`, `max_concurrency = 1` (локальная GPU, параллельность только мешает); значения из конфига, минимум 1. `is_local = true`. Неверный URL endpoint → `Unreachable("invalid endpoint URL …")`.
 - API: `OllamaClassifier::new(&LocalLlmConfig) -> Result<Self, LlmError>`, `OLLAMA_PROVIDER = "ollama"`, `HEALTH_TIMEOUT = 10 с`.
@@ -410,12 +411,17 @@ Rules:
 | Ollama | `qwen2.5:7b-instruct` (по умолчанию) | GPU ≥ 6 ГБ VRAM |
 | Ollama | `qwen2.5:3b-instruct`, `llama3.2:3b` | слабое железо / только CPU |
 | Ollama | `qwen2.5:14b-instruct` | GPU ≥ 12 ГБ, лучшее качество |
+| Ollama | `qwen3.5:9b` | GPU ≥ 8 ГБ, новее Qwen2.5; режим рассуждения выключается `think: false` (§4.2.1) |
+| Ollama | `qwen3.5:4b` | GPU 4–6 ГБ |
 | LM Studio / llama.cpp | любая instruct-модель с поддержкой JSON schema (GGUF Q4_K_M) | — |
 | Anthropic | `claude-haiku-4-5` (по умолчанию) | дёшево и быстро |
 | Anthropic | `claude-sonnet-5` | выше качество, ~2× дороже Haiku на вход |
 
 Список хранится в `crates/sk-llm/data/recommended.yaml` и показывается в UI. Если модели нет
 в Ollama, UI показывает команду `ollama pull <model>`. Программа сама модель не скачивает.
+Формат `recommended.yaml`: `models[]` {`provider`: `ollama | openai_compat | anthropic`, `model?`, `default?`, `when`, `min_vram_gb?`}; текст UI — `llm.recommended.<when>` (`gpu_6gb`, `low_end`, `gpu_12gb`, `gpu_8gb_newer`, `gpu_4gb`, `json_schema`, `cheap_fast`, `higher_quality`). API: `recommended_models()`, `recommendations(ollama_models: Option<&[String]>) -> Vec<Recommendation { model, installed, pull_command }>` (`pull_command = "ollama pull <model>"` для каждой записи Ollama, не известной как установленная), `ollama_pull_command(model)`.
+
+Проверка подключения для UI (FR-08-08, SPEC-11 `llm_health_check`): `llm_health(&LlmConfig, mode: LlmMode, &dyn SecretStore) -> LlmHealth` (`mode` заменяет `cfg.mode`; `off` клиента не строит; не возвращает ошибку) и `classifier_health(LlmMode, &dyn Classifier) -> LlmHealth`. `LlmHealth { mode, status: LlmHealthStatus, provider, model, is_local, latency_ms, server_version, pull_command, error }`, `LlmHealthStatus { Off, Ok, ModelMissing, Unreachable, NoApiKey, AuthFailed, Error }`: `ModelNotFound` или `!model_available` → `ModelMissing` (+ `pull_command` для Ollama); `Unreachable`/`Timeout` → `Unreachable`; `Auth` из health → `AuthFailed`, `Auth` при построении клиента → `NoApiKey`; прочее → `Error`. Текст UI — `llm.health.<status>`.
 
 ### 4.12 Батчинг, параллелизм, ретраи
 
@@ -473,7 +479,7 @@ Rules:
 ### 6.3 Eval (ручной / nightly, с сетью)
 - Набор: `fixtures/llm-eval/*.json` — ≥ 150 `FolderSummary` с реальных машин (обезличенных) + `expected_category` + `acceptable_categories` (например, `app_config|app_data`).
 - Покрытие: ≥ 10 примеров на каждую категорию, кроме `unknown`, включая «ловушки» (большой кэш с `.json`, игра в `Documents`, Electron-приложение).
-- Бинарник `cargo run -p sk-llm --example eval -- --provider ollama --model qwen2.5:7b-instruct`. Выводит accuracy (строгую и по `acceptable`), confusion matrix, среднюю латентность и стоимость.
+- Набор составляется вручную по реальным структурам папок известных программ и игр (без данных конкретного пользователя: имена, пути и даты синтетические). Бинарник `cargo run -p sk-llm --example eval -- --provider ollama --model qwen2.5:7b-instruct`. Выводит accuracy (строгую и по `acceptable`), confusion matrix, среднюю латентность и стоимость.
 - Порог — NFR-08-02. Результаты фиксируются в `fixtures/llm-eval/RESULTS.md` при каждом изменении промпта.
 
 ## 7. Задачи
@@ -490,7 +496,7 @@ Rules:
 - [x] **T-08-10** — `ClassifyRunner`: отбор, батчинг, `buffer_unordered`, ретраи с backoff, деление батча, прогресс, отмена, частичные результаты. *Зависит:* T-08-05, T-08-06. *Готово, когда:* интеграционные тесты §6.2.
 - [x] **T-08-11** — Content peek + скраб секретов §4.9. *Зависит:* T-08-04.
 - [x] **T-08-12** — Встраивание в `sk-engine` (фаза `Classify`), issues, события. *Зависит:* T-08-10, T-01-06.
-- [ ] **T-08-13** — `recommended.yaml` + API для UI: список рекомендаций, health, `ollama pull`-подсказка. *Зависит:* T-08-06.
+- [x] **T-08-13** — `recommended.yaml` + API для UI: список рекомендаций, health, `ollama pull`-подсказка. *Зависит:* T-08-06.
 - [ ] **T-08-14** — Eval-набор (≥ 150 элементов) и `examples/eval`. Первые результаты в `RESULTS.md`. *Зависит:* T-08-06, T-08-08.
 
 ## 8. Критерии приёмки

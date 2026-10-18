@@ -1,0 +1,57 @@
+# Recommended models for the LLM settings screen (SPEC-08 §4.11).
+#
+# The UI shows this list as hints next to the provider and model fields. If an Ollama model
+# is not installed, the UI shows the command `ollama pull <model>`; the program never
+# downloads models itself.
+#
+# Fields:
+#   provider  `ollama` | `openai_compat` (LM Studio, llama.cpp) | `anthropic`.
+#   model     exact model id (Ollama name with tag, Anthropic id without a date suffix);
+#             omitted when any model fits (the `openai_compat` entry).
+#   default   the default model of the provider (`llm.local.model` / `llm.cloud.model`, §4.4).
+#   when      when to pick the model; the UI text is `llm.recommended.<when>`:
+#               gpu_6gb          GPU with at least 6 GB of VRAM;
+#               low_end          weak hardware or CPU only;
+#               gpu_12gb         GPU with at least 12 GB of VRAM, best quality;
+#               gpu_8gb_newer    GPU with at least 8 GB, newer than Qwen2.5; reasoning is turned
+#                                off with `think: false` (§4.2.1);
+#               gpu_4gb          GPU with 4–6 GB of VRAM;
+#               json_schema      any instruct model with JSON schema support (GGUF Q4_K_M);
+#               cheap_fast       cheap and fast;
+#               higher_quality   higher quality, about 2× the input price of Haiku.
+#   min_vram_gb  VRAM the model needs on a GPU, in GB; omitted when a CPU is enough or it
+#                does not apply.
+
+models:
+  - provider: ollama
+    model: qwen2.5:7b-instruct
+    default: true
+    when: gpu_6gb
+    min_vram_gb: 6
+  - provider: ollama
+    model: qwen2.5:3b-instruct
+    when: low_end
+  - provider: ollama
+    model: llama3.2:3b
+    when: low_end
+  - provider: ollama
+    model: qwen2.5:14b-instruct
+    when: gpu_12gb
+    min_vram_gb: 12
+  - provider: ollama
+    model: qwen3.5:9b
+    when: gpu_8gb_newer
+    min_vram_gb: 8
+  - provider: ollama
+    model: qwen3.5:4b
+    when: gpu_4gb
+    min_vram_gb: 4
+  - provider: openai_compat
+    when: json_schema
+  - provider: anthropic
+    model: claude-haiku-4-5
+    default: true
+    when: cheap_fast
+  - provider: anthropic
+    model: claude-sonnet-5
+    when: higher_quality

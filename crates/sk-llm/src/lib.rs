@@ -10,6 +10,7 @@ mod cache;
 mod classifier;
 mod detect;
 mod error;
+mod health;
 mod http;
 #[cfg(any(test, feature = "mock"))]
 pub mod mock;
@@ -18,6 +19,7 @@ mod openai_compat;
 mod peek;
 pub mod privacy;
 mod prompt;
+mod recommended;
 mod request;
 mod runner;
 mod secret;
@@ -39,6 +41,7 @@ pub use detect::{
     LOCAL_CANDIDATES,
 };
 pub use error::LlmError;
+pub use health::{classifier_health, llm_health, LlmHealth, LlmHealthStatus};
 pub use ollama::{OllamaClassifier, HEALTH_TIMEOUT, OLLAMA_PROVIDER};
 pub use openai_compat::{
     OpenAiCompatClassifier, FALLBACK_SCHEMA_INTRO, JSON_SCHEMA_NAME, OPENAI_COMPAT_PROVIDER,
@@ -49,6 +52,10 @@ pub use peek::{
 };
 pub use privacy::{final_check, PrivacyViolation};
 pub use prompt::{PROMPT_VERSION, RESPONSE_SCHEMA, SYSTEM_PROMPT};
+pub use recommended::{
+    ollama_pull_command, recommendations, recommended_models, Recommendation, RecommendedModel,
+    RecommendedProvider, RECOMMENDED_TEXT_PREFIX, RECOMMENDED_YAML,
+};
 pub use request::{
     item_for_prompt, summary_for_prompt, user_message, RequestPreview, MAX_NAME_CHARS,
     MAX_SUMMARY_CHARS, PREVIEW_SAMPLE_ITEMS,
