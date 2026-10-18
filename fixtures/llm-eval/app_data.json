@@ -1,0 +1,1112 @@
+[
+ {
+  "id": "ad-firefox",
+  "expected_category": "app_data",
+  "acceptable_categories": [
+   "credentials"
+  ],
+  "expected_app": "Mozilla Firefox",
+  "summary": {
+   "path": "{APPDATA}\\Mozilla\\Firefox\\Profiles\\x7k2m9qa.default-release",
+   "total_bytes": 228073472,
+   "file_count": 69,
+   "dir_count": 420,
+   "max_depth": 6,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2022-04-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "json",
+     "count": 30,
+     "bytes": 4194304
+    },
+    {
+     "ext": "sqlite",
+     "count": 18,
+     "bytes": 220200960
+    },
+    {
+     "ext": "jsonlz4",
+     "count": 12,
+     "bytes": 3145728
+    },
+    {
+     "ext": "txt",
+     "count": 4,
+     "bytes": 20480
+    },
+    {
+     "ext": "js",
+     "count": 3,
+     "bytes": 204800
+    },
+    {
+     "ext": "db",
+     "count": 2,
+     "bytes": 307200
+    }
+   ],
+   "sample_names": [
+    "places.sqlite",
+    "cookies.sqlite",
+    "favicons.sqlite",
+    "formhistory.sqlite",
+    "logins.json",
+    "key4.db",
+    "prefs.js",
+    "extensions.json",
+    "sessionstore-backups\\recovery.jsonlz4",
+    "storage\\default\\https+++mail.example.com\\idb\\<redacted>.sqlite",
+    "bookmarkbackups\\bookmarks-2026-09-10.jsonlz4"
+   ],
+   "top_children": [
+    {
+     "name": "storage",
+     "bytes": 146800640,
+     "files": 300
+    },
+    {
+     "name": "sessionstore-backups",
+     "bytes": 3145728,
+     "files": 4
+    },
+    {
+     "name": "bookmarkbackups",
+     "bytes": 2097152,
+     "files": 15
+    }
+   ],
+   "markers": [
+    "sqlite_files"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ad-chrome",
+  "expected_category": "app_data",
+  "acceptable_categories": [
+   "credentials"
+  ],
+  "expected_app": "Google Chrome",
+  "must_not": [
+   "cache"
+  ],
+  "trap": "browser profile with a large cache inside",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Google\\Chrome\\User Data\\Default",
+   "total_bytes": 1032847360,
+   "file_count": 2430,
+   "dir_count": 2400,
+   "max_depth": 8,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2023-06-02T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "",
+     "count": 2200,
+     "bytes": 943718400
+    },
+    {
+     "ext": "ldb",
+     "count": 140,
+     "bytes": 83886080
+    },
+    {
+     "ext": "log",
+     "count": 60,
+     "bytes": 2097152
+    },
+    {
+     "ext": "json",
+     "count": 30,
+     "bytes": 3145728
+    }
+   ],
+   "sample_names": [
+    "Bookmarks",
+    "History",
+    "Login Data",
+    "Preferences",
+    "Web Data",
+    "Cookies",
+    "Local Storage\\leveldb\\000123.ldb",
+    "IndexedDB\\https_mail.example.com_0.indexeddb.leveldb\\CURRENT",
+    "Cache\\Cache_Data\\f_00a1b2",
+    "Code Cache\\js\\index",
+    "Extensions\\<redacted>\\1.2.3_0\\manifest.json"
+   ],
+   "top_children": [
+    {
+     "name": "Cache",
+     "bytes": 545259520,
+     "files": 1400
+    },
+    {
+     "name": "Service Worker",
+     "bytes": 125829120,
+     "files": 400
+    },
+    {
+     "name": "Code Cache",
+     "bytes": 94371840,
+     "files": 300
+    },
+    {
+     "name": "IndexedDB",
+     "bytes": 62914560,
+     "files": 120
+    },
+    {
+     "name": "Extensions",
+     "bytes": 52428800,
+     "files": 600
+    },
+    {
+     "name": "Local Storage",
+     "bytes": 10485760,
+     "files": 40
+    }
+   ],
+   "markers": [
+    "chromium_profile",
+    "electron_app",
+    "sqlite_files",
+    "cache_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ad-thunderbird",
+  "expected_category": "app_data",
+  "acceptable_categories": [
+   "user_files"
+  ],
+  "expected_app": "Mozilla Thunderbird",
+  "summary": {
+   "path": "{APPDATA}\\Thunderbird\\Profiles\\q1w2e3r4.default-release",
+   "total_bytes": 3514929152,
+   "file_count": 311,
+   "dir_count": 60,
+   "max_depth": 4,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2021-03-24T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "",
+     "count": 140,
+     "bytes": 3040870400
+    },
+    {
+     "ext": "msf",
+     "count": 140,
+     "bytes": 314572800
+    },
+    {
+     "ext": "json",
+     "count": 20,
+     "bytes": 2097152
+    },
+    {
+     "ext": "sqlite",
+     "count": 9,
+     "bytes": 157286400
+    },
+    {
+     "ext": "js",
+     "count": 2,
+     "bytes": 102400
+    }
+   ],
+   "sample_names": [
+    "ImapMail\\imap.example.com\\INBOX",
+    "ImapMail\\imap.example.com\\INBOX.msf",
+    "Mail\\Local Folders\\Archive",
+    "Mail\\Local Folders\\Archive.msf",
+    "abook.sqlite",
+    "global-messages-db.sqlite",
+    "prefs.js",
+    "logins.json",
+    "key4.db"
+   ],
+   "top_children": [
+    {
+     "name": "ImapMail",
+     "bytes": 2726297600,
+     "files": 200
+    },
+    {
+     "name": "Mail",
+     "bytes": 524288000,
+     "files": 80
+    },
+    {
+     "name": "storage",
+     "bytes": 41943040,
+     "files": 30
+    }
+   ],
+   "markers": [
+    "sqlite_files"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ad-telegram",
+  "expected_category": "app_data",
+  "acceptable_categories": [
+   "cache",
+   "credentials"
+  ],
+  "expected_app": "Telegram Desktop",
+  "trap": "session keys next to a huge media cache",
+  "summary": {
+   "path": "{APPDATA}\\Telegram Desktop\\tdata",
+   "total_bytes": 4435496960,
+   "file_count": 3842,
+   "dir_count": 900,
+   "max_depth": 5,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "",
+     "count": 3800,
+     "bytes": 4404019200
+    },
+    {
+     "ext": "s",
+     "count": 40,
+     "bytes": 31457280
+    },
+    {
+     "ext": "json",
+     "count": 2,
+     "bytes": 20480
+    }
+   ],
+   "sample_names": [
+    "key_datas",
+    "settingss",
+    "D877F783D5D3EF8C\\maps",
+    "D877F783D5D3EF8C\\configs",
+    "user_data\\cache\\0\\2A\\1F3C9E",
+    "user_data\\media_cache\\0\\4B\\7E2D11",
+    "emoji\\set_1_0.webp"
+   ],
+   "top_children": [
+    {
+     "name": "user_data",
+     "bytes": 4299161600,
+     "files": 3600
+    },
+    {
+     "name": "D877F783D5D3EF8C",
+     "bytes": 41943040,
+     "files": 30
+    },
+    {
+     "name": "emoji",
+     "bytes": 31457280,
+     "files": 40
+    }
+   ],
+   "markers": [
+    "cache_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ad-signal",
+  "expected_category": "app_data",
+  "acceptable_categories": [
+   "credentials"
+  ],
+  "expected_app": "Signal",
+  "must_not": [
+   "cache",
+   "reinstallable"
+  ],
+  "trap": "Electron app whose database is the only copy of the messages",
+  "summary": {
+   "path": "{APPDATA}\\Signal",
+   "total_bytes": 4200615936,
+   "file_count": 2621,
+   "dir_count": 300,
+   "max_depth": 3,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2024-07-06T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "",
+     "count": 2600,
+     "bytes": 3250585600
+    },
+    {
+     "ext": "ldb",
+     "count": 10,
+     "bytes": 2097152
+    },
+    {
+     "ext": "log",
+     "count": 6,
+     "bytes": 4194304
+    },
+    {
+     "ext": "json",
+     "count": 4,
+     "bytes": 20480
+    },
+    {
+     "ext": "sqlite",
+     "count": 1,
+     "bytes": 943718400
+    }
+   ],
+   "sample_names": [
+    "config.json",
+    "sql\\db.sqlite",
+    "attachments.noindex\\3a\\3a9f1c7e8b2d",
+    "drafts.noindex\\0c\\0c11aa",
+    "Local Storage\\leveldb\\000005.ldb",
+    "logs\\main.log",
+    "Cache\\Cache_Data\\index",
+    "ephemeral.json"
+   ],
+   "top_children": [
+    {
+     "name": "attachments.noindex",
+     "bytes": 3145728000,
+     "files": 2500
+    },
+    {
+     "name": "sql",
+     "bytes": 943718400,
+     "files": 1
+    },
+    {
+     "name": "Cache",
+     "bytes": 62914560,
+     "files": 80
+    },
+    {
+     "name": "logs",
+     "bytes": 4194304,
+     "files": 6
+    }
+   ],
+   "markers": [
+    "electron_app",
+    "sqlite_files"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ad-joplin",
+  "expected_category": "app_data",
+  "acceptable_categories": [
+   "user_files"
+  ],
+  "expected_app": "Joplin",
+  "summary": {
+   "path": "{HOME}\\.config\\joplin-desktop",
+   "total_bytes": 367067136,
+   "file_count": 347,
+   "dir_count": 3,
+   "max_depth": 1,
+   "newest_mtime": "2026-09-13T16:47:00Z",
+   "oldest_mtime": "2023-12-19T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "png",
+     "count": 300,
+     "bytes": 146800640
+    },
+    {
+     "ext": "pdf",
+     "count": 40,
+     "bytes": 94371840
+    },
+    {
+     "ext": "json",
+     "count": 4,
+     "bytes": 61440
+    },
+    {
+     "ext": "css",
+     "count": 2,
+     "bytes": 4096
+    },
+    {
+     "ext": "sqlite",
+     "count": 1,
+     "bytes": 125829120
+    }
+   ],
+   "sample_names": [
+    "database.sqlite",
+    "settings.json",
+    "userchrome.css",
+    "resources\\<redacted>.png",
+    "resources\\<redacted>.pdf",
+    "plugins\\joplin.plugin.note.tabs.jpl",
+    "log.txt"
+   ],
+   "top_children": [
+    {
+     "name": "resources",
+     "bytes": 241172480,
+     "files": 340
+    },
+    {
+     "name": "plugins",
+     "bytes": 3145728,
+     "files": 4
+    },
+    {
+     "name": "cache",
+     "bytes": 2097152,
+     "files": 30
+    }
+   ],
+   "markers": [
+    "sqlite_files"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ad-zotero",
+  "expected_category": "app_data",
+  "acceptable_categories": [
+   "user_files"
+  ],
+  "expected_app": "Zotero",
+  "summary": {
+   "path": "{HOME}\\Zotero",
+   "total_bytes": 2883788800,
+   "file_count": 888,
+   "dir_count": 900,
+   "max_depth": 2,
+   "newest_mtime": "2026-09-12T16:47:00Z",
+   "oldest_mtime": "2021-10-10T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "pdf",
+     "count": 820,
+     "bytes": 2516582400
+    },
+    {
+     "ext": "html",
+     "count": 60,
+     "bytes": 41943040
+    },
+    {
+     "ext": "json",
+     "count": 4,
+     "bytes": 204800
+    },
+    {
+     "ext": "bak",
+     "count": 2,
+     "bytes": 157286400
+    },
+    {
+     "ext": "sqlite",
+     "count": 2,
+     "bytes": 167772160
+    }
+   ],
+   "sample_names": [
+    "zotero.sqlite",
+    "zotero.sqlite.bak",
+    "better-bibtex.sqlite",
+    "storage\\2AB3C4D5\\Smith et al. - 2021 - Deep learning survey.pdf",
+    "storage\\9XY8Z7W6\\.zotero-ft-cache",
+    "translators\\Amazon.js",
+    "styles\\apa.csl"
+   ],
+   "top_children": [
+    {
+     "name": "storage",
+     "bytes": 2558525440,
+     "files": 1700
+    },
+    {
+     "name": "translators",
+     "bytes": 6291456,
+     "files": 700
+    },
+    {
+     "name": "styles",
+     "bytes": 307200,
+     "files": 20
+    }
+   ],
+   "markers": [
+    "sqlite_files",
+    "document_heavy"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ad-anki",
+  "expected_category": "app_data",
+  "acceptable_categories": [],
+  "expected_app": "Anki",
+  "summary": {
+   "path": "{APPDATA}\\Anki2",
+   "total_bytes": 1247836160,
+   "file_count": 3034,
+   "dir_count": 60,
+   "max_depth": 3,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2022-08-06T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "jpg",
+     "count": 2100,
+     "bytes": 314572800
+    },
+    {
+     "ext": "mp3",
+     "count": 900,
+     "bytes": 209715200
+    },
+    {
+     "ext": "colpkg",
+     "count": 30,
+     "bytes": 629145600
+    },
+    {
+     "ext": "json",
+     "count": 2,
+     "bytes": 10240
+    },
+    {
+     "ext": "anki2",
+     "count": 1,
+     "bytes": 94371840
+    },
+    {
+     "ext": "db",
+     "count": 1,
+     "bytes": 20480
+    }
+   ],
+   "sample_names": [
+    "prefs21.db",
+    "User 1\\collection.anki2",
+    "User 1\\collection.media\\paste-1a2b3c.jpg",
+    "User 1\\collection.media\\rec_0081.mp3",
+    "User 1\\backups\\backup-2026-09-14-08.11.colpkg",
+    "addons21\\1046608507\\meta.json"
+   ],
+   "top_children": [
+    {
+     "name": "User 1",
+     "bytes": 1247805440,
+     "files": 3030
+    },
+    {
+     "name": "addons21",
+     "bytes": 2097152,
+     "files": 30
+    }
+   ],
+   "markers": [
+    "sqlite_files",
+    "media_heavy"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ad-sticky-notes",
+  "expected_category": "app_data",
+  "acceptable_categories": [
+   "user_files"
+  ],
+  "expected_app": "Microsoft Sticky Notes",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Packages\\Microsoft.<redacted>\\LocalState",
+   "total_bytes": 1363968,
+   "file_count": 3,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-13T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "sqlite",
+     "count": 1,
+     "bytes": 921600
+    },
+    {
+     "ext": "sqlite-shm",
+     "count": 1,
+     "bytes": 32768
+    },
+    {
+     "ext": "sqlite-wal",
+     "count": 1,
+     "bytes": 409600
+    }
+   ],
+   "sample_names": [
+    "plum.sqlite",
+    "plum.sqlite-wal",
+    "plum.sqlite-shm"
+   ],
+   "top_children": [],
+   "markers": [
+    "sqlite_files",
+    "uwp_package"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ad-plex",
+  "expected_category": "app_data",
+  "acceptable_categories": [
+   "cache"
+  ],
+  "expected_app": "Plex Media Server",
+  "trap": "library database next to gigabytes of downloaded posters",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Plex Media Server",
+   "total_bytes": 8619294720,
+   "file_count": 45944,
+   "dir_count": 50000,
+   "max_depth": 9,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2023-09-10T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "jpg",
+     "count": 42000,
+     "bytes": 7130316800
+    },
+    {
+     "ext": "xml",
+     "count": 3000,
+     "bytes": 125829120
+    },
+    {
+     "ext": "",
+     "count": 900,
+     "bytes": 419430400
+    },
+    {
+     "ext": "log",
+     "count": 40,
+     "bytes": 314572800
+    },
+    {
+     "ext": "db",
+     "count": 4,
+     "bytes": 629145600
+    }
+   ],
+   "sample_names": [
+    "Preferences.xml",
+    "Plug-in Support\\Databases\\com.plexapp.plugins.library.db",
+    "Plug-in Support\\Databases\\com.plexapp.plugins.library.blobs.db",
+    "Metadata\\Movies\\3\\a1b2c3d4.bundle\\Contents\\_combined\\posters\\tv.plex.agents.movie_1a2b.jpg",
+    "Media\\localhost\\0\\c3d4.bundle\\Contents\\Thumbnails\\thumb1.jpg",
+    "Cache\\PhotoTranscoder\\4f\\4f1a2b.jpg",
+    "Logs\\Plex Media Server.log"
+   ],
+   "top_children": [
+    {
+     "name": "Metadata",
+     "bytes": 4404019200,
+     "files": 30000
+    },
+    {
+     "name": "Media",
+     "bytes": 2202009600,
+     "files": 10000
+    },
+    {
+     "name": "Plug-in Support",
+     "bytes": 681574400,
+     "files": 20
+    },
+    {
+     "name": "Cache",
+     "bytes": 419430400,
+     "files": 2900
+    },
+    {
+     "name": "Logs",
+     "bytes": 314572800,
+     "files": 40
+    }
+   ],
+   "markers": [
+    "sqlite_files",
+    "media_heavy"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ad-edge",
+  "expected_category": "app_data",
+  "acceptable_categories": [
+   "credentials"
+  ],
+  "expected_app": "Microsoft Edge",
+  "must_not": [
+   "cache"
+  ],
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Microsoft\\Edge\\User Data\\Default",
+   "total_bytes": 558891008,
+   "file_count": 1620,
+   "dir_count": 1500,
+   "max_depth": 7,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "",
+     "count": 1500,
+     "bytes": 524288000
+    },
+    {
+     "ext": "ldb",
+     "count": 60,
+     "bytes": 31457280
+    },
+    {
+     "ext": "log",
+     "count": 40,
+     "bytes": 1048576
+    },
+    {
+     "ext": "json",
+     "count": 20,
+     "bytes": 2097152
+    }
+   ],
+   "sample_names": [
+    "Bookmarks",
+    "History",
+    "Login Data",
+    "Preferences",
+    "Top Sites",
+    "Collections\\collectionsSQLite",
+    "Cache\\Cache_Data\\f_0001c2",
+    "Local Storage\\leveldb\\000077.ldb",
+    "Extensions\\<redacted>\\1.60.0_0\\manifest.json"
+   ],
+   "top_children": [
+    {
+     "name": "Cache",
+     "bytes": 314572800,
+     "files": 1000
+    },
+    {
+     "name": "Code Cache",
+     "bytes": 83886080,
+     "files": 200
+    },
+    {
+     "name": "Extensions",
+     "bytes": 62914560,
+     "files": 300
+    },
+    {
+     "name": "Collections",
+     "bytes": 4194304,
+     "files": 3
+    }
+   ],
+   "markers": [
+    "chromium_profile",
+    "electron_app",
+    "sqlite_files",
+    "cache_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ad-pst",
+  "expected_category": "app_data",
+  "acceptable_categories": [
+   "user_files"
+  ],
+  "expected_app": "Microsoft Outlook",
+  "summary": {
+   "path": "{DOCUMENTS}\\Outlook Files",
+   "total_bytes": 6501171200,
+   "file_count": 3,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-13T16:47:00Z",
+   "oldest_mtime": "2020-02-18T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "pst",
+     "count": 3,
+     "bytes": 6501171200
+    }
+   ],
+   "sample_names": [
+    "Outlook.pst",
+    "Archive.pst",
+    "Old mailbox 2019.pst"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ad-element",
+  "expected_category": "app_data",
+  "acceptable_categories": [
+   "credentials",
+   "cache"
+  ],
+  "expected_app": "Element",
+  "trap": "Electron app storing end-to-end encryption keys in IndexedDB",
+  "summary": {
+   "path": "{APPDATA}\\Element",
+   "total_bytes": 945856512,
+   "file_count": 996,
+   "dir_count": 50,
+   "max_depth": 3,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2024-10-14T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "",
+     "count": 900,
+     "bytes": 629145600
+    },
+    {
+     "ext": "ldb",
+     "count": 80,
+     "bytes": 314572800
+    },
+    {
+     "ext": "log",
+     "count": 10,
+     "bytes": 2097152
+    },
+    {
+     "ext": "json",
+     "count": 6,
+     "bytes": 40960
+    }
+   ],
+   "sample_names": [
+    "config.json",
+    "IndexedDB\\vector_vector_0.indexeddb.leveldb\\000145.ldb",
+    "IndexedDB\\vector_vector_0.indexeddb.leveldb\\MANIFEST-000001",
+    "Local Storage\\leveldb\\000003.log",
+    "EventStore\\events.db",
+    "Cache\\Cache_Data\\data_1",
+    "GPUCache\\data_0"
+   ],
+   "top_children": [
+    {
+     "name": "IndexedDB",
+     "bytes": 419430400,
+     "files": 120
+    },
+    {
+     "name": "EventStore",
+     "bytes": 314572800,
+     "files": 4
+    },
+    {
+     "name": "Cache",
+     "bytes": 188743680,
+     "files": 800
+    },
+    {
+     "name": "GPUCache",
+     "bytes": 10485760,
+     "files": 5
+    }
+   ],
+   "markers": [
+    "electron_app",
+    "sqlite_files"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ad-obsidian-appdata",
+  "expected_category": "app_data",
+  "acceptable_categories": [
+   "app_config",
+   "cache"
+  ],
+  "expected_app": "Obsidian",
+  "trap": "Electron app data folder; the vault itself lives elsewhere",
+  "summary": {
+   "path": "{APPDATA}\\Obsidian",
+   "total_bytes": 224733184,
+   "file_count": 424,
+   "dir_count": 40,
+   "max_depth": 4,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2025-05-02T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "",
+     "count": 400,
+     "bytes": 125829120
+    },
+    {
+     "ext": "ldb",
+     "count": 12,
+     "bytes": 4194304
+    },
+    {
+     "ext": "log",
+     "count": 6,
+     "bytes": 307200
+    },
+    {
+     "ext": "json",
+     "count": 5,
+     "bytes": 30720
+    },
+    {
+     "ext": "asar",
+     "count": 1,
+     "bytes": 94371840
+    }
+   ],
+   "sample_names": [
+    "obsidian.json",
+    "Preferences",
+    "obsidian-1.6.7.asar",
+    "Local Storage\\leveldb\\000005.ldb",
+    "IndexedDB\\app_obsidian.md_0.indexeddb.leveldb\\000003.log",
+    "Cache\\Cache_Data\\index",
+    "GPUCache\\data_0",
+    "Code Cache\\wasm\\index"
+   ],
+   "top_children": [
+    {
+     "name": "obsidian-1.6.7.asar",
+     "bytes": 94371840,
+     "files": 1
+    },
+    {
+     "name": "Cache",
+     "bytes": 20971520,
+     "files": 300
+    },
+    {
+     "name": "IndexedDB",
+     "bytes": 6291456,
+     "files": 20
+    },
+    {
+     "name": "Local Storage",
+     "bytes": 4194304,
+     "files": 12
+    }
+   ],
+   "markers": [
+    "electron_app"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ad-calibre-library",
+  "expected_category": "app_data",
+  "acceptable_categories": [
+   "user_files"
+  ],
+  "expected_app": "calibre",
+  "summary": {
+   "path": "{HOME}\\Calibre Library",
+   "total_bytes": 2047868928,
+   "file_count": 2131,
+   "dir_count": 1100,
+   "max_depth": 2,
+   "newest_mtime": "2026-09-11T16:47:00Z",
+   "oldest_mtime": "2021-03-24T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "jpg",
+     "count": 700,
+     "bytes": 146800640
+    },
+    {
+     "ext": "opf",
+     "count": 700,
+     "bytes": 3145728
+    },
+    {
+     "ext": "epub",
+     "count": 640,
+     "bytes": 1363148800
+    },
+    {
+     "ext": "pdf",
+     "count": 60,
+     "bytes": 419430400
+    },
+    {
+     "ext": "azw3",
+     "count": 30,
+     "bytes": 83886080
+    },
+    {
+     "ext": "db",
+     "count": 1,
+     "bytes": 31457280
+    }
+   ],
+   "sample_names": [
+    "metadata.db",
+    "<redacted>.json",
+    "Isaac Asimov\\Foundation (123)\\Foundation - Isaac Asimov.epub",
+    "Isaac Asimov\\Foundation (123)\\cover.jpg",
+    "Isaac Asimov\\Foundation (123)\\metadata.opf",
+    "Ursula K. Le Guin\\A Wizard of Earthsea (241)\\A Wizard of Earthsea - Ursula K. Le Guin.azw3"
+   ],
+   "top_children": [
+    {
+     "name": "Isaac Asimov",
+     "bytes": 62914560,
+     "files": 80
+    },
+    {
+     "name": "Terry Pratchett",
+     "bytes": 57671680,
+     "files": 120
+    },
+    {
+     "name": "Ursula K. Le Guin",
+     "bytes": 31457280,
+     "files": 40
+    }
+   ],
+   "markers": [
+    "sqlite_files",
+    "document_heavy"
+   ],
+   "truncated": false
+  }
+ }
+]

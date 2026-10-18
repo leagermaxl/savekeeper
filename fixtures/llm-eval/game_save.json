@@ -1,0 +1,780 @@
+[
+ {
+  "id": "gs-hollow-knight",
+  "expected_category": "game_save",
+  "acceptable_categories": [],
+  "expected_app": "Hollow Knight",
+  "summary": {
+   "path": "{LOCALLOW}\\Team Cherry\\Hollow Knight",
+   "total_bytes": 3205120,
+   "file_count": 12,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-11T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "dat",
+     "count": 7,
+     "bytes": 2404352
+    },
+    {
+     "ext": "bak1",
+     "count": 2,
+     "bytes": 614400
+    },
+    {
+     "ext": "log",
+     "count": 2,
+     "bytes": 184320
+    },
+    {
+     "ext": "json",
+     "count": 1,
+     "bytes": 2048
+    }
+   ],
+   "sample_names": [
+    "user1.dat",
+    "user1.dat.bak1",
+    "user2.dat",
+    "user3.dat",
+    "shared.dat",
+    "Player.log",
+    "Player-prev.log",
+    "steam_autocloud.vdf"
+   ],
+   "top_children": [],
+   "markers": [
+    "unity_game"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gs-stardew",
+  "expected_category": "game_save",
+  "acceptable_categories": [],
+  "expected_app": "Stardew Valley",
+  "must_not": [
+   "cache"
+  ],
+  "summary": {
+   "path": "{APPDATA}\\StardewValley\\Saves",
+   "total_bytes": 24117248,
+   "file_count": 12,
+   "dir_count": 3,
+   "max_depth": 1,
+   "newest_mtime": "2026-09-09T16:47:00Z",
+   "oldest_mtime": "2024-10-14T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "",
+     "count": 9,
+     "bytes": 18874368
+    },
+    {
+     "ext": "old",
+     "count": 3,
+     "bytes": 5242880
+    }
+   ],
+   "sample_names": [
+    "Farm_318734211",
+    "Farm_318734211\\Farm_318734211",
+    "Farm_318734211\\SaveGameInfo",
+    "Farm_318734211\\Farm_318734211_old",
+    "Farm_318734211\\SaveGameInfo_old",
+    "Oak_299102345",
+    "Oak_299102345\\Oak_299102345",
+    "Oak_299102345\\SaveGameInfo"
+   ],
+   "top_children": [
+    {
+     "name": "Farm_318734211",
+     "bytes": 12582912,
+     "files": 4
+    },
+    {
+     "name": "Oak_299102345",
+     "bytes": 7340032,
+     "files": 4
+    },
+    {
+     "name": "River_401928811",
+     "bytes": 4194304,
+     "files": 4
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gs-cyberpunk",
+  "expected_category": "game_save",
+  "acceptable_categories": [],
+  "expected_app": "Cyberpunk 2077",
+  "summary": {
+   "path": "{SAVED_GAMES}\\CD Projekt Red\\Cyberpunk 2077",
+   "total_bytes": 345288704,
+   "file_count": 129,
+   "dir_count": 44,
+   "max_depth": 1,
+   "newest_mtime": "2026-09-02T16:47:00Z",
+   "oldest_mtime": "2025-05-02T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "dat",
+     "count": 42,
+     "bytes": 304087040
+    },
+    {
+     "ext": "json",
+     "count": 42,
+     "bytes": 307200
+    },
+    {
+     "ext": "png",
+     "count": 42,
+     "bytes": 39845888
+    },
+    {
+     "ext": "log",
+     "count": 3,
+     "bytes": 1048576
+    }
+   ],
+   "sample_names": [
+    "ManualSave-12",
+    "ManualSave-12\\sav.dat",
+    "ManualSave-12\\screenshot.png",
+    "ManualSave-12\\metadata.9.json",
+    "AutoSave-3\\sav.dat",
+    "QuickSave-1\\sav.dat",
+    "EndGameSave\\sav.dat",
+    "UserSettings.json",
+    "user.ls"
+   ],
+   "top_children": [
+    {
+     "name": "ManualSave-12",
+     "bytes": 8388608,
+     "files": 3
+    },
+    {
+     "name": "ManualSave-11",
+     "bytes": 8388608,
+     "files": 3
+    },
+    {
+     "name": "AutoSave-3",
+     "bytes": 7340032,
+     "files": 3
+    },
+    {
+     "name": "QuickSave-1",
+     "bytes": 7340032,
+     "files": 3
+    },
+    {
+     "name": "EndGameSave",
+     "bytes": 7340032,
+     "files": 3
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gs-eu4",
+  "expected_category": "game_save",
+  "acceptable_categories": [],
+  "expected_app": "Europa Universalis IV",
+  "must_not": [
+   "user_files"
+  ],
+  "trap": "game in Documents",
+  "summary": {
+   "path": "{DOCUMENTS}\\Paradox Interactive\\Europa Universalis IV\\save games",
+   "total_bytes": 429916160,
+   "file_count": 23,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-08-25T16:47:00Z",
+   "oldest_mtime": "2024-07-06T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "eu4",
+     "count": 23,
+     "bytes": 429916160
+    }
+   ],
+   "sample_names": [
+    "Castile1612.eu4",
+    "autosave.eu4",
+    "older_autosave.eu4",
+    "Ottomans_ironman.eu4",
+    "Brandenburg1701.eu4"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gs-satisfactory",
+  "expected_category": "game_save",
+  "acceptable_categories": [],
+  "expected_app": "Satisfactory",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\FactoryGame\\Saved\\SaveGames",
+   "total_bytes": 548415488,
+   "file_count": 73,
+   "dir_count": 3,
+   "max_depth": 3,
+   "newest_mtime": "2026-09-12T16:47:00Z",
+   "oldest_mtime": "2025-01-22T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "sav",
+     "count": 61,
+     "bytes": 545259520
+    },
+    {
+     "ext": "sbp",
+     "count": 6,
+     "bytes": 3145728
+    },
+    {
+     "ext": "sbpcfg",
+     "count": 6,
+     "bytes": 10240
+    }
+   ],
+   "sample_names": [
+    "76561198000000000\\Factory_autosave_0.sav",
+    "76561198000000000\\Factory_autosave_1.sav",
+    "76561198000000000\\Megabase_090926-201512.sav",
+    "blueprints\\Megabase\\Smelter.sbp",
+    "blueprints\\Megabase\\Smelter.sbpcfg"
+   ],
+   "top_children": [
+    {
+     "name": "76561198000000000",
+     "bytes": 540016640,
+     "files": 61
+    },
+    {
+     "name": "blueprints",
+     "bytes": 3145728,
+     "files": 12
+    }
+   ],
+   "markers": [
+    "unreal_save_games"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gs-factorio-saves",
+  "expected_category": "game_save",
+  "acceptable_categories": [],
+  "expected_app": "Factorio",
+  "must_not": [
+   "reinstallable",
+   "cache"
+  ],
+  "trap": "saves are .zip archives",
+  "summary": {
+   "path": "{APPDATA}\\Factorio\\saves",
+   "total_bytes": 398458880,
+   "file_count": 14,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-10T16:47:00Z",
+   "oldest_mtime": "2023-12-19T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "zip",
+     "count": 14,
+     "bytes": 398458880
+    }
+   ],
+   "sample_names": [
+    "_autosave1.zip",
+    "_autosave2.zip",
+    "_autosave3.zip",
+    "spaceage-run.zip",
+    "megabase-v2.zip",
+    "rail-world.zip"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gs-valheim",
+  "expected_category": "game_save",
+  "acceptable_categories": [],
+  "expected_app": "Valheim",
+  "summary": {
+   "path": "{LOCALLOW}\\IronGate\\Valheim",
+   "total_bytes": 331763712,
+   "file_count": 21,
+   "dir_count": 2,
+   "max_depth": 1,
+   "newest_mtime": "2026-09-08T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "old",
+     "count": 8,
+     "bytes": 157286400
+    },
+    {
+     "ext": "db",
+     "count": 4,
+     "bytes": 167772160
+    },
+    {
+     "ext": "fwl",
+     "count": 4,
+     "bytes": 4096
+    },
+    {
+     "ext": "fch",
+     "count": 3,
+     "bytes": 6291456
+    },
+    {
+     "ext": "log",
+     "count": 2,
+     "bytes": 409600
+    }
+   ],
+   "sample_names": [
+    "worlds_local\\Midgard.db",
+    "worlds_local\\Midgard.fwl",
+    "worlds_local\\Midgard.db.old",
+    "characters_local\\Bjorn.fch",
+    "characters_local\\Bjorn.fch.old",
+    "Player.log",
+    "prefs"
+   ],
+   "top_children": [
+    {
+     "name": "worlds_local",
+     "bytes": 314572800,
+     "files": 16
+    },
+    {
+     "name": "characters_local",
+     "bytes": 12582912,
+     "files": 6
+    }
+   ],
+   "markers": [
+    "unity_game"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gs-skyrim-saves",
+  "expected_category": "game_save",
+  "acceptable_categories": [],
+  "expected_app": "The Elder Scrolls V: Skyrim Special Edition",
+  "trap": "game in Documents",
+  "summary": {
+   "path": "{DOCUMENTS}\\My Games\\Skyrim Special Edition\\Saves",
+   "total_bytes": 1572864000,
+   "file_count": 240,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-05T16:47:00Z",
+   "oldest_mtime": "2023-06-02T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "ess",
+     "count": 118,
+     "bytes": 1468006400
+    },
+    {
+     "ext": "skse",
+     "count": 118,
+     "bytes": 62914560
+    },
+    {
+     "ext": "bak",
+     "count": 4,
+     "bytes": 41943040
+    }
+   ],
+   "sample_names": [
+    "<redacted>.ess",
+    "<redacted>.skse",
+    "<redacted>.ess",
+    "<redacted>.ess"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gs-bg3",
+  "expected_category": "game_save",
+  "acceptable_categories": [],
+  "expected_app": "Baldur's Gate 3",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Larian Studios\\Baldur's Gate 3\\PlayerProfiles\\Public\\Savegames\\Story",
+   "total_bytes": 1162870784,
+   "file_count": 72,
+   "dir_count": 36,
+   "max_depth": 1,
+   "newest_mtime": "2026-09-07T16:47:00Z",
+   "oldest_mtime": "2025-08-10T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "lsv",
+     "count": 36,
+     "bytes": 1153433600
+    },
+    {
+     "ext": "webp",
+     "count": 36,
+     "bytes": 9437184
+    }
+   ],
+   "sample_names": [
+    "<redacted>\\QuickSave_14.lsv",
+    "<redacted>\\QuickSave_14.WebP",
+    "<redacted>\\AutoSave_88.lsv",
+    "Tav-31207741__Before the gate\\Before the gate.lsv"
+   ],
+   "top_children": [
+    {
+     "name": "<redacted>",
+     "bytes": 33554432,
+     "files": 2
+    },
+    {
+     "name": "<redacted>",
+     "bytes": 32505856,
+     "files": 2
+    },
+    {
+     "name": "Tav-31207741__Before the gate",
+     "bytes": 31457280,
+     "files": 2
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gs-zomboid",
+  "expected_category": "game_save",
+  "acceptable_categories": [],
+  "expected_app": "Project Zomboid",
+  "summary": {
+   "path": "{HOME}\\Zomboid\\Saves",
+   "total_bytes": 874860544,
+   "file_count": 4112,
+   "dir_count": 310,
+   "max_depth": 4,
+   "newest_mtime": "2026-09-06T16:47:00Z",
+   "oldest_mtime": "2026-02-26T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "bin",
+     "count": 4100,
+     "bytes": 859832320
+    },
+    {
+     "ext": "db",
+     "count": 6,
+     "bytes": 14680064
+    },
+    {
+     "ext": "txt",
+     "count": 4,
+     "bytes": 40960
+    },
+    {
+     "ext": "png",
+     "count": 2,
+     "bytes": 307200
+    }
+   ],
+   "sample_names": [
+    "Sandbox\\09-08-2026_21-14-03\\map_t.bin",
+    "Sandbox\\09-08-2026_21-14-03\\players.db",
+    "Sandbox\\09-08-2026_21-14-03\\vehicles.db",
+    "Sandbox\\09-08-2026_21-14-03\\map\\40\\31.bin",
+    "Sandbox\\09-08-2026_21-14-03\\thumb.png",
+    "Survivor\\04-07-2026_18-02-55\\map_ver.bin"
+   ],
+   "top_children": [
+    {
+     "name": "Sandbox",
+     "bytes": 629145600,
+     "files": 3000
+    },
+    {
+     "name": "Survivor",
+     "bytes": 245366784,
+     "files": 1112
+    }
+   ],
+   "markers": [
+    "sqlite_files"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gs-minecraft-saves",
+  "expected_category": "game_save",
+  "acceptable_categories": [],
+  "expected_app": "Minecraft",
+  "summary": {
+   "path": "{APPDATA}\\.minecraft\\saves",
+   "total_bytes": 1997615104,
+   "file_count": 722,
+   "dir_count": 30,
+   "max_depth": 3,
+   "newest_mtime": "2026-09-13T16:47:00Z",
+   "oldest_mtime": "2022-08-06T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "mca",
+     "count": 640,
+     "bytes": 1992294400
+    },
+    {
+     "ext": "dat",
+     "count": 40,
+     "bytes": 3145728
+    },
+    {
+     "ext": "json",
+     "count": 24,
+     "bytes": 921600
+    },
+    {
+     "ext": "dat_old",
+     "count": 12,
+     "bytes": 1048576
+    },
+    {
+     "ext": "png",
+     "count": 6,
+     "bytes": 204800
+    }
+   ],
+   "sample_names": [
+    "New World\\level.dat",
+    "New World\\level.dat_old",
+    "New World\\region\\r.0.0.mca",
+    "New World\\playerdata\\<redacted>.dat",
+    "New World\\stats\\<redacted>.json",
+    "New World\\icon.png",
+    "Skyblock\\level.dat"
+   ],
+   "top_children": [
+    {
+     "name": "New World",
+     "bytes": 1572864000,
+     "files": 520
+    },
+    {
+     "name": "Skyblock",
+     "bytes": 314572800,
+     "files": 150
+    },
+    {
+     "name": "Creative test",
+     "bytes": 110100480,
+     "files": 52
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gs-oni",
+  "expected_category": "game_save",
+  "acceptable_categories": [],
+  "expected_app": "Oxygen Not Included",
+  "trap": "game in Documents",
+  "summary": {
+   "path": "{DOCUMENTS}\\Klei\\OxygenNotIncluded\\save_files",
+   "total_bytes": 222298112,
+   "file_count": 31,
+   "dir_count": 3,
+   "max_depth": 2,
+   "newest_mtime": "2026-08-15T16:47:00Z",
+   "oldest_mtime": "2025-01-22T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "sav",
+     "count": 27,
+     "bytes": 220200960
+    },
+    {
+     "ext": "png",
+     "count": 4,
+     "bytes": 2097152
+    }
+   ],
+   "sample_names": [
+    "Rocky Asteroid\\Rocky Asteroid.sav",
+    "Rocky Asteroid\\auto_save\\Rocky Asteroid Cycle 412.sav",
+    "Spaced Out Run\\Spaced Out Run.sav",
+    "Rocky Asteroid\\Rocky Asteroid.png"
+   ],
+   "top_children": [
+    {
+     "name": "Rocky Asteroid",
+     "bytes": 157286400,
+     "files": 20
+    },
+    {
+     "name": "Spaced Out Run",
+     "bytes": 65011712,
+     "files": 11
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gs-palworld",
+  "expected_category": "game_save",
+  "acceptable_categories": [],
+  "expected_app": "Palworld",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Pal\\Saved\\SaveGames",
+   "total_bytes": 188743680,
+   "file_count": 74,
+   "dir_count": 24,
+   "max_depth": 6,
+   "newest_mtime": "2026-09-09T16:47:00Z",
+   "oldest_mtime": "2025-11-18T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "sav",
+     "count": 74,
+     "bytes": 188743680
+    }
+   ],
+   "sample_names": [
+    "76561198000000000\\<redacted>\\Level.sav",
+    "76561198000000000\\<redacted>\\LevelMeta.sav",
+    "76561198000000000\\<redacted>\\Players\\<redacted>.sav",
+    "76561198000000000\\<redacted>\\backup\\world\\2026.09.10-20.11.03\\Level.sav",
+    "UserOption.sav"
+   ],
+   "top_children": [
+    {
+     "name": "76561198000000000",
+     "bytes": 188743680,
+     "files": 73
+    }
+   ],
+   "markers": [
+    "unreal_save_games"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gs-witcher3",
+  "expected_category": "game_save",
+  "acceptable_categories": [],
+  "expected_app": "The Witcher 3",
+  "must_not": [
+   "user_files"
+  ],
+  "trap": "game in Documents",
+  "summary": {
+   "path": "{DOCUMENTS}\\The Witcher 3\\gamesaves",
+   "total_bytes": 285212672,
+   "file_count": 128,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-08-05T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "png",
+     "count": 64,
+     "bytes": 12582912
+    },
+    {
+     "ext": "sav",
+     "count": 64,
+     "bytes": 272629760
+    }
+   ],
+   "sample_names": [
+    "QuickSave.sav",
+    "QuickSave.png",
+    "AutoSave_0a12b3c4.sav",
+    "ManualSave_3f2a1b0c.sav",
+    "ManualSave_3f2a1b0c.png"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gs-dead-cells",
+  "expected_category": "game_save",
+  "acceptable_categories": [],
+  "expected_app": "Dead Cells",
+  "must_not": [
+   "reinstallable"
+  ],
+  "trap": "save folder inside the game install directory",
+  "summary": {
+   "path": "{DRIVE:D}\\SteamLibrary\\steamapps\\common\\Dead Cells\\save",
+   "total_bytes": 18874368,
+   "file_count": 12,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-08-30T16:47:00Z",
+   "oldest_mtime": "2025-05-02T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "bak",
+     "count": 6,
+     "bytes": 9437184
+    },
+    {
+     "ext": "dat",
+     "count": 6,
+     "bytes": 9437184
+    }
+   ],
+   "sample_names": [
+    "user_0.dat",
+    "user_0.dat.bak",
+    "user_1.dat",
+    "user_0.dat.backup0"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ }
+]

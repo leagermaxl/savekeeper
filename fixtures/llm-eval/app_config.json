@@ -1,0 +1,832 @@
+[
+ {
+  "id": "ac-obs",
+  "expected_category": "app_config",
+  "acceptable_categories": [
+   "app_data"
+  ],
+  "expected_app": "OBS Studio",
+  "summary": {
+   "path": "{APPDATA}\\obs-studio",
+   "total_bytes": 11902976,
+   "file_count": 89,
+   "dir_count": 5,
+   "max_depth": 3,
+   "newest_mtime": "2026-09-09T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "txt",
+     "count": 40,
+     "bytes": 9437184
+    },
+    {
+     "ext": "json",
+     "count": 34,
+     "bytes": 2097152
+    },
+    {
+     "ext": "ini",
+     "count": 9,
+     "bytes": 61440
+    },
+    {
+     "ext": "bak",
+     "count": 6,
+     "bytes": 307200
+    }
+   ],
+   "sample_names": [
+    "global.ini",
+    "basic\\profiles\\Streaming\\basic.ini",
+    "basic\\profiles\\Streaming\\service.json",
+    "basic\\scenes\\Main.json",
+    "basic\\scenes\\Main.json.bak",
+    "plugin_config\\obs-websocket\\config.json",
+    "logs\\2026-09-10 19-22-01.txt",
+    "crashes\\Crash 2026-08-01 10-00-00.txt"
+   ],
+   "top_children": [
+    {
+     "name": "logs",
+     "bytes": 7340032,
+     "files": 30
+    },
+    {
+     "name": "basic",
+     "bytes": 2097152,
+     "files": 40
+    },
+    {
+     "name": "crashes",
+     "bytes": 2097152,
+     "files": 10
+    },
+    {
+     "name": "plugin_config",
+     "bytes": 81920,
+     "files": 6
+    }
+   ],
+   "markers": [
+    "config_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ac-notepadpp",
+  "expected_category": "app_config",
+  "acceptable_categories": [
+   "app_data"
+  ],
+  "expected_app": "Notepad++",
+  "summary": {
+   "path": "{APPDATA}\\Notepad++",
+   "total_bytes": 473088,
+   "file_count": 15,
+   "dir_count": 2,
+   "max_depth": 3,
+   "newest_mtime": "2026-09-11T16:47:00Z",
+   "oldest_mtime": "2023-06-02T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "xml",
+     "count": 9,
+     "bytes": 409600
+    },
+    {
+     "ext": "txt",
+     "count": 5,
+     "bytes": 61440
+    },
+    {
+     "ext": "json",
+     "count": 1,
+     "bytes": 2048
+    }
+   ],
+   "sample_names": [
+    "config.xml",
+    "shortcuts.xml",
+    "stylers.xml",
+    "langs.xml",
+    "session.xml",
+    "contextMenu.xml",
+    "backup\\new 3@2026-09-01_101422",
+    "backup\\notes.txt@2026-09-12_084500",
+    "plugins\\config\\NppFTP\\NppFTP.xml"
+   ],
+   "top_children": [
+    {
+     "name": "backup",
+     "bytes": 61440,
+     "files": 5
+    },
+    {
+     "name": "plugins",
+     "bytes": 20480,
+     "files": 2
+    }
+   ],
+   "markers": [
+    "config_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ac-windows-terminal",
+  "expected_category": "app_config",
+  "acceptable_categories": [
+   "dev_environment"
+  ],
+  "expected_app": "Windows Terminal",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Packages\\Microsoft.<redacted>\\LocalState",
+   "total_bytes": 40960,
+   "file_count": 3,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-02T16:47:00Z",
+   "oldest_mtime": "2025-01-22T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "json",
+     "count": 3,
+     "bytes": 40960
+    }
+   ],
+   "sample_names": [
+    "settings.json",
+    "state.json",
+    "settings.json.bak"
+   ],
+   "top_children": [],
+   "markers": [
+    "config_like",
+    "uwp_package"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ac-sharex",
+  "expected_category": "app_config",
+  "acceptable_categories": [
+   "app_data",
+   "user_files"
+  ],
+  "expected_app": "ShareX",
+  "trap": "app settings folder in Documents with screenshots inside",
+  "summary": {
+   "path": "{DOCUMENTS}\\ShareX",
+   "total_bytes": 281018368,
+   "file_count": 500,
+   "dir_count": 3,
+   "max_depth": 2,
+   "newest_mtime": "2026-09-13T16:47:00Z",
+   "oldest_mtime": "2023-12-19T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "png",
+     "count": 420,
+     "bytes": 272629760
+    },
+    {
+     "ext": "txt",
+     "count": 60,
+     "bytes": 4194304
+    },
+    {
+     "ext": "bak",
+     "count": 12,
+     "bytes": 1048576
+    },
+    {
+     "ext": "json",
+     "count": 8,
+     "bytes": 3145728
+    }
+   ],
+   "sample_names": [
+    "ApplicationConfig.json",
+    "HotkeysConfig.json",
+    "UploadersConfig.json",
+    "History.json",
+    "Backup\\<redacted>.json",
+    "Screenshots\\2026-09\\chrome_Ab12Cd34.png",
+    "Logs\\ShareX-Log-2026-09.txt"
+   ],
+   "top_children": [
+    {
+     "name": "Screenshots",
+     "bytes": 272629760,
+     "files": 420
+    },
+    {
+     "name": "Logs",
+     "bytes": 4194304,
+     "files": 60
+    },
+    {
+     "name": "Backup",
+     "bytes": 1048576,
+     "files": 12
+    }
+   ],
+   "markers": [
+    "media_heavy"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ac-qbittorrent",
+  "expected_category": "app_config",
+  "acceptable_categories": [],
+  "expected_app": "qBittorrent",
+  "summary": {
+   "path": "{APPDATA}\\qBittorrent",
+   "total_bytes": 51200,
+   "file_count": 6,
+   "dir_count": 1,
+   "max_depth": 1,
+   "newest_mtime": "2026-09-12T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "ini",
+     "count": 3,
+     "bytes": 40960
+    },
+    {
+     "ext": "json",
+     "count": 2,
+     "bytes": 8192
+    },
+    {
+     "ext": "dat",
+     "count": 1,
+     "bytes": 2048
+    }
+   ],
+   "sample_names": [
+    "qBittorrent.ini",
+    "qBittorrent-data.ini",
+    "watched_folders.json",
+    "categories.json",
+    "rss\\feeds.json"
+   ],
+   "top_children": [
+    {
+     "name": "rss",
+     "bytes": 4096,
+     "files": 1
+    }
+   ],
+   "markers": [
+    "config_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ac-filezilla",
+  "expected_category": "app_config",
+  "acceptable_categories": [
+   "credentials"
+  ],
+  "expected_app": "FileZilla",
+  "trap": "site manager stores saved server passwords",
+  "summary": {
+   "path": "{APPDATA}\\FileZilla",
+   "total_bytes": 327680,
+   "file_count": 7,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-08-15T16:47:00Z",
+   "oldest_mtime": "2022-08-06T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "xml",
+     "count": 6,
+     "bytes": 122880
+    },
+    {
+     "ext": "sqlite3",
+     "count": 1,
+     "bytes": 204800
+    }
+   ],
+   "sample_names": [
+    "filezilla.xml",
+    "sitemanager.xml",
+    "recentservers.xml",
+    "queue.sqlite3",
+    "layout.xml",
+    "trustedcerts.xml"
+   ],
+   "top_children": [],
+   "markers": [
+    "config_like",
+    "sqlite_files"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ac-potplayer",
+  "expected_category": "app_config",
+  "acceptable_categories": [],
+  "expected_app": "PotPlayer",
+  "summary": {
+   "path": "{APPDATA}\\PotPlayerMini64",
+   "total_bytes": 126976,
+   "file_count": 9,
+   "dir_count": 2,
+   "max_depth": 1,
+   "newest_mtime": "2026-09-10T16:47:00Z",
+   "oldest_mtime": "2024-07-06T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "dpl",
+     "count": 6,
+     "bytes": 30720
+    },
+    {
+     "ext": "txt",
+     "count": 2,
+     "bytes": 4096
+    },
+    {
+     "ext": "ini",
+     "count": 1,
+     "bytes": 92160
+    }
+   ],
+   "sample_names": [
+    "PotPlayerMini64.ini",
+    "Playlist\\PotPlayerMini64.dpl",
+    "Playlist\\Anime.dpl",
+    "Capture\\info.txt"
+   ],
+   "top_children": [
+    {
+     "name": "Playlist",
+     "bytes": 30720,
+     "files": 6
+    },
+    {
+     "name": "Capture",
+     "bytes": 4096,
+     "files": 2
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ac-greenshot",
+  "expected_category": "app_config",
+  "acceptable_categories": [],
+  "expected_app": "Greenshot",
+  "summary": {
+   "path": "{APPDATA}\\Greenshot",
+   "total_bytes": 43008,
+   "file_count": 2,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-13T16:47:00Z",
+   "oldest_mtime": "2025-01-22T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "ini",
+     "count": 1,
+     "bytes": 12288
+    },
+    {
+     "ext": "log",
+     "count": 1,
+     "bytes": 30720
+    }
+   ],
+   "sample_names": [
+    "Greenshot.ini",
+    "Greenshot.log"
+   ],
+   "top_children": [],
+   "markers": [
+    "config_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ac-mpv",
+  "expected_category": "app_config",
+  "acceptable_categories": [
+   "dev_environment"
+  ],
+  "expected_app": "mpv",
+  "summary": {
+   "path": "{APPDATA}\\mpv",
+   "total_bytes": 69632,
+   "file_count": 7,
+   "dir_count": 3,
+   "max_depth": 1,
+   "newest_mtime": "2026-08-25T16:47:00Z",
+   "oldest_mtime": "2024-10-14T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "lua",
+     "count": 4,
+     "bytes": 61440
+    },
+    {
+     "ext": "conf",
+     "count": 2,
+     "bytes": 6144
+    },
+    {
+     "ext": "json",
+     "count": 1,
+     "bytes": 2048
+    }
+   ],
+   "sample_names": [
+    "mpv.conf",
+    "input.conf",
+    "scripts\\autoload.lua",
+    "scripts\\sponsorblock.lua",
+    "script-opts\\uosc.conf",
+    "watch_later\\3F2A1B0C9D8E7F6A"
+   ],
+   "top_children": [
+    {
+     "name": "scripts",
+     "bytes": 51200,
+     "files": 4
+    },
+    {
+     "name": "watch_later",
+     "bytes": 2048,
+     "files": 1
+    },
+    {
+     "name": "script-opts",
+     "bytes": 1024,
+     "files": 1
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ac-irfanview",
+  "expected_category": "app_config",
+  "acceptable_categories": [],
+  "expected_app": "IrfanView",
+  "summary": {
+   "path": "{APPDATA}\\IrfanView",
+   "total_bytes": 18432,
+   "file_count": 2,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-08-05T16:47:00Z",
+   "oldest_mtime": "2021-10-10T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "ini",
+     "count": 2,
+     "bytes": 18432
+    }
+   ],
+   "sample_names": [
+    "i_view64.ini",
+    "i_view64_effects.ini"
+   ],
+   "top_children": [],
+   "markers": [
+    "config_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ac-handbrake",
+  "expected_category": "app_config",
+  "acceptable_categories": [],
+  "expected_app": "HandBrake",
+  "summary": {
+   "path": "{APPDATA}\\HandBrake",
+   "total_bytes": 6383616,
+   "file_count": 37,
+   "dir_count": 1,
+   "max_depth": 1,
+   "newest_mtime": "2026-09-08T16:47:00Z",
+   "oldest_mtime": "2024-10-14T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "txt",
+     "count": 34,
+     "bytes": 6291456
+    },
+    {
+     "ext": "json",
+     "count": 3,
+     "bytes": 92160
+    }
+   ],
+   "sample_names": [
+    "settings.json",
+    "presets.json",
+    "user_presets.json",
+    "logs\\activity_log_main.txt",
+    "logs\\activity_log.1.txt"
+   ],
+   "top_children": [
+    {
+     "name": "logs",
+     "bytes": 6291456,
+     "files": 34
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ac-audacity",
+  "expected_category": "app_config",
+  "acceptable_categories": [
+   "app_data"
+  ],
+  "expected_app": "Audacity",
+  "summary": {
+   "path": "{APPDATA}\\audacity",
+   "total_bytes": 31784960,
+   "file_count": 6,
+   "dir_count": 2,
+   "max_depth": 1,
+   "newest_mtime": "2026-09-04T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "cfg",
+     "count": 3,
+     "bytes": 307200
+    },
+    {
+     "ext": "txt",
+     "count": 2,
+     "bytes": 20480
+    },
+    {
+     "ext": "aup3",
+     "count": 1,
+     "bytes": 31457280
+    }
+   ],
+   "sample_names": [
+    "audacity.cfg",
+    "pluginregistry.cfg",
+    "pluginsettings.cfg",
+    "lastlog.txt",
+    "AutoSave\\Untitled-recovery.aup3",
+    "Macros\\MP3 Conversion.txt"
+   ],
+   "top_children": [
+    {
+     "name": "AutoSave",
+     "bytes": 31457280,
+     "files": 1
+    },
+    {
+     "name": "Macros",
+     "bytes": 4096,
+     "files": 1
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ac-gimp",
+  "expected_category": "app_config",
+  "acceptable_categories": [
+   "app_data"
+  ],
+  "expected_app": "GIMP",
+  "summary": {
+   "path": "{APPDATA}\\GIMP\\2.10",
+   "total_bytes": 2600960,
+   "file_count": 40,
+   "dir_count": 3,
+   "max_depth": 1,
+   "newest_mtime": "2026-08-10T16:47:00Z",
+   "oldest_mtime": "2023-12-19T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "",
+     "count": 18,
+     "bytes": 409600
+    },
+    {
+     "ext": "gbr",
+     "count": 12,
+     "bytes": 2097152
+    },
+    {
+     "ext": "scm",
+     "count": 6,
+     "bytes": 81920
+    },
+    {
+     "ext": "ggr",
+     "count": 4,
+     "bytes": 12288
+    }
+   ],
+   "sample_names": [
+    "gimprc",
+    "sessionrc",
+    "menurc",
+    "controllerrc",
+    "templaterc",
+    "devicerc",
+    "brushes\\soft-round.gbr",
+    "scripts\\batch-resize.scm",
+    "gradients\\Sunset.ggr"
+   ],
+   "top_children": [
+    {
+     "name": "brushes",
+     "bytes": 2097152,
+     "files": 12
+    },
+    {
+     "name": "scripts",
+     "bytes": 81920,
+     "files": 6
+    },
+    {
+     "name": "gradients",
+     "bytes": 12288,
+     "files": 4
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ac-vlc",
+  "expected_category": "app_config",
+  "acceptable_categories": [],
+  "expected_app": "VLC media player",
+  "summary": {
+   "path": "{APPDATA}\\vlc",
+   "total_bytes": 178176,
+   "file_count": 4,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-11T16:47:00Z",
+   "oldest_mtime": "2023-02-22T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "",
+     "count": 2,
+     "bytes": 143360
+    },
+    {
+     "ext": "ini",
+     "count": 1,
+     "bytes": 4096
+    },
+    {
+     "ext": "xspf",
+     "count": 1,
+     "bytes": 30720
+    }
+   ],
+   "sample_names": [
+    "vlcrc",
+    "vlc-qt-interface.ini",
+    "ml.xspf",
+    "vlcrc.bak"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ac-signatures",
+  "expected_category": "app_config",
+  "acceptable_categories": [
+   "user_files"
+  ],
+  "expected_app": "Microsoft Outlook",
+  "summary": {
+   "path": "{APPDATA}\\Microsoft\\Signatures",
+   "total_bytes": 114688,
+   "file_count": 9,
+   "dir_count": 2,
+   "max_depth": 1,
+   "newest_mtime": "2026-02-26T16:47:00Z",
+   "oldest_mtime": "2023-12-19T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "png",
+     "count": 3,
+     "bytes": 61440
+    },
+    {
+     "ext": "htm",
+     "count": 2,
+     "bytes": 30720
+    },
+    {
+     "ext": "rtf",
+     "count": 2,
+     "bytes": 20480
+    },
+    {
+     "ext": "txt",
+     "count": 2,
+     "bytes": 2048
+    }
+   ],
+   "sample_names": [
+    "Work.htm",
+    "Work.rtf",
+    "Work.txt",
+    "Work_files\\image001.png",
+    "Personal.htm",
+    "Personal_files\\filelist.xml"
+   ],
+   "top_children": [
+    {
+     "name": "Work_files",
+     "bytes": 40960,
+     "files": 3
+    },
+    {
+     "name": "Personal_files",
+     "bytes": 20480,
+     "files": 2
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ac-everything",
+  "expected_category": "app_config",
+  "acceptable_categories": [
+   "cache"
+  ],
+  "expected_app": "Everything",
+  "trap": "small config plus a large rebuildable index",
+  "summary": {
+   "path": "{APPDATA}\\Everything",
+   "total_bytes": 65441792,
+   "file_count": 4,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "csv",
+     "count": 2,
+     "bytes": 409600
+    },
+    {
+     "ext": "db",
+     "count": 1,
+     "bytes": 65011712
+    },
+    {
+     "ext": "ini",
+     "count": 1,
+     "bytes": 20480
+    }
+   ],
+   "sample_names": [
+    "Everything.ini",
+    "Run History.csv",
+    "Search History.csv",
+    "Everything.db"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ }
+]

@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-llm` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-07 |
 | Используется в | SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-19 (T-08-13: формат `recommended.yaml`, `llm_health`/`LlmHealth` — §4.11; API fallback без `think` — §4.2.1); 2026-10-19 (§4.2.1: `"think": false` и fallback без него; §4.11: `qwen3.5:9b`, `qwen3.5:4b`; §6.3: происхождение eval-набора); 2026-10-18 (T-08-12: встраивание в engine — SPEC-01 §4.4; подтверждение облака без hook → `llm.cloud_declined`, §9); 2026-10-18 (T-08-11: детали content peek и скраба — §4.9; `final_check` — повторное раскодирование до 4 раундов и исключение JSON-экранирований из пути в сыром представлении, §4.8); 2026-10-18 (T-08-10: детали `ClassifyRunner` — отбор, ретраи, health, issues, `with_env` — §4.12); 2026-10-18 (T-08-09: детали `SecretStore`, `FallbackStore` — §4.10); 2026-10-18 (T-08-08: `LlmError::{MaxTokens, Refusal}`, `Classifier::usage`, `UsageStats`/`ModelPricing`/`CostEstimate` — §4.1; детали Anthropic — §4.2.3; NFR-08-03: $0.05 → $0.40, исправлена арифметика); 2026-10-18 (T-08-07: детали OpenAI-compat — fallback, health, `is_local` по loopback, внешний URL через секцию `local` — §4.2.2, §4.4); 2026-10-18 (T-08-06: детали Ollama, health без модели, авто-детект — §4.2.1; общий маппинг HTTP-ошибок — §4.12; прокси для loopback — §5); 2026-10-18 (T-08-05: `peek_digest`, формат `result`, условия компакции, TTL и API кэша — §4.7); 2026-10-18 (T-08-04: формат усечения дат, `null` опускаются, лимит 4 000 на `summary` и порядок отбрасывания — §4.3, §5; правила `final_check` и API приватности — §4.1, §4.8); 2026-10-18 (T-08-03: порог `min_confidence_to_apply` — аргумент `apply_classification`, §4.1); 2026-10-18 (T-08-01: поля `HealthReport` в §4.1 — FR-08-08; статус in-progress); 2026-10-02 (промпт: `sample_names` — пути файлов и папок, SPEC-03 §4.4; 2026-10-01: `LlmConfig` — в `sk-core::config`; `MockClassifier` в `sk-llm` под feature `mock`) |
+| Последнее изменение | 2026-10-19 (T-08-14: формат кейса eval §6.3; NFR-08-02 — accuracy по `acceptable`, порог для `qwen3.5:9b`; задача T-08-15 — ложные срабатывания `final_check` на UWP/SID); 2026-10-19 (T-08-13: формат `recommended.yaml`, `llm_health`/`LlmHealth` — §4.11; API fallback без `think` — §4.2.1); 2026-10-19 (§4.2.1: `"think": false` и fallback без него; §4.11: `qwen3.5:9b`, `qwen3.5:4b`; §6.3: происхождение eval-набора); 2026-10-18 (T-08-12: встраивание в engine — SPEC-01 §4.4; подтверждение облака без hook → `llm.cloud_declined`, §9); 2026-10-18 (T-08-11: детали content peek и скраба — §4.9; `final_check` — повторное раскодирование до 4 раундов и исключение JSON-экранирований из пути в сыром представлении, §4.8); 2026-10-18 (T-08-10: детали `ClassifyRunner` — отбор, ретраи, health, issues, `with_env` — §4.12); 2026-10-18 (T-08-09: детали `SecretStore`, `FallbackStore` — §4.10); 2026-10-18 (T-08-08: `LlmError::{MaxTokens, Refusal}`, `Classifier::usage`, `UsageStats`/`ModelPricing`/`CostEstimate` — §4.1; детали Anthropic — §4.2.3; NFR-08-03: $0.05 → $0.40, исправлена арифметика); 2026-10-18 (T-08-07: детали OpenAI-compat — fallback, health, `is_local` по loopback, внешний URL через секцию `local` — §4.2.2, §4.4); 2026-10-18 (T-08-06: детали Ollama, health без модели, авто-детект — §4.2.1; общий маппинг HTTP-ошибок — §4.12; прокси для loopback — §5); 2026-10-18 (T-08-05: `peek_digest`, формат `result`, условия компакции, TTL и API кэша — §4.7); 2026-10-18 (T-08-04: формат усечения дат, `null` опускаются, лимит 4 000 на `summary` и порядок отбрасывания — §4.3, §5; правила `final_check` и API приватности — §4.1, §4.8); 2026-10-18 (T-08-03: порог `min_confidence_to_apply` — аргумент `apply_classification`, §4.1); 2026-10-18 (T-08-01: поля `HealthReport` в §4.1 — FR-08-08; статус in-progress); 2026-10-02 (промпт: `sample_names` — пути файлов и папок, SPEC-03 §4.4; 2026-10-01: `LlmConfig` — в `sk-core::config`; `MockClassifier` в `sk-llm` под feature `mock`) |
 
 ## 1. Цель
 
@@ -53,7 +53,7 @@
 
 ### 3.2 Нефункциональные
 - **NFR-08-01** — Local (7–8B, GPU): ≤ 3 с на батч из 8 элементов. Cloud (Haiku 4.5): ≤ 5 с на батч из 20.
-- **NFR-08-02** — Accuracy по категории на eval-наборе (§6.3): ≥ 0.80 для `claude-haiku-4-5`, ≥ 0.70 для `qwen2.5:7b-instruct`.
+- **NFR-08-02** — Accuracy по категории с учётом `acceptable_categories` на eval-наборе (§6.3): ≥ 0.80 для `claude-haiku-4-5`, ≥ 0.70 для локальной модели по умолчанию (`qwen2.5:7b-instruct`) и для `qwen3.5:9b`.
 - **NFR-08-03** — Стоимость облачного скана из 300 элементов на Haiku 4.5 ≤ $0.40 (≈ 300 × 600 входных токенов × $1/MTok + 300 × 120 выходных × $5/MTok ≈ $0.36; оценка и фактическое значение показываются в UI).
 - **NFR-08-04** — API-ключ не попадает в логи, отчёты, `scans/*.json` и сообщения об ошибках.
 
@@ -477,9 +477,10 @@ Rules:
 - `ClassifyRunner` + `MockClassifier`: лимит `max_items_per_scan`, приоритет отбора, детерминизм порядка, повторный прогон на 100% из кэша (0 запросов).
 
 ### 6.3 Eval (ручной / nightly, с сетью)
-- Набор: `fixtures/llm-eval/*.json` — ≥ 150 `FolderSummary` с реальных машин (обезличенных) + `expected_category` + `acceptable_categories` (например, `app_config|app_data`).
+- Набор: `fixtures/llm-eval/*.json` — ≥ 150 синтетических `FolderSummary` по реальным структурам папок + `expected_category` + `acceptable_categories` (например, `app_config|app_data`).
 - Покрытие: ≥ 10 примеров на каждую категорию, кроме `unknown`, включая «ловушки» (большой кэш с `.json`, игра в `Documents`, Electron-приложение).
 - Набор составляется вручную по реальным структурам папок известных программ и игр (без данных конкретного пользователя: имена, пути и даты синтетические). Бинарник `cargo run -p sk-llm --example eval -- --provider ollama --model qwen2.5:7b-instruct`. Выводит accuracy (строгую и по `acceptable`), confusion matrix, среднюю латентность и стоимость.
+- Формат кейса: `{id, expected_category, acceptable_categories, expected_app?, must_not?, trap?, hint?, summary}`; `acceptable_categories` — только другие допустимые категории (ожидаемая допустима всегда); модели отправляются непрозрачные id (`item-NNN`). Пример `eval` вызывает `Classifier` напрямую без кэша, батчит как runner, повторяет один раз и делает `final_check` каждого запроса.
 - Порог — NFR-08-02. Результаты фиксируются в `fixtures/llm-eval/RESULTS.md` при каждом изменении промпта.
 
 ## 7. Задачи
@@ -497,7 +498,8 @@ Rules:
 - [x] **T-08-11** — Content peek + скраб секретов §4.9. *Зависит:* T-08-04.
 - [x] **T-08-12** — Встраивание в `sk-engine` (фаза `Classify`), issues, события. *Зависит:* T-08-10, T-01-06.
 - [x] **T-08-13** — `recommended.yaml` + API для UI: список рекомендаций, health, `ollama pull`-подсказка. *Зависит:* T-08-06.
-- [ ] **T-08-14** — Eval-набор (≥ 150 элементов) и `examples/eval`. Первые результаты в `RESULTS.md`. *Зависит:* T-08-06, T-08-08.
+- [x] **T-08-14** — Eval-набор (≥ 150 элементов) и `examples/eval`. Первые результаты в `RESULTS.md`. *Зависит:* T-08-06, T-08-08.
+- [ ] **T-08-15** — Ложные срабатывания `final_check` на путях Windows (найдено в T-08-14): правило токена (≥ 24 символа `[A-Za-z0-9_-]`) блокирует настоящие папки — имена семейств UWP-пакетов (`{LOCALAPPDATA}\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe`), папки по SID (`Microsoft\Protect\S-1-5-21-…`) и расширение `automaticdestinations-ms` (`Recent`); такие элементы всегда получают `llm.privacy_blocked`. Исключение: в поле `path` правило токена не действует на серию вида `<имя>_<13 символов publisher id [a-z0-9]>` и на SID `S-1-<число>(-<число>)+`, в `ext_histogram[].ext` — не действует; остальные правила (имя пользователя, машины, пути, email) — как прежде. Правило записать в §4.8. *Зависит:* T-08-04, T-08-14. *Готово, когда:* unit-тесты на эти три случая и на то, что настоящий токен в `path`/`sample_names` по-прежнему блокируется; соответствующие кейсы eval-набора вернуть к реальному виду.
 
 ## 8. Критерии приёмки
 

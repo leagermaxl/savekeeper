@@ -1,0 +1,950 @@
+[
+ {
+  "id": "ca-chrome-cache",
+  "expected_category": "cache",
+  "acceptable_categories": [],
+  "expected_app": "Google Chrome",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Google\\Chrome\\User Data\\Default\\Cache\\Cache_Data",
+   "total_bytes": 943718400,
+   "file_count": 18000,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2026-08-05T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "",
+     "count": 18000,
+     "bytes": 943718400
+    }
+   ],
+   "sample_names": [
+    "index",
+    "data_0",
+    "data_1",
+    "data_2",
+    "data_3",
+    "f_00a1b2",
+    "f_00a1b3",
+    "f_01c9d2"
+   ],
+   "top_children": [],
+   "markers": [
+    "cache_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ca-temp",
+  "expected_category": "cache",
+  "acceptable_categories": [],
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Temp",
+   "total_bytes": 3586129920,
+   "file_count": 5794,
+   "dir_count": 1400,
+   "max_depth": 6,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2022-11-14T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "tmp",
+     "count": 3200,
+     "bytes": 1887436800
+    },
+    {
+     "ext": "",
+     "count": 1200,
+     "bytes": 629145600
+    },
+    {
+     "ext": "log",
+     "count": 900,
+     "bytes": 419430400
+    },
+    {
+     "ext": "json",
+     "count": 400,
+     "bytes": 31457280
+    },
+    {
+     "ext": "dll",
+     "count": 60,
+     "bytes": 94371840
+    },
+    {
+     "ext": "exe",
+     "count": 30,
+     "bytes": 314572800
+    },
+    {
+     "ext": "msi",
+     "count": 4,
+     "bytes": 209715200
+    }
+   ],
+   "sample_names": [
+    "chrome_installer.log",
+    "wctB2F1.tmp",
+    "MSI3a2f1.LOG",
+    "{<redacted>}\\setup.exe",
+    "vscode-stable-user-x64\\CodeSetup-stable.exe",
+    "_MEI123402\\python312.dll",
+    "<redacted>.log"
+   ],
+   "top_children": [
+    {
+     "name": "vscode-stable-user-x64",
+     "bytes": 104857600,
+     "files": 2
+    },
+    {
+     "name": "_MEI123402",
+     "bytes": 62914560,
+     "files": 120
+    },
+    {
+     "name": "{<redacted>}",
+     "bytes": 41943040,
+     "files": 3
+    }
+   ],
+   "markers": [
+    "cache_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ca-crashdumps",
+  "expected_category": "cache",
+  "acceptable_categories": [],
+  "summary": {
+   "path": "{LOCALAPPDATA}\\CrashDumps",
+   "total_bytes": 3984588800,
+   "file_count": 24,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-10T16:47:00Z",
+   "oldest_mtime": "2025-05-02T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "dmp",
+     "count": 24,
+     "bytes": 3984588800
+    }
+   ],
+   "sample_names": [
+    "explorer.exe.10432.dmp",
+    "Discord.exe.22100.dmp",
+    "obs64.exe.8120.dmp",
+    "steamwebhelper.exe.6612.dmp"
+   ],
+   "top_children": [],
+   "markers": [
+    "cache_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ca-nvidia-dxcache",
+  "expected_category": "cache",
+  "acceptable_categories": [],
+  "expected_app": "NVIDIA graphics driver",
+  "must_not": [
+   "game_save"
+  ],
+  "trap": "shader cache file names contain game names",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\NVIDIA\\DXCache",
+   "total_bytes": 4435476480,
+   "file_count": 2000,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2025-08-10T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "nvph",
+     "count": 1600,
+     "bytes": 4404019200
+    },
+    {
+     "ext": "toc",
+     "count": 400,
+     "bytes": 31457280
+    }
+   ],
+   "sample_names": [
+    "<redacted>.nvph",
+    "<redacted>.toc",
+    "<redacted>.nvph",
+    "<redacted>.nvph"
+   ],
+   "top_children": [],
+   "markers": [
+    "cache_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ca-d3dscache",
+  "expected_category": "cache",
+  "acceptable_categories": [],
+  "summary": {
+   "path": "{LOCALAPPDATA}\\D3DSCache",
+   "total_bytes": 1530920960,
+   "file_count": 360,
+   "dir_count": 40,
+   "max_depth": 1,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2025-01-22T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "idx",
+     "count": 120,
+     "bytes": 62914560
+    },
+    {
+     "ext": "lock",
+     "count": 120,
+     "bytes": 0
+    },
+    {
+     "ext": "val",
+     "count": 120,
+     "bytes": 1468006400
+    }
+   ],
+   "sample_names": [
+    "3f2a1b0c9d8e7f6a\\<redacted>.idx",
+    "3f2a1b0c9d8e7f6a\\<redacted>.val",
+    "3f2a1b0c9d8e7f6a\\<redacted>.lock"
+   ],
+   "top_children": [
+    {
+     "name": "3f2a1b0c9d8e7f6a",
+     "bytes": 629145600,
+     "files": 90
+    },
+    {
+     "name": "a7b6c5d4e3f20110",
+     "bytes": 419430400,
+     "files": 90
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ca-spotify-storage",
+  "expected_category": "cache",
+  "acceptable_categories": [],
+  "expected_app": "Spotify",
+  "must_not": [
+   "user_files",
+   "app_data"
+  ],
+  "trap": "large media cache without 'cache' in its name",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Spotify\\Storage",
+   "total_bytes": 9707716608,
+   "file_count": 9302,
+   "dir_count": 256,
+   "max_depth": 1,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2025-05-02T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "file",
+     "count": 9000,
+     "bytes": 9663676416
+    },
+    {
+     "ext": "idx",
+     "count": 300,
+     "bytes": 31457280
+    },
+    {
+     "ext": "dat",
+     "count": 2,
+     "bytes": 12582912
+    }
+   ],
+   "sample_names": [
+    "index.dat",
+    "storage.dat",
+    "0a\\<redacted>.file",
+    "0a\\<redacted>.idx",
+    "ff\\<redacted>.file"
+   ],
+   "top_children": [
+    {
+     "name": "0a",
+     "bytes": 41943040,
+     "files": 36
+    },
+    {
+     "name": "1f",
+     "bytes": 39845888,
+     "files": 35
+    },
+    {
+     "name": "ff",
+     "bytes": 40894464,
+     "files": 36
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ca-pip-cache",
+  "expected_category": "cache",
+  "acceptable_categories": [
+   "reinstallable"
+  ],
+  "expected_app": "pip",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\pip\\cache",
+   "total_bytes": 2621441024,
+   "file_count": 3121,
+   "dir_count": 4000,
+   "max_depth": 7,
+   "newest_mtime": "2026-09-12T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "",
+     "count": 3000,
+     "bytes": 943718400
+    },
+    {
+     "ext": "whl",
+     "count": 120,
+     "bytes": 1677721600
+    },
+    {
+     "ext": "json",
+     "count": 1,
+     "bytes": 1024
+    }
+   ],
+   "sample_names": [
+    "selfcheck\\<redacted>",
+    "http-v2\\a\\1\\b\\2\\c\\<redacted>",
+    "wheels\\3f\\2a\\1b\\numpy-2.1.1-cp312-cp312-win_amd64.whl"
+   ],
+   "top_children": [
+    {
+     "name": "http-v2",
+     "bytes": 943718400,
+     "files": 3000
+    },
+    {
+     "name": "wheels",
+     "bytes": 1677721600,
+     "files": 120
+    }
+   ],
+   "markers": [
+    "cache_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ca-npm-cache",
+  "expected_category": "cache",
+  "acceptable_categories": [
+   "reinstallable"
+  ],
+  "expected_app": "npm",
+  "trap": "large cache dominated by JSON index entries",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\npm-cache",
+   "total_bytes": 2967470080,
+   "file_count": 36010,
+   "dir_count": 9000,
+   "max_depth": 6,
+   "newest_mtime": "2026-09-13T16:47:00Z",
+   "oldest_mtime": "2024-07-06T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "",
+     "count": 22000,
+     "bytes": 2726297600
+    },
+    {
+     "ext": "json",
+     "count": 14000,
+     "bytes": 209715200
+    },
+    {
+     "ext": "log",
+     "count": 10,
+     "bytes": 31457280
+    }
+   ],
+   "sample_names": [
+    "_cacache\\content-v2\\sha512\\0a\\1b\\<redacted>",
+    "_cacache\\index-v5\\00\\1a\\2b3c4d5e6f",
+    "_logs\\<redacted>.log",
+    "<redacted>"
+   ],
+   "top_children": [
+    {
+     "name": "_cacache",
+     "bytes": 2936012800,
+     "files": 36000
+    },
+    {
+     "name": "_logs",
+     "bytes": 31457280,
+     "files": 10
+    }
+   ],
+   "markers": [
+    "cache_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ca-thumbcache",
+  "expected_category": "cache",
+  "acceptable_categories": [
+   "system_settings"
+  ],
+  "expected_app": "Windows Explorer",
+  "must_not": [
+   "app_data"
+  ],
+  "trap": "cache made of .db files",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Microsoft\\Windows\\Explorer",
+   "total_bytes": 1365245952,
+   "file_count": 34,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "db",
+     "count": 30,
+     "bytes": 1363148800
+    },
+    {
+     "ext": "tmp",
+     "count": 4,
+     "bytes": 2097152
+    }
+   ],
+   "sample_names": [
+    "thumbcache_256.db",
+    "thumbcache_1024.db",
+    "thumbcache_idx.db",
+    "iconcache_32.db",
+    "iconcache_idx.db",
+    "ExplorerStartupLog.etl"
+   ],
+   "top_children": [],
+   "markers": [
+    "sqlite_files"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ca-steam-htmlcache",
+  "expected_category": "cache",
+  "acceptable_categories": [
+   "reinstallable"
+  ],
+  "expected_app": "Steam",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Steam\\htmlcache",
+   "total_bytes": 634429440,
+   "file_count": 3023,
+   "dir_count": 40,
+   "max_depth": 4,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2025-11-18T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "",
+     "count": 3000,
+     "bytes": 629145600
+    },
+    {
+     "ext": "ldb",
+     "count": 10,
+     "bytes": 4194304
+    },
+    {
+     "ext": "log",
+     "count": 10,
+     "bytes": 1048576
+    },
+    {
+     "ext": "json",
+     "count": 3,
+     "bytes": 40960
+    }
+   ],
+   "sample_names": [
+    "Cache\\Cache_Data\\data_0",
+    "Code Cache\\js\\index",
+    "GPUCache\\data_1",
+    "Local Storage\\leveldb\\000003.log",
+    "Cookies",
+    "Network Persistent State"
+   ],
+   "top_children": [
+    {
+     "name": "Cache",
+     "bytes": 471859200,
+     "files": 2200
+    },
+    {
+     "name": "Code Cache",
+     "bytes": 125829120,
+     "files": 700
+    },
+    {
+     "name": "GPUCache",
+     "bytes": 20971520,
+     "files": 5
+    },
+    {
+     "name": "Local Storage",
+     "bytes": 4194304,
+     "files": 12
+    }
+   ],
+   "markers": [
+    "cache_like",
+    "electron_app"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ca-epic-webcache",
+  "expected_category": "cache",
+  "acceptable_categories": [],
+  "expected_app": "Epic Games Launcher",
+  "must_not": [
+   "game_save"
+  ],
+  "trap": "web cache under an Unreal 'Saved' folder, many JSON files",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\EpicGamesLauncher\\Saved\\webcache_4430",
+   "total_bytes": 1161822208,
+   "file_count": 4930,
+   "dir_count": 80,
+   "max_depth": 5,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2026-02-26T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "",
+     "count": 4000,
+     "bytes": 734003200
+    },
+    {
+     "ext": "json",
+     "count": 900,
+     "bytes": 419430400
+    },
+    {
+     "ext": "ldb",
+     "count": 20,
+     "bytes": 6291456
+    },
+    {
+     "ext": "log",
+     "count": 10,
+     "bytes": 2097152
+    }
+   ],
+   "sample_names": [
+    "Cache\\Cache_Data\\f_002a3b",
+    "Service Worker\\CacheStorage\\3f2a1b0c\\index.txt",
+    "Service Worker\\CacheStorage\\3f2a1b0c\\a1b2c3d4_0.json",
+    "Local Storage\\leveldb\\000005.ldb",
+    "GPUCache\\data_0"
+   ],
+   "top_children": [
+    {
+     "name": "Service Worker",
+     "bytes": 629145600,
+     "files": 3200
+    },
+    {
+     "name": "Cache",
+     "bytes": 524288000,
+     "files": 1700
+    },
+    {
+     "name": "GPUCache",
+     "bytes": 10485760,
+     "files": 5
+    }
+   ],
+   "markers": [
+    "cache_like",
+    "electron_app"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ca-unreal-logs",
+  "expected_category": "cache",
+  "acceptable_categories": [],
+  "expected_app": "Satisfactory",
+  "must_not": [
+   "game_save"
+  ],
+  "trap": "logs under an Unreal 'Saved' folder",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\FactoryGame\\Saved\\Logs",
+   "total_bytes": 1258291200,
+   "file_count": 32,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-12T16:47:00Z",
+   "oldest_mtime": "2026-06-16T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "log",
+     "count": 30,
+     "bytes": 943718400
+    },
+    {
+     "ext": "dmp",
+     "count": 2,
+     "bytes": 314572800
+    }
+   ],
+   "sample_names": [
+    "FactoryGame.log",
+    "FactoryGame-backup-2026.09.10-20.11.03.log",
+    "UE5Minidump.dmp"
+   ],
+   "top_children": [],
+   "markers": [
+    "cache_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ca-discord-appdata",
+  "expected_category": "cache",
+  "acceptable_categories": [
+   "reinstallable",
+   "app_config"
+  ],
+  "expected_app": "Discord",
+  "must_not": [
+   "user_files"
+  ],
+  "trap": "Electron app whose data is server-side",
+  "summary": {
+   "path": "{APPDATA}\\discord",
+   "total_bytes": 1325604864,
+   "file_count": 5270,
+   "dir_count": 200,
+   "max_depth": 6,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "",
+     "count": 5000,
+     "bytes": 1153433600
+    },
+    {
+     "ext": "js",
+     "count": 200,
+     "bytes": 62914560
+    },
+    {
+     "ext": "node",
+     "count": 30,
+     "bytes": 94371840
+    },
+    {
+     "ext": "ldb",
+     "count": 20,
+     "bytes": 8388608
+    },
+    {
+     "ext": "log",
+     "count": 12,
+     "bytes": 6291456
+    },
+    {
+     "ext": "json",
+     "count": 8,
+     "bytes": 204800
+    }
+   ],
+   "sample_names": [
+    "settings.json",
+    "Cache\\Cache_Data\\f_000a1b",
+    "Code Cache\\js\\index",
+    "GPUCache\\data_2",
+    "Local Storage\\leveldb\\000005.ldb",
+    "0.0.309\\modules\\discord_desktop_core\\core.asar",
+    "logs\\renderer_js.log",
+    "sentry\\scope_v3.json"
+   ],
+   "top_children": [
+    {
+     "name": "Cache",
+     "bytes": 943718400,
+     "files": 4200
+    },
+    {
+     "name": "0.0.309",
+     "bytes": 157286400,
+     "files": 230
+    },
+    {
+     "name": "Code Cache",
+     "bytes": 125829120,
+     "files": 600
+    },
+    {
+     "name": "Local Storage",
+     "bytes": 8388608,
+     "files": 20
+    }
+   ],
+   "markers": [
+    "electron_app",
+    "cache_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ca-slack",
+  "expected_category": "cache",
+  "acceptable_categories": [
+   "app_data",
+   "app_config"
+  ],
+  "expected_app": "Slack",
+  "trap": "Electron app whose messages live on the server",
+  "summary": {
+   "path": "{APPDATA}\\Slack",
+   "total_bytes": 915406848,
+   "file_count": 3070,
+   "dir_count": 300,
+   "max_depth": 5,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2025-01-22T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "",
+     "count": 3000,
+     "bytes": 838860800
+    },
+    {
+     "ext": "ldb",
+     "count": 30,
+     "bytes": 41943040
+    },
+    {
+     "ext": "json",
+     "count": 20,
+     "bytes": 3145728
+    },
+    {
+     "ext": "log",
+     "count": 20,
+     "bytes": 31457280
+    }
+   ],
+   "sample_names": [
+    "storage\\root-state.json",
+    "Cache\\Cache_Data\\data_3",
+    "Code Cache\\js\\a1b2c3d4_0",
+    "IndexedDB\\https_app.slack.com_0.indexeddb.leveldb\\000120.ldb",
+    "Service Worker\\CacheStorage\\9e8d7c6b\\index.txt",
+    "logs\\default\\browser.log",
+    "Preferences"
+   ],
+   "top_children": [
+    {
+     "name": "Service Worker",
+     "bytes": 419430400,
+     "files": 1500
+    },
+    {
+     "name": "Cache",
+     "bytes": 314572800,
+     "files": 1200
+    },
+    {
+     "name": "IndexedDB",
+     "bytes": 62914560,
+     "files": 80
+    },
+    {
+     "name": "logs",
+     "bytes": 31457280,
+     "files": 20
+    }
+   ],
+   "markers": [
+    "electron_app",
+    "cache_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ca-inetcache",
+  "expected_category": "cache",
+  "acceptable_categories": [
+   "system_settings"
+  ],
+  "expected_app": "Internet Explorer / WinINet",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Microsoft\\Windows\\INetCache",
+   "total_bytes": 234881024,
+   "file_count": 3124,
+   "dir_count": 40,
+   "max_depth": 3,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2022-08-06T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "jpg",
+     "count": 1400,
+     "bytes": 125829120
+    },
+    {
+     "ext": "png",
+     "count": 900,
+     "bytes": 41943040
+    },
+    {
+     "ext": "js",
+     "count": 400,
+     "bytes": 31457280
+    },
+    {
+     "ext": "htm",
+     "count": 300,
+     "bytes": 20971520
+    },
+    {
+     "ext": "css",
+     "count": 120,
+     "bytes": 6291456
+    },
+    {
+     "ext": "dat",
+     "count": 4,
+     "bytes": 8388608
+    }
+   ],
+   "sample_names": [
+    "IE\\8K2QF1ZD\\logo[1].png",
+    "IE\\8K2QF1ZD\\analytics[2].js",
+    "IE\\Q0WE7R9T\\index[1].htm",
+    "Low\\IE\\container.dat",
+    "Content.Outlook\\A1B2C3D4\\image001.jpg"
+   ],
+   "top_children": [
+    {
+     "name": "IE",
+     "bytes": 209715200,
+     "files": 3000
+    },
+    {
+     "name": "Content.Outlook",
+     "bytes": 20971520,
+     "files": 100
+    },
+    {
+     "name": "Low",
+     "bytes": 4194304,
+     "files": 20
+    }
+   ],
+   "markers": [
+    "cache_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ca-unity-cache",
+  "expected_category": "cache",
+  "acceptable_categories": [
+   "reinstallable"
+  ],
+  "expected_app": "Unity",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Unity\\cache",
+   "total_bytes": 3661627392,
+   "file_count": 1100,
+   "dir_count": 900,
+   "max_depth": 6,
+   "newest_mtime": "2026-08-15T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "json",
+     "count": 600,
+     "bytes": 20971520
+    },
+    {
+     "ext": "tgz",
+     "count": 300,
+     "bytes": 3221225472
+    },
+    {
+     "ext": "",
+     "count": 200,
+     "bytes": 419430400
+    }
+   ],
+   "sample_names": [
+    "packages\\packages.unity.com\\<redacted>",
+    "packages\\packages.unity.com\\com.unity.textmeshpro@3.0.6\\package.json",
+    "npm\\packages.unity.com\\_cacache\\index-v5\\1a\\2b\\3c4d"
+   ],
+   "top_children": [
+    {
+     "name": "packages",
+     "bytes": 3355443200,
+     "files": 700
+    },
+    {
+     "name": "npm",
+     "bytes": 209715200,
+     "files": 400
+    }
+   ],
+   "markers": [
+    "cache_like"
+   ],
+   "truncated": false
+  }
+ }
+]

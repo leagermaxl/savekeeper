@@ -1,0 +1,573 @@
+[
+ {
+  "id": "ss-themes",
+  "expected_category": "system_settings",
+  "acceptable_categories": [
+   "cache"
+  ],
+  "summary": {
+   "path": "{APPDATA}\\Microsoft\\Windows\\Themes",
+   "total_bytes": 9446400,
+   "file_count": 7,
+   "dir_count": 1,
+   "max_depth": 1,
+   "newest_mtime": "2026-09-04T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "jpg",
+     "count": 3,
+     "bytes": 6291456
+    },
+    {
+     "ext": "theme",
+     "count": 2,
+     "bytes": 8192
+    },
+    {
+     "ext": "",
+     "count": 1,
+     "bytes": 3145728
+    },
+    {
+     "ext": "ini",
+     "count": 1,
+     "bytes": 1024
+    }
+   ],
+   "sample_names": [
+    "TranscodedWallpaper",
+    "Custom.theme",
+    "slideshow.ini",
+    "CachedFiles\\<redacted>.jpg"
+   ],
+   "top_children": [
+    {
+     "name": "CachedFiles",
+     "bytes": 6291456,
+     "files": 3
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ss-start-menu",
+  "expected_category": "system_settings",
+  "acceptable_categories": [
+   "reinstallable"
+  ],
+  "summary": {
+   "path": "{APPDATA}\\Microsoft\\Windows\\Start Menu\\Programs",
+   "total_bytes": 210944,
+   "file_count": 104,
+   "dir_count": 30,
+   "max_depth": 2,
+   "newest_mtime": "2026-09-11T16:47:00Z",
+   "oldest_mtime": "2022-08-06T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "lnk",
+     "count": 90,
+     "bytes": 204800
+    },
+    {
+     "ext": "ini",
+     "count": 10,
+     "bytes": 4096
+    },
+    {
+     "ext": "url",
+     "count": 4,
+     "bytes": 2048
+    }
+   ],
+   "sample_names": [
+    "Startup\\Greenshot.lnk",
+    "Visual Studio Code\\Visual Studio Code.lnk",
+    "Steam\\Steam.lnk",
+    "Discord Inc\\Discord.lnk",
+    "desktop.ini",
+    "Maintenance\\Help.url"
+   ],
+   "top_children": [
+    {
+     "name": "Startup",
+     "bytes": 20480,
+     "files": 6
+    },
+    {
+     "name": "Steam",
+     "bytes": 40960,
+     "files": 20
+    },
+    {
+     "name": "Visual Studio Code",
+     "bytes": 4096,
+     "files": 1
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ss-taskbar-pins",
+  "expected_category": "system_settings",
+  "acceptable_categories": [],
+  "summary": {
+   "path": "{APPDATA}\\Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar",
+   "total_bytes": 21504,
+   "file_count": 10,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-08-05T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "lnk",
+     "count": 9,
+     "bytes": 20480
+    },
+    {
+     "ext": "ini",
+     "count": 1,
+     "bytes": 1024
+    }
+   ],
+   "sample_names": [
+    "File Explorer.lnk",
+    "Firefox.lnk",
+    "Windows Terminal.lnk",
+    "Telegram.lnk",
+    "desktop.ini"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ss-sendto",
+  "expected_category": "system_settings",
+  "acceptable_categories": [],
+  "summary": {
+   "path": "{APPDATA}\\Microsoft\\Windows\\SendTo",
+   "total_bytes": 9216,
+   "file_count": 8,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2025-11-18T16:47:00Z",
+   "oldest_mtime": "2022-08-06T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "lnk",
+     "count": 4,
+     "bytes": 8192
+    },
+    {
+     "ext": "desklink",
+     "count": 1,
+     "bytes": 0
+    },
+    {
+     "ext": "ini",
+     "count": 1,
+     "bytes": 1024
+    },
+    {
+     "ext": "mydocs",
+     "count": 1,
+     "bytes": 0
+    },
+    {
+     "ext": "zfsendtotarget",
+     "count": 1,
+     "bytes": 0
+    }
+   ],
+   "sample_names": [
+    "Bluetooth File Transfer.LNK",
+    "Compressed (zipped) Folder.ZFSendToTarget",
+    "Desktop (create shortcut).DeskLink",
+    "Documents.mydocs",
+    "Notepad++.lnk"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ss-start2",
+  "expected_category": "system_settings",
+  "acceptable_categories": [],
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Packages\\Microsoft.Windows.<redacted>\\LocalState",
+   "total_bytes": 126976,
+   "file_count": 3,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-08T16:47:00Z",
+   "oldest_mtime": "2024-10-14T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "bin",
+     "count": 2,
+     "bytes": 122880
+    },
+    {
+     "ext": "json",
+     "count": 1,
+     "bytes": 4096
+    }
+   ],
+   "sample_names": [
+    "start2.bin",
+    "start.bin",
+    "TileStore.json"
+   ],
+   "top_children": [],
+   "markers": [
+    "uwp_package"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ss-spelling",
+  "expected_category": "system_settings",
+  "acceptable_categories": [
+   "app_config"
+  ],
+  "summary": {
+   "path": "{APPDATA}\\Microsoft\\Spelling",
+   "total_bytes": 32768,
+   "file_count": 7,
+   "dir_count": 3,
+   "max_depth": 1,
+   "newest_mtime": "2026-06-06T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "dic",
+     "count": 3,
+     "bytes": 30720
+    },
+    {
+     "ext": "exc",
+     "count": 3,
+     "bytes": 1024
+    },
+    {
+     "ext": "acl",
+     "count": 1,
+     "bytes": 1024
+    }
+   ],
+   "sample_names": [
+    "en-US\\default.dic",
+    "en-US\\default.exc",
+    "en-US\\default.acl",
+    "ru-RU\\default.dic",
+    "neutral\\default.dic"
+   ],
+   "top_children": [
+    {
+     "name": "en-US",
+     "bytes": 20480,
+     "files": 3
+    },
+    {
+     "name": "ru-RU",
+     "bytes": 8192,
+     "files": 2
+    },
+    {
+     "name": "neutral",
+     "bytes": 2048,
+     "files": 2
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ss-libraries",
+  "expected_category": "system_settings",
+  "acceptable_categories": [],
+  "summary": {
+   "path": "{APPDATA}\\Microsoft\\Windows\\Libraries",
+   "total_bytes": 31744,
+   "file_count": 7,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2025-05-02T16:47:00Z",
+   "oldest_mtime": "2022-08-06T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "library-ms",
+     "count": 6,
+     "bytes": 30720
+    },
+    {
+     "ext": "ini",
+     "count": 1,
+     "bytes": 1024
+    }
+   ],
+   "sample_names": [
+    "Documents.library-ms",
+    "Music.library-ms",
+    "Pictures.library-ms",
+    "Videos.library-ms",
+    "Camera Roll.library-ms",
+    "desktop.ini"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ss-hosts",
+  "expected_category": "system_settings",
+  "acceptable_categories": [],
+  "summary": {
+   "path": "{WINDIR}\\System32\\drivers\\etc",
+   "total_bytes": 21504,
+   "file_count": 6,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-08-25T16:47:00Z",
+   "oldest_mtime": "2019-11-10T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "",
+     "count": 5,
+     "bytes": 20480
+    },
+    {
+     "ext": "ics",
+     "count": 1,
+     "bytes": 1024
+    }
+   ],
+   "sample_names": [
+    "hosts",
+    "hosts.ics",
+    "lmhosts.sam",
+    "networks",
+    "protocol",
+    "services"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ss-winx",
+  "expected_category": "system_settings",
+  "acceptable_categories": [],
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Microsoft\\Windows\\WinX",
+   "total_bytes": 41984,
+   "file_count": 19,
+   "dir_count": 3,
+   "max_depth": 1,
+   "newest_mtime": "2024-07-06T16:47:00Z",
+   "oldest_mtime": "2022-08-06T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "lnk",
+     "count": 16,
+     "bytes": 40960
+    },
+    {
+     "ext": "ini",
+     "count": 3,
+     "bytes": 1024
+    }
+   ],
+   "sample_names": [
+    "Group1\\1 - Desktop.lnk",
+    "Group2\\00 - Command Prompt.lnk",
+    "Group2\\02 - Windows PowerShell.lnk",
+    "Group3\\01 - Run.lnk",
+    "Group3\\06 - Control Panel.lnk"
+   ],
+   "top_children": [
+    {
+     "name": "Group3",
+     "bytes": 24576,
+     "files": 10
+    },
+    {
+     "name": "Group2",
+     "bytes": 12288,
+     "files": 5
+    },
+    {
+     "name": "Group1",
+     "bytes": 2048,
+     "files": 2
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ss-account-pictures",
+  "expected_category": "system_settings",
+  "acceptable_categories": [
+   "user_files"
+  ],
+  "summary": {
+   "path": "{APPDATA}\\Microsoft\\Windows\\AccountPictures",
+   "total_bytes": 410624,
+   "file_count": 3,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2024-03-28T16:47:00Z",
+   "oldest_mtime": "2023-06-02T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "accountpicture-ms",
+     "count": 2,
+     "bytes": 409600
+    },
+    {
+     "ext": "ini",
+     "count": 1,
+     "bytes": 1024
+    }
+   ],
+   "sample_names": [
+    "5f2c9a11e4b04d51.accountpicture-ms",
+    "desktop.ini"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ss-wlan-profiles",
+  "expected_category": "system_settings",
+  "acceptable_categories": [
+   "credentials"
+  ],
+  "trap": "Wi-Fi profiles with network keys",
+  "summary": {
+   "path": "{PROGRAMDATA}\\Microsoft\\Wlansvc\\Profiles\\Interfaces",
+   "total_bytes": 40960,
+   "file_count": 14,
+   "dir_count": 1,
+   "max_depth": 1,
+   "newest_mtime": "2026-09-09T16:47:00Z",
+   "oldest_mtime": "2023-09-10T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "xml",
+     "count": 14,
+     "bytes": 40960
+    }
+   ],
+   "sample_names": [
+    "{<redacted>}\\{<redacted>}.xml",
+    "{<redacted>}\\{<redacted>}.xml"
+   ],
+   "top_children": [
+    {
+     "name": "{<redacted>}",
+     "bytes": 40960,
+     "files": 14
+    }
+   ],
+   "markers": [
+    "config_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ss-user-fonts",
+  "expected_category": "system_settings",
+  "acceptable_categories": [
+   "reinstallable",
+   "user_files"
+  ],
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Microsoft\\Windows\\Fonts",
+   "total_bytes": 125829120,
+   "file_count": 90,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-07-16T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "ttf",
+     "count": 60,
+     "bytes": 94371840
+    },
+    {
+     "ext": "otf",
+     "count": 30,
+     "bytes": 31457280
+    }
+   ],
+   "sample_names": [
+    "JetBrainsMono-Regular.ttf",
+    "JetBrainsMono-Bold.ttf",
+    "Inter-Regular.otf",
+    "FiraCode-Retina.ttf",
+    "CascadiaCode.ttf"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ss-ime",
+  "expected_category": "system_settings",
+  "acceptable_categories": [
+   "app_data"
+  ],
+  "summary": {
+   "path": "{APPDATA}\\Microsoft\\InputMethod\\Chs",
+   "total_bytes": 6701056,
+   "file_count": 5,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-13T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "dat",
+     "count": 4,
+     "bytes": 6291456
+    },
+    {
+     "ext": "lex",
+     "count": 1,
+     "bytes": 409600
+    }
+   ],
+   "sample_names": [
+    "ChsPinyinUDL.dat",
+    "ChsPinyinEUDPv1.lex",
+    "ChsWubiEUDPv1.dat",
+    "UserDict.dat"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ }
+]

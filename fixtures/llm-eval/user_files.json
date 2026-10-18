@@ -1,0 +1,907 @@
+[
+ {
+  "id": "uf-taxes",
+  "expected_category": "user_files",
+  "acceptable_categories": [],
+  "summary": {
+   "path": "{DOCUMENTS}\\Taxes",
+   "total_bytes": 415236096,
+   "file_count": 222,
+   "dir_count": 4,
+   "max_depth": 2,
+   "newest_mtime": "2026-09-04T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "pdf",
+     "count": 140,
+     "bytes": 314572800
+    },
+    {
+     "ext": "jpg",
+     "count": 40,
+     "bytes": 83886080
+    },
+    {
+     "ext": "xlsx",
+     "count": 30,
+     "bytes": 12582912
+    },
+    {
+     "ext": "docx",
+     "count": 12,
+     "bytes": 4194304
+    }
+   ],
+   "sample_names": [
+    "2024\\Return 2024.pdf",
+    "2024\\Receipts\\receipt-0412.jpg",
+    "2025\\Income summary.xlsx",
+    "2025\\Letter to tax office.docx",
+    "2026\\Q2 expenses.xlsx"
+   ],
+   "top_children": [
+    {
+     "name": "2024",
+     "bytes": 157286400,
+     "files": 90
+    },
+    {
+     "name": "2025",
+     "bytes": 146800640,
+     "files": 80
+    },
+    {
+     "name": "2026",
+     "bytes": 104857600,
+     "files": 50
+    }
+   ],
+   "markers": [
+    "document_heavy"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "uf-trip-photos",
+  "expected_category": "user_files",
+  "acceptable_categories": [],
+  "summary": {
+   "path": "{PICTURES}\\2025 Iceland trip",
+   "total_bytes": 16986972160,
+   "file_count": 2200,
+   "dir_count": 1,
+   "max_depth": 1,
+   "newest_mtime": "2025-08-10T16:47:00Z",
+   "oldest_mtime": "2025-07-11T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "jpg",
+     "count": 1800,
+     "bytes": 9646899200
+    },
+    {
+     "ext": "heic",
+     "count": 300,
+     "bytes": 943718400
+    },
+    {
+     "ext": "mp4",
+     "count": 60,
+     "bytes": 6396313600
+    },
+    {
+     "ext": "aae",
+     "count": 40,
+     "bytes": 40960
+    }
+   ],
+   "sample_names": [
+    "IMG_4021.JPG",
+    "IMG_4022.HEIC",
+    "IMG_4022.AAE",
+    "VID_20250712_142201.mp4",
+    "Drone\\DJI_0145.JPG",
+    "Drone\\DJI_0146.MP4"
+   ],
+   "top_children": [
+    {
+     "name": "Drone",
+     "bytes": 5242880000,
+     "files": 400
+    }
+   ],
+   "markers": [
+    "media_heavy"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "uf-raw-archive",
+  "expected_category": "user_files",
+  "acceptable_categories": [],
+  "summary": {
+   "path": "{DRIVE:D}\\Photos\\Archive",
+   "total_bytes": 45686456320,
+   "file_count": 16100,
+   "dir_count": 140,
+   "max_depth": 2,
+   "newest_mtime": "2026-06-16T16:47:00Z",
+   "oldest_mtime": "2019-08-02T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "cr2",
+     "count": 5400,
+     "bytes": 37580963840
+    },
+    {
+     "ext": "jpg",
+     "count": 5400,
+     "bytes": 8053063680
+    },
+    {
+     "ext": "xmp",
+     "count": 5300,
+     "bytes": 52428800
+    }
+   ],
+   "sample_names": [
+    "2019\\2019-06-01 Wedding\\IMG_0001.CR2",
+    "2019\\2019-06-01 Wedding\\IMG_0001.xmp",
+    "2021\\2021-12-24 Christmas\\IMG_7712.JPG",
+    "2023\\2023-08 Alps\\IMG_2201.CR2"
+   ],
+   "top_children": [
+    {
+     "name": "2019",
+     "bytes": 12884901888,
+     "files": 4000
+    },
+    {
+     "name": "2021",
+     "bytes": 15032385536,
+     "files": 5000
+    },
+    {
+     "name": "2023",
+     "bytes": 17179869184,
+     "files": 7100
+    }
+   ],
+   "markers": [
+    "media_heavy"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "uf-game-bar-captures",
+  "expected_category": "user_files",
+  "acceptable_categories": [
+   "game_save"
+  ],
+  "must_not": [
+   "cache"
+  ],
+  "trap": "game recordings named after games",
+  "summary": {
+   "path": "{VIDEOS}\\Captures",
+   "total_bytes": 41745907712,
+   "file_count": 440,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-08-31T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "png",
+     "count": 300,
+     "bytes": 943718400
+    },
+    {
+     "ext": "mp4",
+     "count": 140,
+     "bytes": 40802189312
+    }
+   ],
+   "sample_names": [
+    "Cyberpunk 2077 2026-08-01 21-14-02.mp4",
+    "Elden Ring 2026-07-11 22-01-55.mp4",
+    "Desktop 2026-09-01 10-00-12.png"
+   ],
+   "top_children": [],
+   "markers": [
+    "media_heavy"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "uf-fl-studio",
+  "expected_category": "user_files",
+  "acceptable_categories": [],
+  "expected_app": "FL Studio",
+  "summary": {
+   "path": "{DOCUMENTS}\\Image-Line\\FL Studio\\Projects",
+   "total_bytes": 11471421440,
+   "file_count": 536,
+   "dir_count": 3,
+   "max_depth": 1,
+   "newest_mtime": "2026-09-08T16:47:00Z",
+   "oldest_mtime": "2023-02-22T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "wav",
+     "count": 400,
+     "bytes": 9663676416
+    },
+    {
+     "ext": "flp",
+     "count": 90,
+     "bytes": 314572800
+    },
+    {
+     "ext": "mp3",
+     "count": 40,
+     "bytes": 419430400
+    },
+    {
+     "ext": "zip",
+     "count": 6,
+     "bytes": 1073741824
+    }
+   ],
+   "sample_names": [
+    "Summer beat v3.flp",
+    "Summer beat v3 - backup.flp",
+    "Stems\\Summer beat v3_Kick.wav",
+    "Bounces\\Summer beat v3.mp3",
+    "Collab with Sam.zip"
+   ],
+   "top_children": [
+    {
+     "name": "Stems",
+     "bytes": 8589934592,
+     "files": 380
+    },
+    {
+     "name": "Bounces",
+     "bytes": 419430400,
+     "files": 40
+    },
+    {
+     "name": "Backup",
+     "bytes": 104857600,
+     "files": 40
+    }
+   ],
+   "markers": [
+    "media_heavy",
+    "project_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "uf-desktop-notes",
+  "expected_category": "user_files",
+  "acceptable_categories": [
+   "credentials"
+  ],
+  "summary": {
+   "path": "{DESKTOP}\\notes",
+   "total_bytes": 4911104,
+   "file_count": 64,
+   "dir_count": 1,
+   "max_depth": 1,
+   "newest_mtime": "2026-09-13T16:47:00Z",
+   "oldest_mtime": "2024-10-14T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "txt",
+     "count": 34,
+     "bytes": 409600
+    },
+    {
+     "ext": "md",
+     "count": 22,
+     "bytes": 307200
+    },
+    {
+     "ext": "png",
+     "count": 8,
+     "bytes": 4194304
+    }
+   ],
+   "sample_names": [
+    "todo.txt",
+    "ideas.md",
+    "meeting 2026-09-10.md",
+    "passwords old - DO NOT USE.txt",
+    "screenshots\\error.png"
+   ],
+   "top_children": [
+    {
+     "name": "screenshots",
+     "bytes": 4194304,
+     "files": 8
+    }
+   ],
+   "markers": [
+    "document_heavy"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "uf-blender",
+  "expected_category": "user_files",
+  "acceptable_categories": [
+   "dev_environment"
+  ],
+  "expected_app": "Blender",
+  "summary": {
+   "path": "{DRIVE:D}\\Blender\\projects",
+   "total_bytes": 21344813056,
+   "file_count": 1170,
+   "dir_count": 40,
+   "max_depth": 3,
+   "newest_mtime": "2026-09-11T16:47:00Z",
+   "oldest_mtime": "2023-09-10T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "png",
+     "count": 900,
+     "bytes": 4294967296
+    },
+    {
+     "ext": "exr",
+     "count": 120,
+     "bytes": 3221225472
+    },
+    {
+     "ext": "blend",
+     "count": 60,
+     "bytes": 6442450944
+    },
+    {
+     "ext": "blend1",
+     "count": 60,
+     "bytes": 6442450944
+    },
+    {
+     "ext": "fbx",
+     "count": 30,
+     "bytes": 943718400
+    }
+   ],
+   "sample_names": [
+    "robot\\robot_v12.blend",
+    "robot\\robot_v12.blend1",
+    "robot\\textures\\metal_albedo.png",
+    "robot\\render\\0001.exr",
+    "city\\city.blend",
+    "city\\assets\\car.fbx"
+   ],
+   "top_children": [
+    {
+     "name": "robot",
+     "bytes": 9663676416,
+     "files": 500
+    },
+    {
+     "name": "city",
+     "bytes": 8589934592,
+     "files": 400
+    },
+    {
+     "name": "donut",
+     "bytes": 2147483648,
+     "files": 200
+    }
+   ],
+   "markers": [
+    "media_heavy",
+    "project_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "uf-obsidian-vault",
+  "expected_category": "user_files",
+  "acceptable_categories": [
+   "app_data"
+  ],
+  "expected_app": "Obsidian",
+  "summary": {
+   "path": "{DOCUMENTS}\\Second Brain",
+   "total_bytes": 306491392,
+   "file_count": 1746,
+   "dir_count": 60,
+   "max_depth": 3,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2023-06-02T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "md",
+     "count": 1400,
+     "bytes": 31457280
+    },
+    {
+     "ext": "png",
+     "count": 300,
+     "bytes": 209715200
+    },
+    {
+     "ext": "pdf",
+     "count": 30,
+     "bytes": 62914560
+    },
+    {
+     "ext": "json",
+     "count": 12,
+     "bytes": 307200
+    },
+    {
+     "ext": "js",
+     "count": 4,
+     "bytes": 2097152
+    }
+   ],
+   "sample_names": [
+    "Daily\\2026-09-14.md",
+    "Projects\\Home server.md",
+    "attachments\\Pasted image 20260901101010.png",
+    ".obsidian\\app.json",
+    ".obsidian\\workspace.json",
+    ".obsidian\\plugins\\dataview\\main.js"
+   ],
+   "top_children": [
+    {
+     "name": "attachments",
+     "bytes": 272629760,
+     "files": 330
+    },
+    {
+     "name": "Daily",
+     "bytes": 10485760,
+     "files": 900
+    },
+    {
+     "name": "Projects",
+     "bytes": 8388608,
+     "files": 300
+    },
+    {
+     "name": ".obsidian",
+     "bytes": 3145728,
+     "files": 30
+    }
+   ],
+   "markers": [
+    "document_heavy"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "uf-scans",
+  "expected_category": "user_files",
+  "acceptable_categories": [
+   "credentials"
+  ],
+  "summary": {
+   "path": "{DOCUMENTS}\\Scanned Documents",
+   "total_bytes": 1153433600,
+   "file_count": 270,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-08-15T16:47:00Z",
+   "oldest_mtime": "2021-03-24T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "pdf",
+     "count": 210,
+     "bytes": 943718400
+    },
+    {
+     "ext": "jpg",
+     "count": 60,
+     "bytes": 209715200
+    }
+   ],
+   "sample_names": [
+    "Passport scan.pdf",
+    "Apartment lease 2024.pdf",
+    "Diploma.jpg",
+    "Insurance policy.pdf",
+    "Car registration.pdf"
+   ],
+   "top_children": [],
+   "markers": [
+    "document_heavy"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "uf-premiere",
+  "expected_category": "user_files",
+  "acceptable_categories": [],
+  "expected_app": "Adobe Premiere Pro",
+  "summary": {
+   "path": "{DRIVE:E}\\Video Projects\\Wedding 2026",
+   "total_bytes": 177901404160,
+   "file_count": 562,
+   "dir_count": 12,
+   "max_depth": 2,
+   "newest_mtime": "2026-08-25T16:47:00Z",
+   "oldest_mtime": "2026-06-16T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "cfa",
+     "count": 200,
+     "bytes": 2147483648
+    },
+    {
+     "ext": "pek",
+     "count": 200,
+     "bytes": 419430400
+    },
+    {
+     "ext": "mp4",
+     "count": 120,
+     "bytes": 171798691840
+    },
+    {
+     "ext": "wav",
+     "count": 30,
+     "bytes": 3221225472
+    },
+    {
+     "ext": "prproj",
+     "count": 12,
+     "bytes": 314572800
+    }
+   ],
+   "sample_names": [
+    "Wedding 2026.prproj",
+    "Adobe Premiere Pro Auto-Save\\Wedding 2026--3f2a1b0c-0001.prproj",
+    "Footage\\Cam A\\C0001.MP4",
+    "Audio\\vows.wav",
+    "Adobe Premiere Pro Audio Previews\\C0001.MP4 48000.cfa",
+    "Export\\Wedding final.mp4"
+   ],
+   "top_children": [
+    {
+     "name": "Footage",
+     "bytes": 161061273600,
+     "files": 110
+    },
+    {
+     "name": "Export",
+     "bytes": 10737418240,
+     "files": 4
+    },
+    {
+     "name": "Audio",
+     "bytes": 3221225472,
+     "files": 30
+    },
+    {
+     "name": "Adobe Premiere Pro Audio Previews",
+     "bytes": 2147483648,
+     "files": 200
+    }
+   ],
+   "markers": [
+    "media_heavy",
+    "project_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "uf-thesis",
+  "expected_category": "user_files",
+  "acceptable_categories": [
+   "dev_environment"
+  ],
+  "summary": {
+   "path": "{DOCUMENTS}\\Thesis",
+   "total_bytes": 197746688,
+   "file_count": 160,
+   "dir_count": 10,
+   "max_depth": 2,
+   "newest_mtime": "2026-09-12T16:47:00Z",
+   "oldest_mtime": "2025-05-02T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "png",
+     "count": 80,
+     "bytes": 62914560
+    },
+    {
+     "ext": "pdf",
+     "count": 40,
+     "bytes": 125829120
+    },
+    {
+     "ext": "tex",
+     "count": 24,
+     "bytes": 2097152
+    },
+    {
+     "ext": "py",
+     "count": 10,
+     "bytes": 204800
+    },
+    {
+     "ext": "docx",
+     "count": 4,
+     "bytes": 6291456
+    },
+    {
+     "ext": "bib",
+     "count": 2,
+     "bytes": 409600
+    }
+   ],
+   "sample_names": [
+    "main.tex",
+    "chapters\\03-method.tex",
+    "refs.bib",
+    "figures\\results-accuracy.png",
+    "build\\main.pdf",
+    "scripts\\plot_results.py",
+    "Draft for supervisor.docx"
+   ],
+   "top_children": [
+    {
+     "name": "figures",
+     "bytes": 62914560,
+     "files": 80
+    },
+    {
+     "name": "papers",
+     "bytes": 115343360,
+     "files": 36
+    },
+    {
+     "name": "chapters",
+     "bytes": 2097152,
+     "files": 20
+    },
+    {
+     "name": "build",
+     "bytes": 10485760,
+     "files": 4
+    }
+   ],
+   "markers": [
+    "document_heavy",
+    "git_repo"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "uf-books",
+  "expected_category": "user_files",
+  "acceptable_categories": [
+   "reinstallable"
+  ],
+  "summary": {
+   "path": "{DRIVE:D}\\Books",
+   "total_bytes": 5003804672,
+   "file_count": 630,
+   "dir_count": 8,
+   "max_depth": 1,
+   "newest_mtime": "2026-07-16T16:47:00Z",
+   "oldest_mtime": "2018-06-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "epub",
+     "count": 300,
+     "bytes": 629145600
+    },
+    {
+     "ext": "pdf",
+     "count": 220,
+     "bytes": 3221225472
+    },
+    {
+     "ext": "fb2",
+     "count": 80,
+     "bytes": 209715200
+    },
+    {
+     "ext": "djvu",
+     "count": 30,
+     "bytes": 943718400
+    }
+   ],
+   "sample_names": [
+    "Programming\\The Rust Programming Language.pdf",
+    "Fiction\\Dune.epub",
+    "Fiction\\Solaris.fb2",
+    "Math\\Concrete Mathematics.djvu"
+   ],
+   "top_children": [
+    {
+     "name": "Programming",
+     "bytes": 2147483648,
+     "files": 200
+    },
+    {
+     "name": "Fiction",
+     "bytes": 943718400,
+     "files": 380
+    },
+    {
+     "name": "Math",
+     "bytes": 1073741824,
+     "files": 50
+    }
+   ],
+   "markers": [
+    "document_heavy"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "uf-rust-project",
+  "expected_category": "user_files",
+  "acceptable_categories": [
+   "dev_environment"
+  ],
+  "must_not": [
+   "reinstallable",
+   "cache"
+  ],
+  "trap": "source project whose bytes are dominated by build output",
+  "summary": {
+   "path": "{DRIVE:D}\\src\\home-dashboard",
+   "total_bytes": 2182311936,
+   "file_count": 2251,
+   "dir_count": 900,
+   "max_depth": 8,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2025-08-10T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "d",
+     "count": 1200,
+     "bytes": 31457280
+    },
+    {
+     "ext": "rlib",
+     "count": 900,
+     "bytes": 2147483648
+    },
+    {
+     "ext": "rs",
+     "count": 140,
+     "bytes": 3145728
+    },
+    {
+     "ext": "toml",
+     "count": 6,
+     "bytes": 40960
+    },
+    {
+     "ext": "md",
+     "count": 4,
+     "bytes": 61440
+    },
+    {
+     "ext": "lock",
+     "count": 1,
+     "bytes": 122880
+    }
+   ],
+   "sample_names": [
+    "Cargo.toml",
+    "Cargo.lock",
+    "README.md",
+    "src\\main.rs",
+    "crates\\api\\src\\lib.rs",
+    "target\\debug\\deps\\libserde-1a2b3c4d.rlib",
+    ".git\\HEAD"
+   ],
+   "top_children": [
+    {
+     "name": "target",
+     "bytes": 2202009600,
+     "files": 4500
+    },
+    {
+     "name": ".git",
+     "bytes": 41943040,
+     "files": 900
+    },
+    {
+     "name": "crates",
+     "bytes": 3145728,
+     "files": 120
+    },
+    {
+     "name": "src",
+     "bytes": 409600,
+     "files": 20
+    }
+   ],
+   "markers": [
+    "git_repo",
+    "project_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "uf-ableton",
+  "expected_category": "user_files",
+  "acceptable_categories": [],
+  "expected_app": "Ableton Live",
+  "summary": {
+   "path": "{MUSIC}\\Ableton\\Projects\\Night Drive Project",
+   "total_bytes": 4368368640,
+   "file_count": 335,
+   "dir_count": 3,
+   "max_depth": 2,
+   "newest_mtime": "2026-09-09T16:47:00Z",
+   "oldest_mtime": "2026-02-26T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "asd",
+     "count": 160,
+     "bytes": 31457280
+    },
+    {
+     "ext": "wav",
+     "count": 160,
+     "bytes": 4294967296
+    },
+    {
+     "ext": "als",
+     "count": 14,
+     "bytes": 41943040
+    },
+    {
+     "ext": "cfg",
+     "count": 1,
+     "bytes": 1024
+    }
+   ],
+   "sample_names": [
+    "Night Drive.als",
+    "Night Drive [2026-09-10 213011].als",
+    "Samples\\Recorded\\Bass 0001.wav",
+    "Samples\\Recorded\\Bass 0001.wav.asd",
+    "Backup\\Night Drive [2026-09-01].als",
+    "Ableton Project Info\\Project8_1.cfg"
+   ],
+   "top_children": [
+    {
+     "name": "Samples",
+     "bytes": 4294967296,
+     "files": 320
+    },
+    {
+     "name": "Backup",
+     "bytes": 31457280,
+     "files": 12
+    }
+   ],
+   "markers": [
+    "media_heavy",
+    "project_like"
+   ],
+   "truncated": false
+  }
+ }
+]

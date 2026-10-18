@@ -1,0 +1,131 @@
+[
+ {
+  "id": "un-new-folder",
+  "expected_category": "unknown",
+  "acceptable_categories": [
+   "user_files"
+  ],
+  "summary": {
+   "path": "{DRIVE:D}\\New folder (2)",
+   "total_bytes": 255852544,
+   "file_count": 8,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2024-10-14T16:47:00Z",
+   "oldest_mtime": "2024-09-24T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "bin",
+     "count": 6,
+     "bytes": 251658240
+    },
+    {
+     "ext": "dat",
+     "count": 2,
+     "bytes": 4194304
+    }
+   ],
+   "sample_names": [
+    "data1.bin",
+    "data2.bin",
+    "data3.bin",
+    "index.dat",
+    "x.dat"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "un-hex-appdata",
+  "expected_category": "unknown",
+  "acceptable_categories": [
+   "cache",
+   "app_data"
+  ],
+  "summary": {
+   "path": "{LOCALAPPDATA}\\7c4e2a91",
+   "total_bytes": 3350528,
+   "file_count": 13,
+   "dir_count": 1,
+   "max_depth": 1,
+   "newest_mtime": "2026-07-16T16:47:00Z",
+   "oldest_mtime": "2025-11-18T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "",
+     "count": 12,
+     "bytes": 3145728
+    },
+    {
+     "ext": "dat",
+     "count": 1,
+     "bytes": 204800
+    }
+   ],
+   "sample_names": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "state.dat",
+    "a\\b"
+   ],
+   "top_children": [
+    {
+     "name": "a",
+     "bytes": 30720,
+     "files": 2
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "un-programdata-vendor",
+  "expected_category": "unknown",
+  "acceptable_categories": [
+   "app_data",
+   "app_config",
+   "cache"
+  ],
+  "summary": {
+   "path": "{PROGRAMDATA}\\Contoso\\Agent",
+   "total_bytes": 31868928,
+   "file_count": 11,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2026-02-26T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "",
+     "count": 6,
+     "bytes": 409600
+    },
+    {
+     "ext": "bin",
+     "count": 4,
+     "bytes": 31457280
+    },
+    {
+     "ext": "cfg",
+     "count": 1,
+     "bytes": 2048
+    }
+   ],
+   "sample_names": [
+    "agent.cfg",
+    "store.bin",
+    "store.bin.1",
+    "queue",
+    "queue.1"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ }
+]

@@ -1,0 +1,848 @@
+[
+ {
+  "id": "de-vscode-user",
+  "expected_category": "dev_environment",
+  "acceptable_categories": [
+   "app_config"
+  ],
+  "expected_app": "Visual Studio Code",
+  "summary": {
+   "path": "{APPDATA}\\Code\\User",
+   "total_bytes": 254844928,
+   "file_count": 124,
+   "dir_count": 500,
+   "max_depth": 4,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2023-12-19T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "json",
+     "count": 60,
+     "bytes": 3145728
+    },
+    {
+     "ext": "backup",
+     "count": 30,
+     "bytes": 125829120
+    },
+    {
+     "ext": "vscdb",
+     "count": 30,
+     "bytes": 125829120
+    },
+    {
+     "ext": "code-snippets",
+     "count": 4,
+     "bytes": 40960
+    }
+   ],
+   "sample_names": [
+    "settings.json",
+    "keybindings.json",
+    "snippets\\rust.json",
+    "snippets\\global.code-snippets",
+    "globalStorage\\state.vscdb",
+    "workspaceStorage\\<redacted>\\workspace.json",
+    "History\\-1a2b3c4d\\entries.json",
+    "profiles\\-7e8f9a0b\\settings.json"
+   ],
+   "top_children": [
+    {
+     "name": "workspaceStorage",
+     "bytes": 167772160,
+     "files": 80
+    },
+    {
+     "name": "globalStorage",
+     "bytes": 62914560,
+     "files": 40
+    },
+    {
+     "name": "History",
+     "bytes": 10485760,
+     "files": 300
+    },
+    {
+     "name": "snippets",
+     "bytes": 61440,
+     "files": 6
+    }
+   ],
+   "markers": [
+    "sqlite_files",
+    "config_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "de-intellij",
+  "expected_category": "dev_environment",
+  "acceptable_categories": [
+   "app_config",
+   "reinstallable"
+  ],
+  "expected_app": "IntelliJ IDEA",
+  "trap": "IDE settings with downloaded plugins taking most of the space",
+  "summary": {
+   "path": "{APPDATA}\\JetBrains\\IntelliJIdea2024.2",
+   "total_bytes": 443570176,
+   "file_count": 395,
+   "dir_count": 120,
+   "max_depth": 5,
+   "newest_mtime": "2026-09-13T16:47:00Z",
+   "oldest_mtime": "2025-11-18T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "jar",
+     "count": 300,
+     "bytes": 440401920
+    },
+    {
+     "ext": "xml",
+     "count": 90,
+     "bytes": 3145728
+    },
+    {
+     "ext": "txt",
+     "count": 3,
+     "bytes": 20480
+    },
+    {
+     "ext": "key",
+     "count": 1,
+     "bytes": 1024
+    },
+    {
+     "ext": "vmoptions",
+     "count": 1,
+     "bytes": 1024
+    }
+   ],
+   "sample_names": [
+    "options\\editor.xml",
+    "options\\ide.general.xml",
+    "keymaps\\My Keymap.xml",
+    "codestyles\\Team.xml",
+    "idea64.exe.vmoptions",
+    "idea.key",
+    "plugins\\rust\\lib\\intellij-rust.jar",
+    "disabled_plugins.txt"
+   ],
+   "top_children": [
+    {
+     "name": "plugins",
+     "bytes": 440401920,
+     "files": 300
+    },
+    {
+     "name": "options",
+     "bytes": 2097152,
+     "files": 80
+    },
+    {
+     "name": "keymaps",
+     "bytes": 30720,
+     "files": 2
+    },
+    {
+     "name": "codestyles",
+     "bytes": 20480,
+     "files": 2
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "de-nvim",
+  "expected_category": "dev_environment",
+  "acceptable_categories": [
+   "app_config"
+  ],
+  "expected_app": "Neovim",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\nvim",
+   "total_bytes": 215040,
+   "file_count": 31,
+   "dir_count": 6,
+   "max_depth": 2,
+   "newest_mtime": "2026-09-10T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "lua",
+     "count": 28,
+     "bytes": 204800
+    },
+    {
+     "ext": "vim",
+     "count": 2,
+     "bytes": 6144
+    },
+    {
+     "ext": "json",
+     "count": 1,
+     "bytes": 4096
+    }
+   ],
+   "sample_names": [
+    "init.lua",
+    "lazy-lock.json",
+    "lua\\config\\options.lua",
+    "lua\\config\\keymaps.lua",
+    "lua\\plugins\\lsp.lua",
+    "lua\\plugins\\telescope.lua",
+    "after\\ftplugin\\rust.vim"
+   ],
+   "top_children": [
+    {
+     "name": "lua",
+     "bytes": 184320,
+     "files": 26
+    },
+    {
+     "name": "after",
+     "bytes": 6144,
+     "files": 2
+    }
+   ],
+   "markers": [
+    "git_repo"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "de-gh-cli",
+  "expected_category": "dev_environment",
+  "acceptable_categories": [
+   "credentials"
+  ],
+  "expected_app": "GitHub CLI",
+  "summary": {
+   "path": "{APPDATA}\\GitHub CLI",
+   "total_bytes": 2048,
+   "file_count": 2,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-07-16T16:47:00Z",
+   "oldest_mtime": "2025-05-02T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "yml",
+     "count": 2,
+     "bytes": 2048
+    }
+   ],
+   "sample_names": [
+    "config.yml",
+    "hosts.yml"
+   ],
+   "top_children": [],
+   "markers": [
+    "config_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "de-pwsh-profile",
+  "expected_category": "dev_environment",
+  "acceptable_categories": [],
+  "expected_app": "PowerShell",
+  "trap": "dev config in Documents",
+  "summary": {
+   "path": "{DOCUMENTS}\\PowerShell",
+   "total_bytes": 8818688,
+   "file_count": 65,
+   "dir_count": 20,
+   "max_depth": 4,
+   "newest_mtime": "2026-08-25T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "psm1",
+     "count": 40,
+     "bytes": 2097152
+    },
+    {
+     "ext": "psd1",
+     "count": 12,
+     "bytes": 409600
+    },
+    {
+     "ext": "dll",
+     "count": 10,
+     "bytes": 6291456
+    },
+    {
+     "ext": "ps1",
+     "count": 3,
+     "bytes": 20480
+    }
+   ],
+   "sample_names": [
+    "Microsoft.PowerShell_profile.ps1",
+    "Microsoft.VSCode_profile.ps1",
+    "Modules\\posh-git\\1.1.0\\posh-git.psd1",
+    "Modules\\Terminal-Icons\\0.11.0\\Terminal-Icons.psm1",
+    "Scripts\\Update-All.ps1"
+   ],
+   "top_children": [
+    {
+     "name": "Modules",
+     "bytes": 8388608,
+     "files": 60
+    },
+    {
+     "name": "Scripts",
+     "bytes": 6144,
+     "files": 1
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "de-psreadline",
+  "expected_category": "dev_environment",
+  "acceptable_categories": [
+   "app_data",
+   "cache"
+  ],
+  "expected_app": "PowerShell",
+  "must_not": [
+   "reinstallable"
+  ],
+  "summary": {
+   "path": "{APPDATA}\\Microsoft\\Windows\\PowerShell\\PSReadLine",
+   "total_bytes": 3145728,
+   "file_count": 2,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-14T16:47:00Z",
+   "oldest_mtime": "2023-06-02T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "txt",
+     "count": 2,
+     "bytes": 3145728
+    }
+   ],
+   "sample_names": [
+    "ConsoleHost_history.txt",
+    "Visual Studio Code Host_history.txt"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "de-jupyter",
+  "expected_category": "dev_environment",
+  "acceptable_categories": [],
+  "expected_app": "Jupyter",
+  "summary": {
+   "path": "{HOME}\\.jupyter",
+   "total_bytes": 102400,
+   "file_count": 16,
+   "dir_count": 8,
+   "max_depth": 4,
+   "newest_mtime": "2026-08-15T16:47:00Z",
+   "oldest_mtime": "2024-10-14T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "jupyterlab-settings",
+     "count": 8,
+     "bytes": 20480
+    },
+    {
+     "ext": "json",
+     "count": 6,
+     "bytes": 20480
+    },
+    {
+     "ext": "py",
+     "count": 2,
+     "bytes": 61440
+    }
+   ],
+   "sample_names": [
+    "jupyter_notebook_config.py",
+    "jupyter_server_config.py",
+    "lab\\user-settings\\@jupyterlab\\apputils-extension\\themes.jupyterlab-settings",
+    "lab\\user-settings\\@jupyterlab\\shortcuts-extension\\shortcuts.jupyterlab-settings",
+    "lab\\workspaces\\default-37a8.jupyterlab-workspace"
+   ],
+   "top_children": [
+    {
+     "name": "lab",
+     "bytes": 40960,
+     "files": 14
+    }
+   ],
+   "markers": [
+    "config_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "de-ipython",
+  "expected_category": "dev_environment",
+  "acceptable_categories": [],
+  "expected_app": "IPython",
+  "summary": {
+   "path": "{HOME}\\.ipython\\profile_default",
+   "total_bytes": 4236288,
+   "file_count": 5,
+   "dir_count": 2,
+   "max_depth": 1,
+   "newest_mtime": "2026-09-11T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "py",
+     "count": 3,
+     "bytes": 40960
+    },
+    {
+     "ext": "json",
+     "count": 1,
+     "bytes": 1024
+    },
+    {
+     "ext": "sqlite",
+     "count": 1,
+     "bytes": 4194304
+    }
+   ],
+   "sample_names": [
+    "ipython_config.py",
+    "history.sqlite",
+    "startup\\00-imports.py",
+    "startup\\README",
+    "security\\.gitkeep"
+   ],
+   "top_children": [
+    {
+     "name": "startup",
+     "bytes": 4096,
+     "files": 2
+    },
+    {
+     "name": "security",
+     "bytes": 0,
+     "files": 1
+    }
+   ],
+   "markers": [
+    "sqlite_files"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "de-sublime",
+  "expected_category": "dev_environment",
+  "acceptable_categories": [
+   "app_config"
+  ],
+  "expected_app": "Sublime Text",
+  "summary": {
+   "path": "{APPDATA}\\Sublime Text\\Packages\\User",
+   "total_bytes": 77824,
+   "file_count": 26,
+   "dir_count": 1,
+   "max_depth": 1,
+   "newest_mtime": "2026-07-26T16:47:00Z",
+   "oldest_mtime": "2022-08-06T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "sublime-snippet",
+     "count": 12,
+     "bytes": 20480
+    },
+    {
+     "ext": "sublime-settings",
+     "count": 8,
+     "bytes": 40960
+    },
+    {
+     "ext": "sublime-build",
+     "count": 3,
+     "bytes": 2048
+    },
+    {
+     "ext": "py",
+     "count": 2,
+     "bytes": 10240
+    },
+    {
+     "ext": "sublime-keymap",
+     "count": 1,
+     "bytes": 4096
+    }
+   ],
+   "sample_names": [
+    "Preferences.sublime-settings",
+    "Default (Windows).sublime-keymap",
+    "Package Control.sublime-settings",
+    "rust-test.sublime-build",
+    "snippets\\log.sublime-snippet",
+    "my_commands.py"
+   ],
+   "top_children": [
+    {
+     "name": "snippets",
+     "bytes": 20480,
+     "files": 12
+    }
+   ],
+   "markers": [
+    "config_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "de-vimfiles",
+  "expected_category": "dev_environment",
+  "acceptable_categories": [
+   "app_config"
+  ],
+  "expected_app": "Vim",
+  "summary": {
+   "path": "{HOME}\\vimfiles",
+   "total_bytes": 491520,
+   "file_count": 36,
+   "dir_count": 4,
+   "max_depth": 3,
+   "newest_mtime": "2026-02-26T16:47:00Z",
+   "oldest_mtime": "2021-03-24T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "vim",
+     "count": 30,
+     "bytes": 409600
+    },
+    {
+     "ext": "txt",
+     "count": 4,
+     "bytes": 61440
+    },
+    {
+     "ext": "",
+     "count": 2,
+     "bytes": 20480
+    }
+   ],
+   "sample_names": [
+    "vimrc",
+    "gvimrc",
+    "autoload\\plug.vim",
+    "plugged\\vim-fugitive\\plugin\\fugitive.vim",
+    "ftplugin\\python.vim",
+    "colors\\gruvbox.vim"
+   ],
+   "top_children": [
+    {
+     "name": "plugged",
+     "bytes": 358400,
+     "files": 30
+    },
+    {
+     "name": "autoload",
+     "bytes": 30720,
+     "files": 1
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "de-android-home",
+  "expected_category": "dev_environment",
+  "acceptable_categories": [
+   "credentials",
+   "reinstallable"
+  ],
+  "expected_app": "Android Studio",
+  "trap": "debug keystore next to large emulator images",
+  "summary": {
+   "path": "{HOME}\\.android",
+   "total_bytes": 18253645824,
+   "file_count": 30,
+   "dir_count": 6,
+   "max_depth": 3,
+   "newest_mtime": "2026-09-11T16:47:00Z",
+   "oldest_mtime": "2025-01-22T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "img",
+     "count": 12,
+     "bytes": 15032385536
+    },
+    {
+     "ext": "ini",
+     "count": 6,
+     "bytes": 20480
+    },
+    {
+     "ext": "qcow2",
+     "count": 6,
+     "bytes": 3221225472
+    },
+    {
+     "ext": "",
+     "count": 4,
+     "bytes": 10240
+    },
+    {
+     "ext": "keystore",
+     "count": 1,
+     "bytes": 3072
+    },
+    {
+     "ext": "pub",
+     "count": 1,
+     "bytes": 1024
+    }
+   ],
+   "sample_names": [
+    "adbkey",
+    "adbkey.pub",
+    "debug.keystore",
+    "avd\\Pixel_7_API_34.avd\\config.ini",
+    "avd\\Pixel_7_API_34.avd\\userdata-qemu.img",
+    "avd\\Pixel_7_API_34.avd\\cache.img.qcow2",
+    "avd\\Pixel_7_API_34.ini",
+    "analytics.settings"
+   ],
+   "top_children": [
+    {
+     "name": "avd",
+     "bytes": 18253611008,
+     "files": 22
+    },
+    {
+     "name": "cache",
+     "bytes": 2097152,
+     "files": 30
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "de-vs-settings",
+  "expected_category": "dev_environment",
+  "acceptable_categories": [
+   "app_config"
+  ],
+  "expected_app": "Visual Studio 2022",
+  "trap": "dev config in Documents",
+  "summary": {
+   "path": "{DOCUMENTS}\\Visual Studio 2022",
+   "total_bytes": 988160,
+   "file_count": 21,
+   "dir_count": 30,
+   "max_depth": 4,
+   "newest_mtime": "2026-08-05T16:47:00Z",
+   "oldest_mtime": "2024-07-06T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "snippet",
+     "count": 14,
+     "bytes": 61440
+    },
+    {
+     "ext": "vssettings",
+     "count": 2,
+     "bytes": 614400
+    },
+    {
+     "ext": "vstemplate",
+     "count": 2,
+     "bytes": 4096
+    },
+    {
+     "ext": "zip",
+     "count": 2,
+     "bytes": 307200
+    },
+    {
+     "ext": "txt",
+     "count": 1,
+     "bytes": 1024
+    }
+   ],
+   "sample_names": [
+    "Settings\\CurrentSettings.vssettings",
+    "Settings\\Exported-2026-01-10.vssettings",
+    "Code Snippets\\Visual C#\\My Code Snippets\\propnotify.snippet",
+    "Templates\\ProjectTemplates\\MyService.zip",
+    "Visualizers\\readme.txt"
+   ],
+   "top_children": [
+    {
+     "name": "Settings",
+     "bytes": 614400,
+     "files": 2
+    },
+    {
+     "name": "Code Snippets",
+     "bytes": 61440,
+     "files": 14
+    },
+    {
+     "name": "Templates",
+     "bytes": 307200,
+     "files": 2
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "de-dbeaver",
+  "expected_category": "dev_environment",
+  "acceptable_categories": [
+   "credentials",
+   "app_data"
+  ],
+  "expected_app": "DBeaver",
+  "summary": {
+   "path": "{APPDATA}\\DBeaverData\\workspace6",
+   "total_bytes": 6414336,
+   "file_count": 70,
+   "dir_count": 40,
+   "max_depth": 6,
+   "newest_mtime": "2026-09-12T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "sql",
+     "count": 40,
+     "bytes": 2097152
+    },
+    {
+     "ext": "prefs",
+     "count": 20,
+     "bytes": 61440
+    },
+    {
+     "ext": "json",
+     "count": 6,
+     "bytes": 61440
+    },
+    {
+     "ext": "log",
+     "count": 4,
+     "bytes": 4194304
+    }
+   ],
+   "sample_names": [
+    "General\\.dbeaver\\data-sources.json",
+    "General\\.dbeaver\\credentials-config.json",
+    "General\\Scripts\\Script-12.sql",
+    "General\\Scripts\\reports\\monthly.sql",
+    ".metadata\\.plugins\\org.eclipse.core.runtime\\.settings\\org.jkiss.dbeaver.core.prefs",
+    ".metadata\\dbeaver-debug.log"
+   ],
+   "top_children": [
+    {
+     "name": "General",
+     "bytes": 2097152,
+     "files": 50
+    },
+    {
+     "name": ".metadata",
+     "bytes": 4194304,
+     "files": 30
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "de-wsl-config",
+  "expected_category": "dev_environment",
+  "acceptable_categories": [
+   "app_config"
+  ],
+  "summary": {
+   "path": "{HOME}\\.config",
+   "total_bytes": 43008,
+   "file_count": 12,
+   "dir_count": 5,
+   "max_depth": 1,
+   "newest_mtime": "2026-08-30T16:47:00Z",
+   "oldest_mtime": "2024-07-06T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "toml",
+     "count": 4,
+     "bytes": 20480
+    },
+    {
+     "ext": "yml",
+     "count": 3,
+     "bytes": 10240
+    },
+    {
+     "ext": "conf",
+     "count": 2,
+     "bytes": 2048
+    },
+    {
+     "ext": "json",
+     "count": 2,
+     "bytes": 6144
+    },
+    {
+     "ext": "lua",
+     "count": 1,
+     "bytes": 4096
+    }
+   ],
+   "sample_names": [
+    "starship.toml",
+    "wezterm\\wezterm.lua",
+    "alacritty\\alacritty.toml",
+    "lazygit\\config.yml",
+    "gh-dash\\config.yml",
+    "git\\ignore"
+   ],
+   "top_children": [
+    {
+     "name": "wezterm",
+     "bytes": 4096,
+     "files": 1
+    },
+    {
+     "name": "alacritty",
+     "bytes": 6144,
+     "files": 2
+    },
+    {
+     "name": "lazygit",
+     "bytes": 4096,
+     "files": 1
+    }
+   ],
+   "markers": [
+    "config_like"
+   ],
+   "truncated": false
+  }
+ }
+]

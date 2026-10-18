@@ -1,0 +1,1123 @@
+[
+ {
+  "id": "ri-vscode-bin",
+  "expected_category": "reinstallable",
+  "acceptable_categories": [],
+  "expected_app": "Visual Studio Code",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Programs\\Microsoft VS Code",
+   "total_bytes": 459276288,
+   "file_count": 3410,
+   "dir_count": 900,
+   "max_depth": 7,
+   "newest_mtime": "2026-09-06T16:47:00Z",
+   "oldest_mtime": "2026-09-06T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "js",
+     "count": 2400,
+     "bytes": 125829120
+    },
+    {
+     "ext": "json",
+     "count": 900,
+     "bytes": 10485760
+    },
+    {
+     "ext": "pak",
+     "count": 60,
+     "bytes": 20971520
+    },
+    {
+     "ext": "node",
+     "count": 30,
+     "bytes": 41943040
+    },
+    {
+     "ext": "dll",
+     "count": 14,
+     "bytes": 62914560
+    },
+    {
+     "ext": "exe",
+     "count": 4,
+     "bytes": 188743680
+    },
+    {
+     "ext": "asar",
+     "count": 2,
+     "bytes": 8388608
+    }
+   ],
+   "sample_names": [
+    "Code.exe",
+    "ffmpeg.dll",
+    "resources.pak",
+    "locales\\en-US.pak",
+    "resources\\app\\package.json",
+    "resources\\app\\out\\main.js",
+    "resources\\app\\extensions\\git\\package.json",
+    "unins000.exe"
+   ],
+   "top_children": [
+    {
+     "name": "resources",
+     "bytes": 272629760,
+     "files": 3300
+    },
+    {
+     "name": "locales",
+     "bytes": 20971520,
+     "files": 55
+    },
+    {
+     "name": "bin",
+     "bytes": 1048576,
+     "files": 2
+    }
+   ],
+   "markers": [
+    "has_executables"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ri-discord-app",
+  "expected_category": "reinstallable",
+  "acceptable_categories": [],
+  "expected_app": "Discord",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Discord\\app-1.0.9163",
+   "total_bytes": 271147008,
+   "file_count": 78,
+   "dir_count": 60,
+   "max_depth": 4,
+   "newest_mtime": "2026-08-25T16:47:00Z",
+   "oldest_mtime": "2026-08-25T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "pak",
+     "count": 60,
+     "bytes": 31457280
+    },
+    {
+     "ext": "dll",
+     "count": 8,
+     "bytes": 41943040
+    },
+    {
+     "ext": "node",
+     "count": 6,
+     "bytes": 10485760
+    },
+    {
+     "ext": "exe",
+     "count": 2,
+     "bytes": 178257920
+    },
+    {
+     "ext": "asar",
+     "count": 1,
+     "bytes": 8388608
+    },
+    {
+     "ext": "bin",
+     "count": 1,
+     "bytes": 614400
+    }
+   ],
+   "sample_names": [
+    "Discord.exe",
+    "ffmpeg.dll",
+    "libGLESv2.dll",
+    "resources\\app.asar",
+    "locales\\en-US.pak",
+    "modules\\discord_voice-1\\discord_voice\\discord_voice.node"
+   ],
+   "top_children": [
+    {
+     "name": "modules",
+     "bytes": 62914560,
+     "files": 40
+    },
+    {
+     "name": "locales",
+     "bytes": 31457280,
+     "files": 55
+    },
+    {
+     "name": "resources",
+     "bytes": 8388608,
+     "files": 2
+    }
+   ],
+   "markers": [
+    "has_executables"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ri-hades",
+  "expected_category": "reinstallable",
+  "acceptable_categories": [],
+  "expected_app": "Hades",
+  "must_not": [
+   "game_save"
+  ],
+  "summary": {
+   "path": "{STEAM}\\steamapps\\common\\Hades",
+   "total_bytes": 12100567040,
+   "file_count": 463,
+   "dir_count": 70,
+   "max_depth": 5,
+   "newest_mtime": "2025-11-18T16:47:00Z",
+   "oldest_mtime": "2025-11-18T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "sjson",
+     "count": 300,
+     "bytes": 31457280
+    },
+    {
+     "ext": "lua",
+     "count": 60,
+     "bytes": 6291456
+    },
+    {
+     "ext": "pkg",
+     "count": 40,
+     "bytes": 9663676416
+    },
+    {
+     "ext": "bank",
+     "count": 30,
+     "bytes": 2147483648
+    },
+    {
+     "ext": "dll",
+     "count": 30,
+     "bytes": 209715200
+    },
+    {
+     "ext": "exe",
+     "count": 3,
+     "bytes": 41943040
+    }
+   ],
+   "sample_names": [
+    "x64\\Hades.exe",
+    "x64\\fmod.dll",
+    "Content\\Win\\Packages\\720p\\BiomeHouse.pkg",
+    "Content\\Audio\\Desktop\\Music.bank",
+    "Content\\Scripts\\RoomManager.lua",
+    "Content\\Game\\Text\\en\\HelpText.en.sjson"
+   ],
+   "top_children": [
+    {
+     "name": "Content",
+     "bytes": 11811160064,
+     "files": 420
+    },
+    {
+     "name": "x64",
+     "bytes": 251658240,
+     "files": 33
+    }
+   ],
+   "markers": [
+    "has_executables"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ri-cyberpunk-install",
+  "expected_category": "reinstallable",
+  "acceptable_categories": [],
+  "expected_app": "Cyberpunk 2077",
+  "must_not": [
+   "game_save"
+  ],
+  "trap": "game install folder with a few config files",
+  "summary": {
+   "path": "{DRIVE:D}\\SteamLibrary\\steamapps\\common\\Cyberpunk 2077",
+   "total_bytes": 70867165184,
+   "file_count": 406,
+   "dir_count": 120,
+   "max_depth": 5,
+   "newest_mtime": "2026-07-16T16:47:00Z",
+   "oldest_mtime": "2026-07-16T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "archive",
+     "count": 210,
+     "bytes": 68719476736
+    },
+    {
+     "ext": "dll",
+     "count": 120,
+     "bytes": 943718400
+    },
+    {
+     "ext": "json",
+     "count": 40,
+     "bytes": 4194304
+    },
+    {
+     "ext": "bin",
+     "count": 20,
+     "bytes": 1073741824
+    },
+    {
+     "ext": "ini",
+     "count": 10,
+     "bytes": 204800
+    },
+    {
+     "ext": "exe",
+     "count": 6,
+     "bytes": 125829120
+    }
+   ],
+   "sample_names": [
+    "bin\\x64\\Cyberpunk2077.exe",
+    "bin\\x64\\REDEngineErrorReporter.exe",
+    "archive\\pc\\content\\basegame_4_appearance.archive",
+    "archive\\pc\\ep1\\ep1_1_textures.archive",
+    "engine\\config\\platform\\pc\\user.ini",
+    "r6\\config\\inputUserMappings.xml"
+   ],
+   "top_children": [
+    {
+     "name": "archive",
+     "bytes": 68719476736,
+     "files": 210
+    },
+    {
+     "name": "bin",
+     "bytes": 1073741824,
+     "files": 130
+    },
+    {
+     "name": "engine",
+     "bytes": 1073741824,
+     "files": 30
+    },
+    {
+     "name": "r6",
+     "bytes": 20971520,
+     "files": 40
+    }
+   ],
+   "markers": [
+    "has_executables"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ri-python",
+  "expected_category": "reinstallable",
+  "acceptable_categories": [
+   "dev_environment"
+  ],
+  "expected_app": "Python",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Programs\\Python\\Python312",
+   "total_bytes": 334495744,
+   "file_count": 8366,
+   "dir_count": 900,
+   "max_depth": 6,
+   "newest_mtime": "2026-06-06T16:47:00Z",
+   "oldest_mtime": "2026-06-06T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "py",
+     "count": 4100,
+     "bytes": 125829120
+    },
+    {
+     "ext": "pyc",
+     "count": 3900,
+     "bytes": 146800640
+    },
+    {
+     "ext": "txt",
+     "count": 300,
+     "bytes": 8388608
+    },
+    {
+     "ext": "pyd",
+     "count": 40,
+     "bytes": 20971520
+    },
+    {
+     "ext": "dll",
+     "count": 20,
+     "bytes": 31457280
+    },
+    {
+     "ext": "exe",
+     "count": 6,
+     "bytes": 1048576
+    }
+   ],
+   "sample_names": [
+    "python.exe",
+    "python312.dll",
+    "DLLs\\_ssl.pyd",
+    "Lib\\asyncio\\base_events.py",
+    "Lib\\site-packages\\pip\\__init__.py",
+    "Scripts\\pip.exe",
+    "tcl\\tk8.6\\tk.tcl"
+   ],
+   "top_children": [
+    {
+     "name": "Lib",
+     "bytes": 314572800,
+     "files": 8200
+    },
+    {
+     "name": "DLLs",
+     "bytes": 20971520,
+     "files": 40
+    },
+    {
+     "name": "tcl",
+     "bytes": 10485760,
+     "files": 900
+    },
+    {
+     "name": "Scripts",
+     "bytes": 2097152,
+     "files": 12
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ri-cargo-registry",
+  "expected_category": "reinstallable",
+  "acceptable_categories": [
+   "cache"
+  ],
+  "expected_app": "Cargo",
+  "must_not": [
+   "user_files"
+  ],
+  "trap": "thousands of source files that are only downloaded dependencies",
+  "summary": {
+   "path": "{HOME}\\.cargo\\registry",
+   "total_bytes": 3024093184,
+   "file_count": 95900,
+   "dir_count": 12000,
+   "max_depth": 9,
+   "newest_mtime": "2026-09-13T16:47:00Z",
+   "oldest_mtime": "2024-10-14T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "rs",
+     "count": 90000,
+     "bytes": 2306867200
+    },
+    {
+     "ext": "md",
+     "count": 2800,
+     "bytes": 62914560
+    },
+    {
+     "ext": "crate",
+     "count": 1400,
+     "bytes": 629145600
+    },
+    {
+     "ext": "toml",
+     "count": 1400,
+     "bytes": 20971520
+    },
+    {
+     "ext": "json",
+     "count": 300,
+     "bytes": 4194304
+    }
+   ],
+   "sample_names": [
+    "cache\\index.crates.io-1949cf8c6b5b557f\\serde-1.0.210.crate",
+    "src\\index.crates.io-1949cf8c6b5b557f\\serde-1.0.210\\src\\lib.rs",
+    "src\\index.crates.io-1949cf8c6b5b557f\\tokio-1.40.0\\Cargo.toml",
+    "index\\index.crates.io-1949cf8c6b5b557f\\.cache\\se\\rd\\serde"
+   ],
+   "top_children": [
+    {
+     "name": "src",
+     "bytes": 2411724800,
+     "files": 95000
+    },
+    {
+     "name": "cache",
+     "bytes": 629145600,
+     "files": 1400
+    },
+    {
+     "name": "index",
+     "bytes": 41943040,
+     "files": 3000
+    }
+   ],
+   "markers": [
+    "project_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ri-vscode-extensions",
+  "expected_category": "reinstallable",
+  "acceptable_categories": [
+   "dev_environment"
+  ],
+  "expected_app": "Visual Studio Code",
+  "trap": "dev folder full of JSON that is only downloaded extensions",
+  "summary": {
+   "path": "{HOME}\\.vscode\\extensions",
+   "total_bytes": 617611264,
+   "file_count": 8656,
+   "dir_count": 3000,
+   "max_depth": 9,
+   "newest_mtime": "2026-09-12T16:47:00Z",
+   "oldest_mtime": "2025-05-02T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "js",
+     "count": 6000,
+     "bytes": 419430400
+    },
+    {
+     "ext": "json",
+     "count": 2400,
+     "bytes": 62914560
+    },
+    {
+     "ext": "md",
+     "count": 200,
+     "bytes": 8388608
+    },
+    {
+     "ext": "vsixmanifest",
+     "count": 40,
+     "bytes": 1048576
+    },
+    {
+     "ext": "wasm",
+     "count": 10,
+     "bytes": 31457280
+    },
+    {
+     "ext": "exe",
+     "count": 6,
+     "bytes": 94371840
+    }
+   ],
+   "sample_names": [
+    "extensions.json",
+    "rust-lang.rust-analyzer-0.3.2112-win32-x64\\server\\rust-analyzer.exe",
+    "ms-python.python-2026.14.0\\package.json",
+    "eamodio.gitlens-16.0.0\\dist\\gitlens.js",
+    "ms-vscode.cpptools-1.22.0-win32-x64\\bin\\cpptools.exe"
+   ],
+   "top_children": [
+    {
+     "name": "ms-vscode.cpptools-1.22.0-win32-x64",
+     "bytes": 209715200,
+     "files": 900
+    },
+    {
+     "name": "rust-lang.rust-analyzer-0.3.2112-win32-x64",
+     "bytes": 94371840,
+     "files": 30
+    },
+    {
+     "name": "ms-python.python-2026.14.0",
+     "bytes": 62914560,
+     "files": 1200
+    }
+   ],
+   "markers": [
+    "has_executables"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ri-android-sdk",
+  "expected_category": "reinstallable",
+  "acceptable_categories": [
+   "dev_environment"
+  ],
+  "expected_app": "Android SDK",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Android\\Sdk",
+   "total_bytes": 9529458688,
+   "file_count": 1586,
+   "dir_count": 2000,
+   "max_depth": 7,
+   "newest_mtime": "2026-08-15T16:47:00Z",
+   "oldest_mtime": "2025-01-22T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "xml",
+     "count": 600,
+     "bytes": 20971520
+    },
+    {
+     "ext": "so",
+     "count": 400,
+     "bytes": 1073741824
+    },
+    {
+     "ext": "jar",
+     "count": 300,
+     "bytes": 943718400
+    },
+    {
+     "ext": "dll",
+     "count": 200,
+     "bytes": 629145600
+    },
+    {
+     "ext": "exe",
+     "count": 80,
+     "bytes": 419430400
+    },
+    {
+     "ext": "img",
+     "count": 6,
+     "bytes": 6442450944
+    }
+   ],
+   "sample_names": [
+    "platform-tools\\adb.exe",
+    "build-tools\\34.0.0\\aapt2.exe",
+    "platforms\\android-34\\android.jar",
+    "emulator\\emulator.exe",
+    "system-images\\android-34\\google_apis\\x86_64\\system.img",
+    "licenses\\android-sdk-license"
+   ],
+   "top_children": [
+    {
+     "name": "system-images",
+     "bytes": 7516192768,
+     "files": 40
+    },
+    {
+     "name": "emulator",
+     "bytes": 1073741824,
+     "files": 900
+    },
+    {
+     "name": "platforms",
+     "bytes": 314572800,
+     "files": 400
+    },
+    {
+     "name": "build-tools",
+     "bytes": 209715200,
+     "files": 300
+    }
+   ],
+   "markers": [
+    "has_executables"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ri-maven-repo",
+  "expected_category": "reinstallable",
+  "acceptable_categories": [
+   "cache"
+  ],
+  "expected_app": "Apache Maven",
+  "summary": {
+   "path": "{HOME}\\.m2\\repository",
+   "total_bytes": 1951604736,
+   "file_count": 12400,
+   "dir_count": 9000,
+   "max_depth": 8,
+   "newest_mtime": "2026-09-09T16:47:00Z",
+   "oldest_mtime": "2023-06-02T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "sha1",
+     "count": 5000,
+     "bytes": 204800
+    },
+    {
+     "ext": "pom",
+     "count": 2600,
+     "bytes": 62914560
+    },
+    {
+     "ext": "jar",
+     "count": 2400,
+     "bytes": 1887436800
+    },
+    {
+     "ext": "repositories",
+     "count": 2400,
+     "bytes": 1048576
+    }
+   ],
+   "sample_names": [
+    "org\\springframework\\spring-core\\6.1.12\\spring-core-6.1.12.jar",
+    "org\\springframework\\spring-core\\6.1.12\\spring-core-6.1.12.pom",
+    "com\\fasterxml\\jackson\\core\\jackson-databind\\2.17.2\\jackson-databind-2.17.2.jar.sha1",
+    "junit\\junit\\4.13.2\\_remote.repositories"
+   ],
+   "top_children": [
+    {
+     "name": "org",
+     "bytes": 1363148800,
+     "files": 7000
+    },
+    {
+     "name": "com",
+     "bytes": 419430400,
+     "files": 3000
+    },
+    {
+     "name": "io",
+     "bytes": 157286400,
+     "files": 1400
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ri-npm-global",
+  "expected_category": "reinstallable",
+  "acceptable_categories": [
+   "dev_environment",
+   "cache"
+  ],
+  "expected_app": "npm",
+  "summary": {
+   "path": "{APPDATA}\\npm",
+   "total_bytes": 429940736,
+   "file_count": 21024,
+   "dir_count": 4000,
+   "max_depth": 10,
+   "newest_mtime": "2026-08-25T16:47:00Z",
+   "oldest_mtime": "2024-07-06T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "js",
+     "count": 14000,
+     "bytes": 314572800
+    },
+    {
+     "ext": "ts",
+     "count": 3000,
+     "bytes": 41943040
+    },
+    {
+     "ext": "json",
+     "count": 2200,
+     "bytes": 31457280
+    },
+    {
+     "ext": "md",
+     "count": 1800,
+     "bytes": 41943040
+    },
+    {
+     "ext": "cmd",
+     "count": 12,
+     "bytes": 12288
+    },
+    {
+     "ext": "ps1",
+     "count": 12,
+     "bytes": 12288
+    }
+   ],
+   "sample_names": [
+    "pnpm.cmd",
+    "pnpm.ps1",
+    "tsc.cmd",
+    "node_modules\\typescript\\package.json",
+    "node_modules\\pnpm\\dist\\pnpm.cjs",
+    "node_modules\\@angular\\cli\\bin\\ng.js"
+   ],
+   "top_children": [
+    {
+     "name": "node_modules",
+     "bytes": 429916160,
+     "files": 21000
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ri-fortnite",
+  "expected_category": "reinstallable",
+  "acceptable_categories": [],
+  "expected_app": "Fortnite",
+  "must_not": [
+   "game_save"
+  ],
+  "summary": {
+   "path": "{DRIVE:D}\\Epic Games\\Fortnite",
+   "total_bytes": 97706311680,
+   "file_count": 548,
+   "dir_count": 80,
+   "max_depth": 7,
+   "newest_mtime": "2026-09-11T16:47:00Z",
+   "oldest_mtime": "2026-09-11T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "pak",
+     "count": 120,
+     "bytes": 42949672960
+    },
+    {
+     "ext": "sig",
+     "count": 120,
+     "bytes": 20971520
+    },
+    {
+     "ext": "ucas",
+     "count": 120,
+     "bytes": 53687091200
+    },
+    {
+     "ext": "utoc",
+     "count": 120,
+     "bytes": 314572800
+    },
+    {
+     "ext": "dll",
+     "count": 60,
+     "bytes": 419430400
+    },
+    {
+     "ext": "exe",
+     "count": 8,
+     "bytes": 314572800
+    }
+   ],
+   "sample_names": [
+    "FortniteGame\\Content\\Paks\\pakchunk0-WindowsClient.pak",
+    "FortniteGame\\Content\\Paks\\pakchunk0-WindowsClient.ucas",
+    "FortniteGame\\Binaries\\Win64\\<redacted>.exe",
+    "Engine\\Binaries\\ThirdParty\\NVIDIA\\NVaftermath\\Win64\\GFSDK_Aftermath_Lib.x64.dll"
+   ],
+   "top_children": [
+    {
+     "name": "FortniteGame",
+     "bytes": 97710505984,
+     "files": 500
+    },
+    {
+     "name": "Engine",
+     "bytes": 524288000,
+     "files": 60
+    }
+   ],
+   "markers": [
+    "has_executables"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ri-ollama-models",
+  "expected_category": "reinstallable",
+  "acceptable_categories": [
+   "cache"
+  ],
+  "expected_app": "Ollama",
+  "must_not": [
+   "user_files"
+  ],
+  "summary": {
+   "path": "{HOME}\\.ollama\\models",
+   "total_bytes": 33285996544,
+   "file_count": 14,
+   "dir_count": 8,
+   "max_depth": 4,
+   "newest_mtime": "2026-09-13T16:47:00Z",
+   "oldest_mtime": "2026-02-26T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "",
+     "count": 14,
+     "bytes": 33285996544
+    }
+   ],
+   "sample_names": [
+    "blobs\\<redacted>",
+    "blobs\\<redacted>",
+    "manifests\\registry.ollama.ai\\library\\qwen2.5\\7b-instruct",
+    "manifests\\registry.ollama.ai\\library\\llama3.2\\3b"
+   ],
+   "top_children": [
+    {
+     "name": "blobs",
+     "bytes": 33285996544,
+     "files": 10
+    },
+    {
+     "name": "manifests",
+     "bytes": 20480,
+     "files": 4
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ri-minecraft-versions",
+  "expected_category": "reinstallable",
+  "acceptable_categories": [],
+  "expected_app": "Minecraft",
+  "must_not": [
+   "game_save"
+  ],
+  "summary": {
+   "path": "{APPDATA}\\.minecraft\\versions",
+   "total_bytes": 425721856,
+   "file_count": 28,
+   "dir_count": 14,
+   "max_depth": 1,
+   "newest_mtime": "2026-08-25T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "jar",
+     "count": 14,
+     "bytes": 419430400
+    },
+    {
+     "ext": "json",
+     "count": 14,
+     "bytes": 6291456
+    }
+   ],
+   "sample_names": [
+    "1.21.1\\1.21.1.jar",
+    "1.21.1\\1.21.1.json",
+    "fabric-loader-0.16.5-1.21.1\\fabric-loader-0.16.5-1.21.1.json",
+    "1.20.4\\1.20.4.jar"
+   ],
+   "top_children": [
+    {
+     "name": "1.21.1",
+     "bytes": 31457280,
+     "files": 2
+    },
+    {
+     "name": "1.20.4",
+     "bytes": 29360128,
+     "files": 2
+    },
+    {
+     "name": "fabric-loader-0.16.5-1.21.1",
+     "bytes": 30720,
+     "files": 2
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ri-toolbox-apps",
+  "expected_category": "reinstallable",
+  "acceptable_categories": [
+   "dev_environment"
+  ],
+  "expected_app": "JetBrains Toolbox",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\JetBrains\\Toolbox\\apps",
+   "total_bytes": 3265265664,
+   "file_count": 2730,
+   "dir_count": 1400,
+   "max_depth": 9,
+   "newest_mtime": "2026-08-15T16:47:00Z",
+   "oldest_mtime": "2026-08-15T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "jar",
+     "count": 2100,
+     "bytes": 2726297600
+    },
+    {
+     "ext": "xml",
+     "count": 300,
+     "bytes": 10485760
+    },
+    {
+     "ext": "dll",
+     "count": 200,
+     "bytes": 314572800
+    },
+    {
+     "ext": "txt",
+     "count": 100,
+     "bytes": 4194304
+    },
+    {
+     "ext": "exe",
+     "count": 30,
+     "bytes": 209715200
+    }
+   ],
+   "sample_names": [
+    "IDEA-U\\ch-0\\242.21829.142\\bin\\idea64.exe",
+    "IDEA-U\\ch-0\\242.21829.142\\lib\\app.jar",
+    "PyCharm-P\\ch-0\\242.22855.92\\bin\\pycharm64.exe",
+    "IDEA-U\\ch-0\\242.21829.142\\jbr\\bin\\java.exe"
+   ],
+   "top_children": [
+    {
+     "name": "IDEA-U",
+     "bytes": 1887436800,
+     "files": 1600
+    },
+    {
+     "name": "PyCharm-P",
+     "bytes": 1363148800,
+     "files": 1100
+    }
+   ],
+   "markers": [
+    "has_executables"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ri-downloads-installers",
+  "expected_category": "reinstallable",
+  "acceptable_categories": [
+   "user_files"
+  ],
+  "trap": "installers kept in Downloads",
+  "summary": {
+   "path": "{DOWNLOADS}\\Installers",
+   "total_bytes": 19197329408,
+   "file_count": 64,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-04T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "exe",
+     "count": 40,
+     "bytes": 4294967296
+    },
+    {
+     "ext": "msi",
+     "count": 12,
+     "bytes": 943718400
+    },
+    {
+     "ext": "zip",
+     "count": 10,
+     "bytes": 2147483648
+    },
+    {
+     "ext": "iso",
+     "count": 2,
+     "bytes": 11811160064
+    }
+   ],
+   "sample_names": [
+    "SteamSetup.exe",
+    "VSCodeUserSetup-x64-1.93.1.exe",
+    "Git-2.46.0-64-bit.exe",
+    "python-3.12.6-amd64.exe",
+    "Win11_24H2_English_x64.iso",
+    "node-v22.9.0-x64.msi"
+   ],
+   "top_children": [],
+   "markers": [
+    "has_executables"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "ri-zoom-bin",
+  "expected_category": "reinstallable",
+  "acceptable_categories": [],
+  "expected_app": "Zoom",
+  "trap": "program binaries under Roaming AppData",
+  "summary": {
+   "path": "{APPDATA}\\Zoom\\bin",
+   "total_bytes": 432013312,
+   "file_count": 204,
+   "dir_count": 10,
+   "max_depth": 2,
+   "newest_mtime": "2026-09-02T16:47:00Z",
+   "oldest_mtime": "2026-09-02T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "dll",
+     "count": 160,
+     "bytes": 314572800
+    },
+    {
+     "ext": "pak",
+     "count": 30,
+     "bytes": 41943040
+    },
+    {
+     "ext": "exe",
+     "count": 10,
+     "bytes": 62914560
+    },
+    {
+     "ext": "dat",
+     "count": 4,
+     "bytes": 12582912
+    }
+   ],
+   "sample_names": [
+    "Zoom.exe",
+    "Installer.exe",
+    "zWebview2Agent.dll",
+    "aomhost64.exe",
+    "icudtl.dat",
+    "locales\\en-US.pak"
+   ],
+   "top_children": [
+    {
+     "name": "locales",
+     "bytes": 31457280,
+     "files": 30
+    },
+    {
+     "name": "cef",
+     "bytes": 209715200,
+     "files": 60
+    }
+   ],
+   "markers": [
+    "has_executables"
+   ],
+   "truncated": false
+  }
+ }
+]

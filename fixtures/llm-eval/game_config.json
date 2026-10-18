@@ -1,0 +1,607 @@
+[
+ {
+  "id": "gc-skyrim-local",
+  "expected_category": "game_config",
+  "acceptable_categories": [
+   "app_config"
+  ],
+  "expected_app": "The Elder Scrolls V: Skyrim Special Edition",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Skyrim Special Edition",
+   "total_bytes": 32768,
+   "file_count": 4,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-05T16:47:00Z",
+   "oldest_mtime": "2024-10-14T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "txt",
+     "count": 3,
+     "bytes": 30720
+    },
+    {
+     "ext": "ini",
+     "count": 1,
+     "bytes": 2048
+    }
+   ],
+   "sample_names": [
+    "plugins.txt",
+    "loadorder.txt",
+    "DLCList.txt",
+    "Skyrim.ini"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gc-satisfactory-config",
+  "expected_category": "game_config",
+  "acceptable_categories": [],
+  "expected_app": "Satisfactory",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\FactoryGame\\Saved\\Config\\Windows",
+   "total_bytes": 61440,
+   "file_count": 9,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-12T16:47:00Z",
+   "oldest_mtime": "2025-01-22T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "ini",
+     "count": 9,
+     "bytes": 61440
+    }
+   ],
+   "sample_names": [
+    "GameUserSettings.ini",
+    "Input.ini",
+    "Engine.ini",
+    "Game.ini",
+    "Scalability.ini",
+    "<redacted>.ini"
+   ],
+   "top_children": [],
+   "markers": [
+    "config_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gc-gta5",
+  "expected_category": "game_config",
+  "acceptable_categories": [
+   "game_save"
+  ],
+  "expected_app": "Grand Theft Auto V",
+  "trap": "game in Documents",
+  "summary": {
+   "path": "{DOCUMENTS}\\Rockstar Games\\GTA V",
+   "total_bytes": 47104,
+   "file_count": 6,
+   "dir_count": 1,
+   "max_depth": 2,
+   "newest_mtime": "2026-07-16T16:47:00Z",
+   "oldest_mtime": "2022-08-06T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "dat",
+     "count": 3,
+     "bytes": 30720
+    },
+    {
+     "ext": "xml",
+     "count": 2,
+     "bytes": 12288
+    },
+    {
+     "ext": "bin",
+     "count": 1,
+     "bytes": 4096
+    }
+   ],
+   "sample_names": [
+    "settings.xml",
+    "Profiles\\9A1C3E5F\\cfg.dat",
+    "Profiles\\9A1C3E5F\\pc_settings.bin",
+    "Profiles\\9A1C3E5F\\pc_settings.xml"
+   ],
+   "top_children": [
+    {
+     "name": "Profiles",
+     "bytes": 34816,
+     "files": 4
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gc-dcs",
+  "expected_category": "game_config",
+  "acceptable_categories": [],
+  "expected_app": "DCS World",
+  "summary": {
+   "path": "{SAVED_GAMES}\\DCS\\Config",
+   "total_bytes": 1060864,
+   "file_count": 91,
+   "dir_count": 4,
+   "max_depth": 4,
+   "newest_mtime": "2026-09-03T16:47:00Z",
+   "oldest_mtime": "2024-07-06T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "lua",
+     "count": 88,
+     "bytes": 1048576
+    },
+    {
+     "ext": "json",
+     "count": 2,
+     "bytes": 10240
+    },
+    {
+     "ext": "vault",
+     "count": 1,
+     "bytes": 2048
+    }
+   ],
+   "sample_names": [
+    "options.lua",
+    "network.vault",
+    "Input\\F-16C_50\\joystick\\Throttle - HOTAS Warthog {C1D2E3F4}.diff.lua",
+    "Input\\F-16C_50\\keyboard\\Keyboard.diff.lua",
+    "Input\\FA-18C_hornet\\joystick\\Joystick - HOTAS Warthog {A1B2C3D4}.diff.lua",
+    "View\\SnapViews.lua"
+   ],
+   "top_children": [
+    {
+     "name": "Input",
+     "bytes": 921600,
+     "files": 80
+    },
+    {
+     "name": "View",
+     "bytes": 81920,
+     "files": 3
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gc-valorant",
+  "expected_category": "game_config",
+  "acceptable_categories": [],
+  "expected_app": "VALORANT",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\VALORANT\\Saved\\Config",
+   "total_bytes": 40960,
+   "file_count": 6,
+   "dir_count": 2,
+   "max_depth": 2,
+   "newest_mtime": "2026-09-11T16:47:00Z",
+   "oldest_mtime": "2025-11-18T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "ini",
+     "count": 6,
+     "bytes": 40960
+    }
+   ],
+   "sample_names": [
+    "Windows\\GameUserSettings.ini",
+    "Windows\\RiotLocalMachine.ini",
+    "<redacted>\\Windows\\RiotUserSettings.ini",
+    "<redacted>\\Windows\\GameUserSettings.ini"
+   ],
+   "top_children": [
+    {
+     "name": "Windows",
+     "bytes": 20480,
+     "files": 2
+    },
+    {
+     "name": "<redacted>",
+     "bytes": 20480,
+     "files": 2
+    }
+   ],
+   "markers": [
+    "config_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gc-rocket-league",
+  "expected_category": "game_config",
+  "acceptable_categories": [],
+  "expected_app": "Rocket League",
+  "trap": "game in Documents",
+  "summary": {
+   "path": "{DOCUMENTS}\\My Games\\Rocket League\\TAGame\\Config",
+   "total_bytes": 92160,
+   "file_count": 6,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-08-20T16:47:00Z",
+   "oldest_mtime": "2023-09-10T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "ini",
+     "count": 6,
+     "bytes": 92160
+    }
+   ],
+   "sample_names": [
+    "TASystemSettings.ini",
+    "TAInput.ini",
+    "TAGame.ini",
+    "TAEngine.ini"
+   ],
+   "top_children": [],
+   "markers": [
+    "config_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gc-factorio-mods",
+  "expected_category": "game_config",
+  "acceptable_categories": [
+   "reinstallable"
+  ],
+  "expected_app": "Factorio",
+  "trap": "mods: downloaded archives plus the mod list",
+  "summary": {
+   "path": "{APPDATA}\\Factorio\\mods",
+   "total_bytes": 272676864,
+   "file_count": 50,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-10T16:47:00Z",
+   "oldest_mtime": "2024-10-14T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "zip",
+     "count": 48,
+     "bytes": 272629760
+    },
+    {
+     "ext": "dat",
+     "count": 1,
+     "bytes": 40960
+    },
+    {
+     "ext": "json",
+     "count": 1,
+     "bytes": 6144
+    }
+   ],
+   "sample_names": [
+    "mod-list.json",
+    "mod-settings.dat",
+    "Krastorio2_1.3.24.zip",
+    "flib_0.12.9.zip",
+    "RateCalculator_3.2.6.zip",
+    "even-distribution_2.0.2.zip"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gc-bg3-profile",
+  "expected_category": "game_config",
+  "acceptable_categories": [
+   "game_save"
+  ],
+  "expected_app": "Baldur's Gate 3",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Larian Studios\\Baldur's Gate 3\\PlayerProfiles\\Public",
+   "total_bytes": 266240,
+   "file_count": 5,
+   "dir_count": 1,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-07T16:47:00Z",
+   "oldest_mtime": "2025-08-10T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "lsf",
+     "count": 2,
+     "bytes": 204800
+    },
+    {
+     "ext": "lsx",
+     "count": 2,
+     "bytes": 40960
+    },
+    {
+     "ext": "json",
+     "count": 1,
+     "bytes": 20480
+    }
+   ],
+   "sample_names": [
+    "modsettings.lsx",
+    "profile8.lsf",
+    "inputconfig_p1.json",
+    "playerprofiles8.lsf",
+    "UILayout.lsx"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gc-fallout4",
+  "expected_category": "game_config",
+  "acceptable_categories": [],
+  "expected_app": "Fallout 4",
+  "trap": "game in Documents",
+  "summary": {
+   "path": "{DOCUMENTS}\\My Games\\Fallout4",
+   "total_bytes": 43008,
+   "file_count": 4,
+   "dir_count": 1,
+   "max_depth": 1,
+   "newest_mtime": "2026-02-26T16:47:00Z",
+   "oldest_mtime": "2023-02-22T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "ini",
+     "count": 3,
+     "bytes": 40960
+    },
+    {
+     "ext": "txt",
+     "count": 1,
+     "bytes": 2048
+    }
+   ],
+   "sample_names": [
+    "Fallout4.ini",
+    "Fallout4Prefs.ini",
+    "Fallout4Custom.ini",
+    "F4SE\\f4se.txt"
+   ],
+   "top_children": [
+    {
+     "name": "F4SE",
+     "bytes": 2048,
+     "files": 1
+    }
+   ],
+   "markers": [
+    "config_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gc-dolphin",
+  "expected_category": "game_config",
+  "acceptable_categories": [
+   "app_config"
+  ],
+  "expected_app": "Dolphin Emulator",
+  "summary": {
+   "path": "{DOCUMENTS}\\Dolphin Emulator\\Config",
+   "total_bytes": 72704,
+   "file_count": 13,
+   "dir_count": 1,
+   "max_depth": 2,
+   "newest_mtime": "2026-07-26T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "ini",
+     "count": 12,
+     "bytes": 71680
+    },
+    {
+     "ext": "txt",
+     "count": 1,
+     "bytes": 1024
+    }
+   ],
+   "sample_names": [
+    "Dolphin.ini",
+    "GCPadNew.ini",
+    "WiimoteNew.ini",
+    "GFX.ini",
+    "Hotkeys.ini",
+    "Logger.ini",
+    "Profiles\\GCPad\\XboxPad.ini"
+   ],
+   "top_children": [
+    {
+     "name": "Profiles",
+     "bytes": 8192,
+     "files": 2
+    }
+   ],
+   "markers": [
+    "config_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gc-overwatch",
+  "expected_category": "game_config",
+  "acceptable_categories": [],
+  "expected_app": "Overwatch 2",
+  "summary": {
+   "path": "{DOCUMENTS}\\Overwatch\\Settings",
+   "total_bytes": 18432,
+   "file_count": 2,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-08-31T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "bak",
+     "count": 1,
+     "bytes": 9216
+    },
+    {
+     "ext": "ini",
+     "count": 1,
+     "bytes": 9216
+    }
+   ],
+   "sample_names": [
+    "Settings_v0.ini",
+    "Settings_v0.ini.bak"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gc-cs2-cfg",
+  "expected_category": "game_config",
+  "acceptable_categories": [],
+  "expected_app": "Counter-Strike 2",
+  "summary": {
+   "path": "{STEAM}\\userdata\\{STEAM_USERID}\\730\\local\\cfg",
+   "total_bytes": 108544,
+   "file_count": 10,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-09-12T16:47:00Z",
+   "oldest_mtime": "2024-10-14T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "cfg",
+     "count": 6,
+     "bytes": 71680
+    },
+    {
+     "ext": "txt",
+     "count": 2,
+     "bytes": 6144
+    },
+    {
+     "ext": "vcfg",
+     "count": 2,
+     "bytes": 30720
+    }
+   ],
+   "sample_names": [
+    "config.cfg",
+    "autoexec.cfg",
+    "video.txt",
+    "cs2_user_keys_0_slot0.vcfg",
+    "<redacted>.vcfg",
+    "practice.cfg"
+   ],
+   "top_children": [],
+   "markers": [],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gc-hogwarts",
+  "expected_category": "game_config",
+  "acceptable_categories": [],
+  "expected_app": "Hogwarts Legacy",
+  "must_not": [
+   "game_save"
+  ],
+  "trap": "Unreal 'Saved' folder that holds only config",
+  "summary": {
+   "path": "{LOCALAPPDATA}\\Hogwarts Legacy\\Saved\\Config\\WindowsNoEditor",
+   "total_bytes": 25600,
+   "file_count": 5,
+   "dir_count": 0,
+   "max_depth": 0,
+   "newest_mtime": "2026-06-16T16:47:00Z",
+   "oldest_mtime": "2025-05-02T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "ini",
+     "count": 5,
+     "bytes": 25600
+    }
+   ],
+   "sample_names": [
+    "GameUserSettings.ini",
+    "Engine.ini",
+    "Input.ini",
+    "Scalability.ini",
+    "Game.ini"
+   ],
+   "top_children": [],
+   "markers": [
+    "config_like"
+   ],
+   "truncated": false
+  }
+ },
+ {
+  "id": "gc-witcher3-settings",
+  "expected_category": "game_config",
+  "acceptable_categories": [
+   "game_save"
+  ],
+  "expected_app": "The Witcher 3",
+  "trap": "game in Documents: settings plus saves",
+  "summary": {
+   "path": "{DOCUMENTS}\\The Witcher 3",
+   "total_bytes": 272695296,
+   "file_count": 67,
+   "dir_count": 1,
+   "max_depth": 1,
+   "newest_mtime": "2026-08-05T16:47:00Z",
+   "oldest_mtime": "2024-03-28T21:00:00Z",
+   "ext_histogram": [
+    {
+     "ext": "sav",
+     "count": 64,
+     "bytes": 272629760
+    },
+    {
+     "ext": "settings",
+     "count": 2,
+     "bytes": 61440
+    },
+    {
+     "ext": "ini",
+     "count": 1,
+     "bytes": 4096
+    }
+   ],
+   "sample_names": [
+    "user.settings",
+    "input.settings",
+    "dx12user.settings",
+    "gamesaves\\QuickSave.sav",
+    "gamesaves\\AutoSave_0a12b3c4.sav"
+   ],
+   "top_children": [
+    {
+     "name": "gamesaves",
+     "bytes": 272629760,
+     "files": 128
+    }
+   ],
+   "markers": [],
+   "truncated": false
+  }
+ }
+]
