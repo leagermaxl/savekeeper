@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-llm` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-07 |
 | Используется в | SPEC-09, SPEC-11 |
-| Последнее изменение | 2026-10-18 (T-08-04: формат усечения дат, `null` опускаются, лимит 4 000 на `summary` и порядок отбрасывания — §4.3, §5; правила `final_check` и API приватности — §4.1, §4.8); 2026-10-18 (T-08-03: порог `min_confidence_to_apply` — аргумент `apply_classification`, §4.1); 2026-10-18 (T-08-01: поля `HealthReport` в §4.1 — FR-08-08; статус in-progress); 2026-10-02 (промпт: `sample_names` — пути файлов и папок, SPEC-03 §4.4; 2026-10-01: `LlmConfig` — в `sk-core::config`; `MockClassifier` в `sk-llm` под feature `mock`) |
+| Последнее изменение | 2026-10-18 (T-08-05: `peek_digest`, формат `result`, условия компакции, TTL и API кэша — §4.7); 2026-10-18 (T-08-04: формат усечения дат, `null` опускаются, лимит 4 000 на `summary` и порядок отбрасывания — §4.3, §5; правила `final_check` и API приватности — §4.1, §4.8); 2026-10-18 (T-08-03: порог `min_confidence_to_apply` — аргумент `apply_classification`, §4.1); 2026-10-18 (T-08-01: поля `HealthReport` в §4.1 — FR-08-08; статус in-progress); 2026-10-02 (промпт: `sample_names` — пути файлов и папок, SPEC-03 §4.4; 2026-10-01: `LlmConfig` — в `sk-core::config`; `MockClassifier` в `sk-llm` под feature `mock`) |
 
 ## 1. Цель
 
@@ -326,9 +326,11 @@ Rules:
 - Файл: `savekeeper-data/cache/llm-cache.jsonl`. Решение по вопросу SPEC-01 §9: **JSONL** (без C-зависимостей, достаточно для ≤ 10⁴ записей).
 - Ключ: `blake3( canonical_json(summary_for_prompt) + "\n" + peek_digest + "\n" + provider + ":" + model + "\n" + PROMPT_VERSION )`, hex.
   `summary_for_prompt` — ровно то, что отправляется (после redact, с датами, усечёнными до дня).
-- Строка: `{"key": "...", "created_at": "...", "provider": "...", "model": "...", "prompt_version": "v1", "result": { /* Classification без id */ }}`.
-- Загрузка при старте в `HashMap` (последняя запись по ключу побеждает). Дозапись append-only с `flush` после каждого батча. Компакция при > 20 000 строк или при > 30% устаревших (дубли, другая версия промпта): переписывание во временный файл и атомарный `rename`.
-- TTL: 180 дней.
+  `peek_digest` — blake3 hex от `canonical_json` массива `peek` в отправляемом виде (`[{file, head}]`), пустая строка без peek. `canonical_json` — как в SPEC-02 §2.7 (компактно, ключи объектов отсортированы рекурсивно). `id` и `hint` в ключ не входят (другой `hint` даёт попадание в кэш — учесть в A/B по `hint`, §9). API: `sk_llm::cache_key(&ClassifyItem, provider: &str, model: &str) -> String` (64 символа hex).
+- Строка: `{"key": "...", "created_at": "...", "provider": "...", "model": "...", "prompt_version": "v1", "result": { /* Classification без id и from_cache */ }}`. `get` подставляет запрошенный id и `from_cache = true`.
+- Загрузка при старте в `HashMap` (последняя запись по ключу побеждает). Дозапись append-only с `flush` после каждого батча; при ошибке `flush` строки остаются в буфере и пишутся следующим `flush` (дубли безвредны). Устаревшие строки: перекрытые более поздней строкой с тем же ключом, другой `prompt_version`, старше TTL, битые. Компакция проверяется при `open` и после каждого `flush` и выполняется, только если есть хотя бы одна устаревшая строка и строк > 20 000 или устаревших > 30%: запись в `llm-cache.jsonl.tmp` рядом (оставшийся после сбоя перезаписывается), `sync_all`, атомарный `rename`; при ошибке компакции старый файл не меняется; ошибка автоматической компакции в `open`/`flush` — только warn в лог, загруженный кэш остаётся рабочим (явный `compact()` возвращает ошибку). Вытеснение живых записей сверх 20 000 не делается.
+- API: `LlmCache::{file_path(data_dir), open(path), get(&self, key, id) -> Option<Classification>, insert(&mut self, key, &ClassifierInfo, &Classification), flush, compact, clear, len, is_empty}`, ошибки — `std::io::Error` (перевод в issue — `ClassifyRunner`, T-08-10). Отсутствующий файл — пустой кэш. Константы `CACHE_FILE`, `CACHE_TTL_DAYS = 180`, `COMPACT_MAX_LINES = 20_000`, `COMPACT_STALE_RATIO = 0.30`.
+- TTL: 180 дней, проверяется при загрузке (просроченные строки — устаревшие) и в `get`.
 - Битые строки пропускаются с warn в лог.
 - Кнопка «Очистить кэш LLM» в UI удаляет файл.
 
@@ -424,7 +426,7 @@ Rules:
 - [x] **T-08-02** — Промпт `classify_v1.txt`, `PROMPT_VERSION`, JSON-схема §4.5 как константа + тест соответствия `Category`. *Зависит:* T-08-01.
 - [x] **T-08-03** — Валидация и нормализация §4.6 + `apply_classification`. *Зависит:* T-08-01.
 - [x] **T-08-04** — Приватность: `final_check`, построение `summary_for_prompt` (усечение дат, лимиты длины), `RequestPreview`. *Зависит:* T-02-04. *Готово, когда:* тесты §6.1.
-- [ ] **T-08-05** — Кэш JSONL §4.7. *Зависит:* T-08-04.
+- [x] **T-08-05** — Кэш JSONL §4.7. *Зависит:* T-08-04.
 - [ ] **T-08-06** — Провайдер Ollama + health + авто-детект. *Зависит:* T-08-02, T-08-03. *Готово, когда:* wiremock-тесты.
 - [ ] **T-08-07** — Провайдер OpenAI-compat + fallback на `json_object`. *Зависит:* T-08-06.
 - [ ] **T-08-08** — Провайдер Anthropic: тело §4.2.3, structured outputs, prompt caching, обработка `stop_reason`, 429/529/5xx, health через `/v1/models/{model}`, `UsageStats`, оценка стоимости. *Зависит:* T-08-02, T-08-03. *Готово, когда:* wiremock-тесты для всех кодов.

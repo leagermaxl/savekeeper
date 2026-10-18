@@ -5,6 +5,7 @@
 //! (principle P4): with `llm.mode = off` it makes no network requests.
 
 mod apply;
+mod cache;
 mod classifier;
 mod error;
 #[cfg(any(test, feature = "mock"))]
@@ -16,6 +17,9 @@ mod types;
 pub mod validate;
 
 pub use apply::{apply_classification, LLM_EVIDENCE_KEY};
+pub use cache::{
+    cache_key, LlmCache, CACHE_FILE, CACHE_TTL_DAYS, COMPACT_MAX_LINES, COMPACT_STALE_RATIO,
+};
 pub use classifier::Classifier;
 pub use error::LlmError;
 pub use privacy::{final_check, PrivacyViolation};

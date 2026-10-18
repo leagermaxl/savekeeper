@@ -18,6 +18,8 @@ mock = ["dep:tokio"]
 async-trait.workspace = true
 # Validating suggested globs (SPEC-08 §4.6).
 globset.workspace = true
+# Cache keys of `llm-cache.jsonl` (SPEC-08 §4.7).
+blake3.workspace = true
 serde.workspace = true
 # Parsing the model response (SPEC-08 §4.6).
 serde_json.workspace = true
@@ -26,10 +28,14 @@ sk-core.workspace = true
 thiserror.workspace = true
 # Truncating summary timestamps to the day (SPEC-08 §4.3, §4.7).
 time.workspace = true
+# Warnings about broken cache lines (SPEC-08 §4.7).
+tracing.workspace = true
 # `MockClassifier`: simulated delay racing the cancellation token.
 tokio = { workspace = true, features = ["macros", "time"], optional = true }
 
 [dev-dependencies]
+# Cache files in temporary folders under `target/tmp` (SPEC-08 §6.1).
+tempfile.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "time"] }
 
 [lints]

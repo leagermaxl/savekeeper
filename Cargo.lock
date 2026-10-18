@@ -3051,13 +3051,16 @@ name = "sk-llm"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "blake3",
  "globset",
  "serde",
  "serde_json",
  "sk-core",
+ "tempfile",
  "thiserror",
  "time",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
