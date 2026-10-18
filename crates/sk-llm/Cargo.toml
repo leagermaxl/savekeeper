@@ -20,6 +20,8 @@ async-trait.workspace = true
 globset.workspace = true
 # Cache keys of `llm-cache.jsonl` (SPEC-08 §4.7).
 blake3.workspace = true
+# API keys (SPEC-08 §4.10): redacted `Debug`, exposed only when a request is built.
+secrecy.workspace = true
 serde.workspace = true
 # HTTP of the providers (SPEC-08 §4.2): rustls with the `ring` provider, no OpenSSL.
 reqwest.workspace = true
@@ -35,6 +37,10 @@ time.workspace = true
 tracing.workspace = true
 # `MockClassifier`: simulated delay racing the cancellation token.
 tokio = { workspace = true, features = ["macros", "time"], optional = true }
+
+[target.'cfg(windows)'.dependencies]
+# `CredentialManagerStore` (SPEC-08 §4.10): Windows Credential Manager only.
+keyring = { workspace = true, features = ["windows-native"] }
 
 [dev-dependencies]
 # Snapshot of provider request bodies (SPEC-08 §6.1).

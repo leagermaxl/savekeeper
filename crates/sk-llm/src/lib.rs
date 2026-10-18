@@ -18,6 +18,7 @@ mod openai_compat;
 pub mod privacy;
 mod prompt;
 mod request;
+mod secret;
 mod types;
 mod usage;
 pub mod validate;
@@ -46,12 +47,18 @@ pub use request::{
     item_for_prompt, summary_for_prompt, user_message, RequestPreview, MAX_NAME_CHARS,
     MAX_SUMMARY_CHARS, PREVIEW_SAMPLE_ITEMS,
 };
+pub use secret::{
+    CredentialManagerStore, EnvStore, FallbackStore, SecretError, SecretStore, API_KEY_NAME,
+    CREDENTIAL_SERVICE, CREDENTIAL_TARGET_PREFIX,
+};
 pub use types::{Classification, ClassifierInfo, ClassifyItem, ContentPeek, HealthReport};
 pub use usage::{
     CostEstimate, ModelPricing, UsageStats, EST_INPUT_TOKENS_PER_ITEM, EST_OUTPUT_TOKENS_PER_ITEM,
 };
 pub use validate::{parse_response, ParsedResponse};
 
+/// Secret values of [`SecretStore`] (SPEC-08 §4.10), re-exported from `secrecy`.
+pub use secrecy::{ExposeSecret, SecretString};
 /// The `llm` config section (SPEC-08 §4.4); defined in `sk-core::config`.
 pub use sk_core::config::{
     ApiKeySource, CloudLlmConfig, CloudLlmKind, LlmConfig, LocalLlmConfig, LocalLlmKind,

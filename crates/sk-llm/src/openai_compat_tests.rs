@@ -130,7 +130,7 @@ fn api_key_is_not_shown_by_debug() {
     let c = classifier(&config()).with_api_key("sk-very-secret-key-1234567890");
     let text = format!("{c:?}");
     assert!(!text.contains("very-secret"), "{text}");
-    assert!(text.contains("<redacted>"));
+    assert!(text.contains("REDACTED"), "{text}");
     assert!(classifier(&config()).with_api_key("  ").api_key.is_none());
 }
 

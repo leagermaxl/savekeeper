@@ -1,12 +1,12 @@
 //! Anthropic provider, Messages API (SPEC-08 §4.2.3).
 
-use std::fmt;
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::{Duration, Instant};
 
 use async_trait::async_trait;
 use reqwest::header::{HeaderValue, CONTENT_TYPE};
 use reqwest::{RequestBuilder, StatusCode, Url};
+use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use sk_core::config::CloudLlmConfig;
@@ -34,16 +34,6 @@ pub const ANTHROPIC_MAX_TOKENS: u32 = 4096;
 /// Header carrying the API key.
 const API_KEY_HEADER: &str = "x-api-key";
 
-/// The API key, never shown by `Debug` (NFR-08-04).
-#[derive(Clone)]
-struct ApiKey(String);
-
-impl fmt::Debug for ApiKey {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("ApiKey(<redacted>)")
-    }
-}
-
 /// Classifier backed by the Anthropic Messages API: `POST /v1/messages`
 /// with structured outputs (`output_config.format`) and a cached system prompt.
 ///
@@ -54,7 +44,8 @@ pub struct AnthropicClassifier {
     client: reqwest::Client,
     endpoint: Url,
     model: String,
-    api_key: ApiKey,
+    /// Never shown by `Debug` (NFR-08-04); exposed only to build the header.
+    api_key: SecretString,
     timeout: Duration,
     max_batch: usize,
     max_concurrency: usize,
@@ -69,17 +60,19 @@ impl AnthropicClassifier {
     /// checked. Talks to [`ANTHROPIC_ENDPOINT`]. Makes no request. A blank key
     /// or one that cannot be sent in a header is [`LlmError::Auth`].
     pub fn new(cfg: &CloudLlmConfig, api_key: impl Into<String>) -> Result<Self, LlmError> {
-        let key = api_key.into().trim().to_owned();
-        if key.is_empty() || HeaderValue::from_str(&key).is_err() {
+        let raw = SecretString::from(api_key.into());
+        let key = raw.expose_secret().trim();
+        if key.is_empty() || HeaderValue::from_str(key).is_err() {
             return Err(LlmError::Auth);
         }
+        let key = SecretString::from(key);
         let endpoint = http::parse_endpoint(ANTHROPIC_ENDPOINT)?;
         let client = http::client(&endpoint)?;
         Ok(Self {
             client,
             endpoint,
             model: cfg.model.trim().to_owned(),
-            api_key: ApiKey(key),
+            api_key: key,
             timeout: Duration::from_secs(u64::from(cfg.timeout_s.max(1))),
             max_batch: usize_of(cfg.max_batch),
             max_concurrency: usize_of(cfg.max_concurrency),
@@ -120,7 +113,7 @@ impl AnthropicClassifier {
     /// Adds the API key (header marked sensitive) and `anthropic-version`.
     fn authorize(&self, request: RequestBuilder) -> RequestBuilder {
         let request = request.header("anthropic-version", ANTHROPIC_VERSION);
-        match HeaderValue::from_str(&self.api_key.0) {
+        match HeaderValue::from_str(self.api_key.expose_secret()) {
             Ok(mut value) => {
                 value.set_sensitive(true);
                 request.header(API_KEY_HEADER, value)

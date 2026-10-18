@@ -1,6 +1,5 @@
 //! OpenAI-compatible provider: llama.cpp `llama-server`, LM Studio, vLLM (SPEC-08 §4.2.2).
 
-use std::fmt;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -8,6 +7,7 @@ use std::time::{Duration, Instant};
 use async_trait::async_trait;
 use reqwest::header::{HeaderValue, AUTHORIZATION, CONTENT_TYPE};
 use reqwest::{RequestBuilder, StatusCode, Url};
+use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use sk_core::config::LocalLlmConfig;
@@ -30,16 +30,6 @@ pub const JSON_SCHEMA_NAME: &str = "classifications";
 pub const FALLBACK_SCHEMA_INTRO: &str =
     "\n\nOutput a single JSON object that matches this JSON Schema:\n";
 
-/// The API key, never shown by `Debug` (NFR-08-04).
-#[derive(Clone)]
-struct ApiKey(String);
-
-impl fmt::Debug for ApiKey {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("ApiKey(<redacted>)")
-    }
-}
-
 /// Classifier backed by an OpenAI-compatible server:
 /// `POST {endpoint}/v1/chat/completions` with `response_format: json_schema`.
 ///
@@ -52,7 +42,8 @@ pub struct OpenAiCompatClassifier {
     client: reqwest::Client,
     endpoint: Url,
     model: String,
-    api_key: Option<ApiKey>,
+    /// Never shown by `Debug` (NFR-08-04); exposed only to build the header.
+    api_key: Option<SecretString>,
     timeout: Duration,
     max_batch: usize,
     max_concurrency: usize,
@@ -95,8 +86,9 @@ impl OpenAiCompatClassifier {
     /// §4.2.2). A blank key means no header.
     #[must_use]
     pub fn with_api_key(mut self, key: impl Into<String>) -> Self {
-        let key = key.into().trim().to_owned();
-        self.api_key = (!key.is_empty()).then_some(ApiKey(key));
+        let raw = SecretString::from(key.into());
+        let key = raw.expose_secret().trim();
+        self.api_key = (!key.is_empty()).then(|| SecretString::from(key));
         self
     }
 
@@ -139,10 +131,11 @@ impl OpenAiCompatClassifier {
 
     /// Adds `Authorization: Bearer` when a key is set; the header is marked sensitive.
     fn authorize(&self, request: RequestBuilder) -> RequestBuilder {
-        let Some(ApiKey(key)) = &self.api_key else {
+        let Some(key) = &self.api_key else {
             return request;
         };
-        match HeaderValue::from_str(&format!("Bearer {key}")) {
+        let bearer = SecretString::from(format!("Bearer {}", key.expose_secret()));
+        match HeaderValue::from_str(bearer.expose_secret()) {
             Ok(mut value) => {
                 value.set_sensitive(true);
                 request.header(AUTHORIZATION, value)

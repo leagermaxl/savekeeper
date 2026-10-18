@@ -162,7 +162,7 @@ fn api_key_is_required_and_not_shown_by_debug() {
     let c = classifier("claude-haiku-4-5");
     let text = format!("{c:?}");
     assert!(!text.contains("test-key"), "{text}");
-    assert!(text.contains("<redacted>"));
+    assert!(text.contains("REDACTED"), "{text}");
     let cfg = config("claude-haiku-4-5");
     assert!(matches!(
         AnthropicClassifier::new(&cfg, "  "),
