@@ -229,3 +229,36 @@ fn usable_as_trait_object() {
     let classifier: Arc<dyn Classifier> = Arc::new(MockClassifier::default());
     assert_eq!(classifier.info().provider, "mock");
 }
+
+#[tokio::test]
+async fn truncation_refusal_and_usage() {
+    let per_call = crate::UsageStats {
+        requests: 1,
+        input_tokens: 10,
+        ..crate::UsageStats::default()
+    };
+    let mock = obs_mock()
+        .with_truncate_above(1)
+        .with_usage_per_call(per_call);
+    let cancel = CancellationToken::new();
+    let two = [
+        item("a", "{LOCALAPPDATA}/SomeCache"),
+        item("b", "{APPDATA}/obs-studio"),
+    ];
+    assert_eq!(mock.classify(&two, &cancel).await, Err(LlmError::MaxTokens));
+    assert_eq!(
+        mock.classify(&two[..1], &cancel).await.map(|v| v.len()),
+        Ok(1)
+    );
+    mock.fail_next(MockFailure::Refusal);
+    mock.fail_next(MockFailure::MaxTokens);
+    assert_eq!(
+        mock.classify(&two[..1], &cancel).await,
+        Err(LlmError::Refusal)
+    );
+    assert_eq!(
+        mock.classify(&two[..1], &cancel).await,
+        Err(LlmError::MaxTokens)
+    );
+    assert_eq!((mock.usage().requests, mock.usage().input_tokens), (4, 40));
+}

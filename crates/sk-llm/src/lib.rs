@@ -18,6 +18,7 @@ mod openai_compat;
 pub mod privacy;
 mod prompt;
 mod request;
+mod runner;
 mod secret;
 mod types;
 mod usage;
@@ -46,6 +47,11 @@ pub use prompt::{PROMPT_VERSION, RESPONSE_SCHEMA, SYSTEM_PROMPT};
 pub use request::{
     item_for_prompt, summary_for_prompt, user_message, RequestPreview, MAX_NAME_CHARS,
     MAX_SUMMARY_CHARS, PREVIEW_SAMPLE_ITEMS,
+};
+pub use runner::{
+    no_api_key_issue, selection_priority, ClassifyRunner, RunOutput, BACKOFF_BASE, ISSUE_SOURCE,
+    MAX_BATCH_INPUT_CHARS, MAX_PRIORITY_BYTES, MAX_PROVIDER_FAILURES, MAX_RETRIES, MAX_RETRY_AFTER,
+    MIN_PHASE_BUDGET, RECENCY_HALF_LIFE_DAYS,
 };
 pub use secret::{
     CredentialManagerStore, EnvStore, FallbackStore, SecretError, SecretStore, API_KEY_NAME,

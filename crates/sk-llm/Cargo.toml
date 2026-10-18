@@ -11,11 +11,13 @@ publish.workspace = true
 [features]
 # `MockClassifier` for tests of other crates (SPEC-08 §4.2.4):
 # `sk-llm = { workspace = true, features = ["mock"] }` in `[dev-dependencies]`.
-mock = ["dep:tokio"]
+mock = []
 
 [dependencies]
 # `Classifier` is an async trait object (SPEC-08 §4.1).
 async-trait.workspace = true
+# `ClassifyRunner`: batches in parallel via `buffer_unordered` (SPEC-08 §4.12).
+futures.workspace = true
 # Validating suggested globs (SPEC-08 §4.6).
 globset.workspace = true
 # Cache keys of `llm-cache.jsonl` (SPEC-08 §4.7).
@@ -35,8 +37,9 @@ thiserror.workspace = true
 time.workspace = true
 # Warnings about broken cache lines (SPEC-08 §4.7).
 tracing.workspace = true
+# `ClassifyRunner` backoff, phase budget and cancellation (SPEC-08 §4.12);
 # `MockClassifier`: simulated delay racing the cancellation token.
-tokio = { workspace = true, features = ["macros", "time"], optional = true }
+tokio = { workspace = true, features = ["macros", "time"] }
 
 [target.'cfg(windows)'.dependencies]
 # `CredentialManagerStore` (SPEC-08 §4.10): Windows Credential Manager only.
@@ -47,7 +50,8 @@ keyring = { workspace = true, features = ["windows-native"] }
 insta.workspace = true
 # Cache files in temporary folders under `target/tmp` (SPEC-08 §6.1).
 tempfile.workspace = true
-tokio = { workspace = true, features = ["macros", "rt", "time"] }
+# `test-util`: paused time for the runner's backoff tests; `sync`: the event channel.
+tokio = { workspace = true, features = ["macros", "rt", "sync", "time", "test-util"] }
 # Local mock HTTP server emulating the providers (SPEC-08 §6.2); no real network.
 wiremock.workspace = true
 

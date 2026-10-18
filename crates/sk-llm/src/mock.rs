@@ -12,7 +12,9 @@ use async_trait::async_trait;
 use sk_core::template::PathTemplate;
 use sk_core::CancellationToken;
 
-use crate::{Classification, Classifier, ClassifierInfo, ClassifyItem, HealthReport, LlmError};
+use crate::{
+    Classification, Classifier, ClassifierInfo, ClassifyItem, HealthReport, LlmError, UsageStats,
+};
 
 /// A provider failure the mock returns instead of answering.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -31,6 +33,10 @@ pub enum MockFailure {
     ModelNotFound,
     /// The request timed out.
     Timeout,
+    /// The answer was cut off at the output limit (`stop_reason: max_tokens`).
+    MaxTokens,
+    /// The model declined to answer (`stop_reason: refusal`).
+    Refusal,
 }
 
 impl MockFailure {
@@ -43,6 +49,8 @@ impl MockFailure {
             Self::Auth => LlmError::Auth,
             Self::ModelNotFound => LlmError::ModelNotFound(model.to_owned()),
             Self::Timeout => LlmError::Timeout,
+            Self::MaxTokens => LlmError::MaxTokens,
+            Self::Refusal => LlmError::Refusal,
         }
     }
 }
@@ -54,7 +62,11 @@ impl MockFailure {
 ///   result, as a model that skipped an id would.
 /// - Failures queued with [`fail_next`](Self::fail_next) are returned by the
 ///   next `classify` calls, one per call, in order.
-/// - A batch larger than `max_batch` is a [`LlmError::BadResponse`].
+/// - A batch larger than `max_batch` is a [`LlmError::BadResponse`]; a batch
+///   larger than [`with_truncate_above`](Self::with_truncate_above) is a
+///   [`LlmError::MaxTokens`].
+/// - Every call that reached the provider adds
+///   [`with_usage_per_call`](Self::with_usage_per_call) to [`Classifier::usage`].
 /// - Cancellation before or during the simulated delay is [`LlmError::Cancelled`].
 #[derive(Debug)]
 pub struct MockClassifier {
@@ -65,6 +77,9 @@ pub struct MockClassifier {
     max_concurrency: usize,
     delay: Duration,
     health_failure: Option<MockFailure>,
+    truncate_above: Option<usize>,
+    usage_per_call: UsageStats,
+    usage: Mutex<UsageStats>,
     failures: Mutex<VecDeque<MockFailure>>,
     calls: Mutex<Vec<Vec<String>>>,
 }
@@ -86,6 +101,9 @@ impl MockClassifier {
             max_concurrency: 1,
             delay: Duration::ZERO,
             health_failure: None,
+            truncate_above: None,
+            usage_per_call: UsageStats::default(),
+            usage: Mutex::new(UsageStats::default()),
             failures: Mutex::new(VecDeque::new()),
             calls: Mutex::new(Vec::new()),
         }
@@ -137,6 +155,21 @@ impl MockClassifier {
     #[must_use]
     pub fn with_health_failure(mut self, failure: MockFailure) -> Self {
         self.health_failure = Some(failure);
+        self
+    }
+
+    /// Answer [`LlmError::MaxTokens`] to batches of more than `items` items,
+    /// as a model whose output limit fits only `items` answers.
+    #[must_use]
+    pub fn with_truncate_above(mut self, items: usize) -> Self {
+        self.truncate_above = Some(items);
+        self
+    }
+
+    /// Usage added by every `classify` call that reached the provider.
+    #[must_use]
+    pub fn with_usage_per_call(mut self, usage: UsageStats) -> Self {
+        self.usage_per_call = usage;
         self
     }
 
@@ -198,6 +231,7 @@ impl Classifier for MockClassifier {
             return Err(LlmError::Cancelled);
         }
         lock(&self.calls).push(items.iter().map(|item| item.id.clone()).collect());
+        lock(&self.usage).add(&self.usage_per_call);
         let failure = lock(&self.failures).pop_front();
         self.wait(cancel).await?;
         if let Some(failure) = failure {
@@ -209,6 +243,9 @@ impl Classifier for MockClassifier {
                 items.len(),
                 self.max_batch
             )));
+        }
+        if self.truncate_above.is_some_and(|max| items.len() > max) {
+            return Err(LlmError::MaxTokens);
         }
         Ok(items
             .iter()
@@ -222,6 +259,10 @@ impl Classifier for MockClassifier {
                     })
             })
             .collect())
+    }
+
+    fn usage(&self) -> UsageStats {
+        *lock(&self.usage)
     }
 }
 
