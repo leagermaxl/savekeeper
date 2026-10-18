@@ -3049,6 +3049,13 @@ dependencies = [
 [[package]]
 name = "sk-llm"
 version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "serde",
+ "sk-core",
+ "thiserror",
+ "tokio",
+]
 
 [[package]]
 name = "sk-restore"

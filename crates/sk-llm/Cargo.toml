@@ -8,5 +8,23 @@ license.workspace = true
 authors.workspace = true
 publish.workspace = true
 
+[features]
+# `MockClassifier` for tests of other crates (SPEC-08 §4.2.4):
+# `sk-llm = { workspace = true, features = ["mock"] }` in `[dev-dependencies]`.
+mock = ["dep:tokio"]
+
+[dependencies]
+# `Classifier` is an async trait object (SPEC-08 §4.1).
+async-trait.workspace = true
+serde.workspace = true
+sk-core.workspace = true
+# `LlmError` (SPEC-08 §4.1).
+thiserror.workspace = true
+# `MockClassifier`: simulated delay racing the cancellation token.
+tokio = { workspace = true, features = ["macros", "time"], optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt", "time"] }
+
 [lints]
 workspace = true
