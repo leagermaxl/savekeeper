@@ -7,6 +7,7 @@
 //! [`merge_by_id`] merges findings with the same id (§4.3), [`merge_nested`]
 //! nests findings into enclosing `FileSet`s (§4.4). [`score`] computes the
 //! importance score with its components (§4.5).
+//! [`default_selection`] applies the default selection rules (§4.7).
 
 mod authority;
 mod config;
@@ -16,15 +17,20 @@ mod nested;
 mod order;
 mod sanitize;
 mod score;
+mod select;
 
 pub use authority::{authority, evidence_authority, source_priority, Authority};
 pub use config::{validate_config, BAD_CONFIG_KEY, ISSUE_SOURCE};
-pub use issues::{BAD_NUMBER_KEY, CATEGORY_CONFLICT_KEY, NO_EVIDENCE_KEY};
+pub use issues::{BAD_NUMBER_KEY, CATEGORY_CONFLICT_KEY, NO_EVIDENCE_KEY, SENSITIVE_SELECTED_KEY};
 pub use merge::{merge_by_id, CONFLICT_TAG};
 pub use nested::{merge_nested, NESTED_TAG, VIA_ARG};
 pub use score::{
     score, ADJUSTMENTS, BASE, CONFIDENCE, IMPORTANCE_ARG, IRREPLACEABILITY, RECENCY, SIZE_PENALTY,
     USER_AUTHORED, VALUE,
+};
+pub use select::{
+    default_selection, SelectionDecision, ALTERNATIVE_TAG, BELOW_THRESHOLD_TAG, COUNT_ARG,
+    NEEDS_ELEVATION_TAG, RESTORABLE_TAG, TOO_LARGE_DEFAULT_TAG,
 };
 pub use sk_core::config::{default_weights, CategoryWeights, ScoringConfig};
 
@@ -44,3 +50,5 @@ mod sanitize_tests;
 mod score_table_tests;
 #[cfg(test)]
 mod score_tests;
+#[cfg(test)]
+mod select_tests;

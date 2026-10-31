@@ -18,6 +18,10 @@ pub const BAD_NUMBER_KEY: &str = "scoring.bad_number";
 /// i18n key of a finding without evidence, a P3 violation (SPEC-09 §5).
 pub const NO_EVIDENCE_KEY: &str = "scoring.no_evidence";
 
+/// i18n key of the warning that `Credentials` or `Sensitivity::High`
+/// findings are selected by default; one per scan (SPEC-09 §4.7, FR-09-07).
+pub const SENSITIVE_SELECTED_KEY: &str = "scoring.sensitive_selected";
+
 /// A `Warning` issue from the `scoring` phase.
 pub(crate) fn warning(key: &str, path: Option<String>, args: &[(&str, String)]) -> ScanIssue {
     ScanIssue {
