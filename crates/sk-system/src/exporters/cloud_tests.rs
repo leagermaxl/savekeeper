@@ -20,7 +20,7 @@ use super::powershell_modules::{self, PowershellModulesExporter};
 use super::test_util::{files_under, reg_runner, run_export, temp_dir, FakeSourceFs};
 use crate::cmd::CmdRunner;
 use crate::error::ExportError;
-use crate::exporter::{Availability, ExportResult, RestoreHint, SystemExporter};
+use crate::exporter::{Availability, ExportResult, RestoreHint};
 use crate::reg_export::RegExport;
 
 /// Writes `files` (relative path with `/`, content) under `dir`; returns their paths.
@@ -296,6 +296,7 @@ mod win {
     use std::process::Command;
 
     use super::*;
+    use crate::exporter::SystemExporter;
 
     const FILE_ATTRIBUTE_OFFLINE: u32 = 0x1000;
 

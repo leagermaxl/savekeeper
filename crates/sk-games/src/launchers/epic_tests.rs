@@ -28,7 +28,7 @@ fn fixture_item() {
         PathBuf::from(r"D:\Epic Games\HollowKnight")
     } else {
         // The fixture path is not absolute here: use a Unix one.
-        let text = String::from_utf8_lossy(&bytes).replace(r"D:\\Epic Games", "/games");
+        let text = String::from_utf8_lossy(&bytes).replace(r"D:\\Epic Games\\", "/games/");
         bytes = text.into_bytes();
         PathBuf::from("/games/HollowKnight")
     };
