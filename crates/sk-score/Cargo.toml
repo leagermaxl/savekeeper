@@ -16,3 +16,8 @@ workspace = true
 sk-core.workspace = true
 # Include/exclude glob checks of `merge_nested` (§4.4), matched like `sk-scan`.
 globset.workspace = true
+# `OffsetDateTime` of `score()` (§4.1): `now` comes from the caller.
+time.workspace = true
+
+[dev-dependencies]
+time = { workspace = true, features = ["macros"] }

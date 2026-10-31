@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-score` |
 | Зависит от | SPEC-01, SPEC-02, SPEC-04, SPEC-05, SPEC-06, SPEC-07, SPEC-08 |
 | Используется в | SPEC-10, SPEC-11 |
-| Последнее изменение | 2026-10-31 (T-09-04: §4.4 — покрытие include для каталога по выборке сканера, а не по имени каталога; в ветке FR-09-03 exclude добавляется всем FileSet-предкам B); 2026-10-17 (§4.7 правило 1a и FR-09-08: тег `alternative`; §4.9: находки `alternative` не входят в `Totals` — SPEC-07 T-07-10); 2026-10-01 (`ScoringConfig` — в `sk-core::config`) |
+| Последнее изменение | 2026-10-31 (T-09-05: §4.5 — C для категорий от LLM и нейтральная C=0.5 для `Unknown` без LLM, определение «категория получена от LLM», importance из `Evidence.importance`; §6.1 — строки 13–14; §9 п.4 закрыт); 2026-10-31 (T-09-04: §4.4 — покрытие include для каталога по выборке сканера, а не по имени каталога; в ветке FR-09-03 exclude добавляется всем FileSet-предкам B); 2026-10-17 (§4.7 правило 1a и FR-09-08: тег `alternative`; §4.9: находки `alternative` не входят в `Totals` — SPEC-07 T-07-10); 2026-10-01 (`ScoringConfig` — в `sk-core::config`) |
 
 ## 1. Цель
 
@@ -159,9 +159,9 @@ for each finding B (по возрастанию глубины):
 | Компонент | Ключ в `components` | Определение |
 |---|---|---|
 | I | `irreplaceability` | `category_weights[cat].irreplaceability` (§4.6) |
-| A | `user_authored` | Первое применимое: `tags ∋ git-unsaved ∨ git-no-remote` → 1.0; есть `Evidence::Llm` и категория получена от LLM → `message_args["importance"]` (SPEC-08); иначе `category_weights[cat].authored` |
+| A | `user_authored` | Первое применимое: `tags ∋ git-unsaved ∨ git-no-remote` → 1.0; категория получена от LLM (см. ниже) → importance этого Llm-evidence: `Evidence.importance` (SPEC-02 §2.5), иначе число из `message_args["importance"]`; иначе `category_weights[cat].authored` |
 | R | `recency` | `d` = дней с `stats.newest_mtime` до `now`. `d ≤ 30` → 1.0; `d > 30` → `0.3 + 0.7·e^{−(d−30)/365}`. Нет данных → 0.5 |
-| C | `confidence` | confidence самого авторитетного evidence (§4.2) |
+| C | `confidence` | Первое применимое: категория получена от LLM → confidence этого Llm-evidence; категория `Unknown` не от LLM → 0.5 (нейтрально); иначе confidence самого авторитетного evidence (§4.2) |
 | S | `size_penalty` | `b = stats.total_bytes`; `b ≤ size_free_bytes` → 0; иначе `min(cap, 0.1·log2(b / size_free_bytes))`; для категорий с `size_tolerant = true` умножается на 0.5. Нет stats → 0 |
 | Adj | `adjustments` | `+installed_bonus`, если `app.installed == Some(true)`; `−uninstalled_penalty`, если `Some(false)` и категория ∈ {AppConfig, AppData, GameConfig}; `−cloud_synced_penalty`, если тег `cloud-synced` |
 
@@ -170,6 +170,12 @@ C_eff  = 0.5 + 0.5·C
 base   = 0.55·I + 0.25·A + 0.20·R
 value  = clamp01( C_eff · base − S + Adj )
 ```
+
+**Категория получена от LLM** ⇔ у находки есть собственное (без `message_args["via"]`, §4.4) `Evidence::Llm` с importance и нет evidence с приоритетом выше `Heuristic` (§4.2). Если таких Llm-evidence несколько, берётся с наибольшей confidence. Сюда входит и случай, когда ответ LLM не применён (confidence ниже `min_confidence_to_apply`, SPEC-08) и находка осталась `Unknown`.
+
+Почему не просто §4.2 для C: в LLM уходят только находки `Unknown` (SPEC-08), и у них остаётся evidence эвристики с низкой confidence (часто 0). По §4.2 оно старше Llm, и C отражало бы заменённый вердикт эвристики. Низкая confidence эвристики у `Unknown` означает «категория неизвестна», а не «неважно», поэтому без LLM C нейтральна (0.5): иначе правило 6 §4.7 («лучше лишнее») было бы недостижимо.
+
+Некорректная importance (NaN, ∞, нечисловая строка) → 0 и issue `scoring.bad_number` (§5); значения вне `[0, 1]` обрезаются без issue.
 
 `Score.components` содержит `irreplaceability, user_authored, recency, confidence, size_penalty,
 adjustments, base, value`. Все значения округляются до 3 знаков (`(x·1000).round()/1000`).
@@ -283,6 +289,8 @@ pub struct CategoryTotals { pub count: u32, pub bytes: u64, pub selected_count: 
 | 10 | Documents в OneDrive | UserFiles, Rule C=1.0, 5 ГБ, −1 д, `cloud-synced` | ≈ 0.54 | false / `too_large_default` |
 | 11 | Чистый git-репозиторий | Reinstallable, Heuristic C=0.85, tag `git-clean` | ≈ 0.12 | false / `restorable` |
 | 12 | Экспорт драйверов | SystemSettings, System C=1.0, `requires_elevation` | ≈ 0.53 | false / `needs_elevation` |
+| 13 | Неизвестная папка (вид из конвейера) | Unknown, Heuristic C=0 + Llm C=0.3, importance 0.3, 80 МБ, −20 д | ≈ 0.30 (0.304) | true (как #7: C берётся от LLM, точное значение без допуска) |
+| 14 | Неизвестная папка без LLM | Unknown, Heuristic C=0, 80 МБ, −20 д | ≈ 0.35 (0.75·0.4675) | true |
 
 Если реализация даёт расхождение больше допуска, сначала проверяется формула. Если ошибка
 в таблице, исправляется спека, а не допуск.
@@ -310,7 +318,7 @@ pub struct CategoryTotals { pub count: u32, pub bytes: u64, pub selected_count: 
 - [x] **T-09-02** — `authority()` и приоритет источников §4.2. *Зависит:* T-09-01.
 - [x] **T-09-03** — `merge_by_id` §4.3 (включая конфликт категорий и issue). *Зависит:* T-09-02. *Готово, когда:* тесты §6.2 (id-часть).
 - [x] **T-09-04** — `merge_nested` §4.4 на `PathSet`/сортировке, с glob-проверкой include/exclude. *Зависит:* T-09-03, T-02-02. *Готово, когда:* тесты §6.2 (вложенность).
-- [ ] **T-09-05** — `score()` §4.5 с компонентами и округлением. *Зависит:* T-09-01. *Готово, когда:* таблица §6.1 (value) зелёная.
+- [x] **T-09-05** — `score()` §4.5 с компонентами и округлением. *Зависит:* T-09-01. *Готово, когда:* таблица §6.1 (value) зелёная.
 - [ ] **T-09-06** — `default_selection()` §4.7 + теги причин + issue `sensitive_selected`. *Зависит:* T-09-05. *Готово, когда:* таблица §6.1 (selected) зелёная.
 - [ ] **T-09-07** — `totals()` §4.9 и сортировка §4.8. *Зависит:* T-09-06.
 - [ ] **T-09-08** — `run()` + встраивание в `sk-engine` (фаза `Score`), `now` берётся из engine. *Зависит:* T-09-07, T-01-06.
@@ -329,6 +337,6 @@ pub struct CategoryTotals { pub count: u32, pub bytes: u64, pub selected_count: 
 1. **Unknown-родитель с важным ребёнком:** сейчас (FR-09-03) родитель получает `exclude`, и ребёнок живёт отдельно. Альтернатива — уточнять категорию родителя до категории ребёнка. Решение v1: exclude (консервативно). Уточнение категории — кандидат на пересмотр после eval на реальных машинах.
 2. **Предложение к SPEC-02 §6:** зафиксировать структуру `Totals` из §4.9.
 3. **Предложение к SPEC-02 §2.1:** хранить ли добавленные при слиянии `exclude` отдельно (`merged_excludes`), чтобы явно отличать их от исходного target? Сейчас они дописываются в `target.exclude`, а `id` не пересчитывается.
-4. **Предложение к SPEC-08/SPEC-02:** `importance` от LLM передаётся через `Evidence.message_args["importance"]` (строка). Отдельное типизированное поле было бы чище.
+4. ~~**Предложение к SPEC-08/SPEC-02:** `importance` от LLM передаётся через `Evidence.message_args["importance"]` (строка).~~ Решено: типизированное `Evidence.importance` (SPEC-02 §2.5); строка — только запасной вариант (§4.5).
 5. **Бюджет выбора:** нужен ли общий лимит «выбрано по умолчанию ≤ N ГБ» или «≤ свободного места на цели»? Решается в SPEC-10/SPEC-11 (цель бэкапа известна только там). SPEC-09 даёт `totals()` для проверки.
 6. **Обучение на выборе пользователя (future):** персональные поправки весов категорий и эмбеддинги похожих путей. Отдельное расширение после MVP.
