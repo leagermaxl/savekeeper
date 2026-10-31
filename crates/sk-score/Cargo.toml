@@ -20,4 +20,13 @@ globset.workspace = true
 time.workspace = true
 
 [dev-dependencies]
+# Manual benchmark of `run()` (SPEC-09 §6.4, NFR-09-01).
+criterion.workspace = true
+# Properties of `run()` (SPEC-09 §6.3).
+proptest.workspace = true
 time = { workspace = true, features = ["macros"] }
+
+# Manual benchmark (SPEC-09 §6.4, NFR-09-01): `cargo bench -p sk-score --bench score`.
+[[bench]]
+name = "score"
+harness = false

@@ -171,3 +171,75 @@ fn fr_09_03_exclude_reaches_filesets_on_the_parent_path() {
     assert_eq!(excludes(by_title(&out, "x2")), vec!["Saves/**".to_owned()]);
     assert!(!is_nested(by_title(&out, "save")));
 }
+
+/// The literal excludes a compiled matcher learns from FR-09-03
+/// (`Matcher::added`) cover exactly what the escaped globs `rel` and
+/// `rel/**` would cover after a recompilation.
+#[test]
+fn added_literal_excludes_match_like_compiled_globs() {
+    use crate::nested::Matcher;
+    use sk_core::model::Target;
+
+    let literals: [(&[&str], bool); 6] = [
+        (&["Saves"], true),
+        (&["Saves"], false),
+        (&["Saves", "Slot1"], true),
+        (&["Saves", "Slot1"], false),
+        (&["a[1]*"], true),
+        (&["Ünï"], true),
+    ];
+    let probes = [
+        "Saves",
+        "saves",
+        "Saves/x",
+        "SAVES/Slot1",
+        "Saves/Slot1/y",
+        "Saves/slot1",
+        "Save",
+        "Savesx",
+        "Other/Saves",
+        "a[1]*/b",
+        "A[1]*",
+        "a1",
+        "ünï",
+        "ÜNÏ/x",
+        "Ünï",
+        "Ünï/x",
+    ];
+    for (names, is_set) in literals {
+        let mut glob = names
+            .iter()
+            .map(|n| globset::escape(n))
+            .collect::<Vec<_>>()
+            .join("/");
+        if is_set {
+            glob.push_str("/**");
+        }
+        let Target::FileSet { root, resolved, .. } = fileset(r"{APPDATA}\Foo", &[], &[]) else {
+            unreachable!()
+        };
+        let compiled = Matcher::new(&Target::FileSet {
+            root: root.clone(),
+            resolved: resolved.clone(),
+            include: vec![],
+            exclude: vec![glob.clone()],
+        });
+        let mut learned = Matcher::new(&Target::FileSet {
+            root,
+            resolved,
+            include: vec![],
+            exclude: vec![],
+        });
+        let names = names.iter().map(|n| (*n).to_owned()).collect();
+        learned.added.push((names, is_set));
+        for rel in probes {
+            for is_dir in [false, true] {
+                assert_eq!(
+                    learned.excludes(rel, is_dir),
+                    compiled.excludes(rel, is_dir),
+                    "glob {glob:?}, rel {rel:?}, is_dir {is_dir}"
+                );
+            }
+        }
+    }
+}

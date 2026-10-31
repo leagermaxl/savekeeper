@@ -2,6 +2,7 @@
 
 use std::collections::{BTreeSet, HashMap};
 use std::path::{Component, Path, Prefix};
+use std::rc::Rc;
 
 use globset::{GlobBuilder, GlobSet, GlobSetBuilder};
 use sk_core::env::Environment;
@@ -95,7 +96,7 @@ pub fn merge_nested(findings: &mut Vec<Finding>, env: &Environment) {
             .then_with(|| findings[ea.index].id.cmp(&findings[eb.index].id))
     });
 
-    let mut matchers: HashMap<usize, Matcher> = HashMap::new();
+    let mut matchers = Matchers::default();
     // (parent entry, child entry), in processing order.
     let mut links: Vec<(usize, usize)> = Vec::new();
     for &b in &order {
@@ -147,7 +148,7 @@ fn exclude_from_ancestors(
     entries: &[Entry],
     roots: &HashMap<&[String], Vec<usize>>,
     findings: &mut [Finding],
-    matchers: &mut HashMap<usize, Matcher>,
+    matchers: &mut Matchers,
 ) {
     let child = &entries[b];
     let a_len = entries[a].keys.len();
@@ -166,9 +167,7 @@ fn exclude_from_ancestors(
                 continue;
             }
             let rel = child.names[len..].join("/");
-            let matcher = matchers
-                .entry(p)
-                .or_insert_with(|| Matcher::new(&findings[entries[p].index].target));
+            let matcher = matchers.get(p, &findings[entries[p].index].target);
             if matcher.includes(&rel, child.is_set) {
                 targets.push(p);
             }
@@ -190,7 +189,12 @@ fn exclude_from_ancestors(
                 exclude.sort();
             }
         }
-        matchers.remove(&p);
+        // A matcher compiled before this exclude learns it as a literal, so
+        // it is not recompiled for every FR-09-03 child (NFR-09-01).
+        if let Some(matcher) = matchers.compiled.get_mut(&p) {
+            let names = child.names[entries[p].keys.len()..].to_vec();
+            matcher.added.push((names, child.is_set));
+        }
     }
 }
 
@@ -229,7 +233,7 @@ fn closest_parent(
     entries: &[Entry],
     roots: &HashMap<&[String], Vec<usize>>,
     findings: &[Finding],
-    matchers: &mut HashMap<usize, Matcher>,
+    matchers: &mut Matchers,
 ) -> Option<usize> {
     let child = &entries[b];
     let child_finding = &findings[child.index];
@@ -245,9 +249,7 @@ fn closest_parent(
             let fits = if len == child.keys.len() {
                 same_path_fits(parent_finding, child_finding, child.is_set)
             } else {
-                let matcher = matchers
-                    .entry(a)
-                    .or_insert_with(|| Matcher::new(&parent_finding.target));
+                let matcher = matchers.get(a, &parent_finding.target);
                 let rel = child.names[len..].join("/");
                 matcher.encloses(&rel, child.is_set)
             };
@@ -345,25 +347,63 @@ fn split(path: &Path) -> (Vec<String>, Vec<String>) {
     (keys, names)
 }
 
+/// Matchers of the parent entries, compiled on first use. Glob lists are
+/// compiled once per distinct list: many `FileSet`s share the same globs
+/// (NFR-09-01).
+#[derive(Default)]
+struct Matchers {
+    /// By entry index.
+    compiled: HashMap<usize, Matcher>,
+    /// By glob list.
+    sets: HashMap<Vec<String>, Rc<GlobSet>>,
+}
+
+impl Matchers {
+    /// The matcher of entry `e` with target `target`, compiled if needed.
+    fn get(&mut self, e: usize, target: &Target) -> &mut Matcher {
+        let sets = &mut self.sets;
+        self.compiled
+            .entry(e)
+            .or_insert_with(|| Matcher::compile(target, sets))
+    }
+}
+
 /// Compiled `include`/`exclude` of a parent `FileSet`.
-struct Matcher {
+pub(crate) struct Matcher {
     /// `None`: empty `include`, everything is included.
-    include: Option<GlobSet>,
-    exclude: GlobSet,
+    include: Option<Rc<GlobSet>>,
+    exclude: Rc<GlobSet>,
+    /// Excludes added by FR-09-03 after compilation: the components of `rel`
+    /// and whether it is a folder (`rel/**`) or a file (`rel`).
+    pub(crate) added: Vec<(Vec<String>, bool)>,
 }
 
 impl Matcher {
-    fn new(target: &Target) -> Self {
+    #[cfg(test)]
+    pub(crate) fn new(target: &Target) -> Self {
+        Self::compile(target, &mut HashMap::new())
+    }
+
+    /// Compiles the globs of `target`, reusing the sets in `sets`.
+    fn compile(target: &Target, sets: &mut HashMap<Vec<String>, Rc<GlobSet>>) -> Self {
+        let mut set = |globs: &Vec<String>| {
+            Rc::clone(
+                sets.entry(globs.clone())
+                    .or_insert_with(|| Rc::new(glob_set(globs))),
+            )
+        };
         match target {
             Target::FileSet {
                 include, exclude, ..
             } => Self {
-                include: (!include.is_empty()).then(|| glob_set(include)),
-                exclude: glob_set(exclude),
+                include: (!include.is_empty()).then(|| set(include)),
+                exclude: set(exclude),
+                added: Vec::new(),
             },
             _ => Self {
-                include: Some(GlobSet::empty()),
-                exclude: GlobSet::empty(),
+                include: Some(Rc::new(GlobSet::empty())),
+                exclude: Rc::new(GlobSet::empty()),
+                added: Vec::new(),
             },
         }
     }
@@ -377,9 +417,31 @@ impl Matcher {
     /// Whether `exclude` covers `rel` (§4.4, «Покрытие»): a glob matches `rel`
     /// or one of its prefixes, or, for a folder, a path under `rel` or under
     /// one of its prefixes (`Saves/**` covers the folder `Saves`).
-    fn excludes(&self, rel: &str, is_dir: bool) -> bool {
+    pub(crate) fn excludes(&self, rel: &str, is_dir: bool) -> bool {
         prefixes(rel).any(|p| {
             self.exclude.is_match(p) || (is_dir && self.exclude.is_match(format!("{p}/{PROBE}")))
+        }) || self.excludes_added(rel, is_dir)
+    }
+
+    /// [`Self::excludes`] for the literal excludes in `added`, with the
+    /// result of the escaped globs `rel` and `rel/**`: a file glob covers
+    /// `rel` when it is `rel` or one of its prefixes; a folder glob covers
+    /// what lies strictly below it, and also the folder itself when `rel` is
+    /// a folder (its files are all excluded). Components compare ignoring
+    /// ASCII case, exactly like the compiled globs (`globset` folds ASCII only).
+    fn excludes_added(&self, rel: &str, is_dir: bool) -> bool {
+        if self.added.is_empty() {
+            return false;
+        }
+        let parts: Vec<&str> = rel.split('/').collect();
+        self.added.iter().any(|(lit, lit_is_dir)| {
+            let prefix = lit.len() <= parts.len()
+                && lit
+                    .iter()
+                    .zip(&parts)
+                    .all(|(l, p)| l.eq_ignore_ascii_case(p));
+            let strict = lit.len() < parts.len();
+            prefix && (!lit_is_dir || is_dir || strict)
         })
     }
 

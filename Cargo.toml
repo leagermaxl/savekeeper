@@ -83,6 +83,8 @@ assert_cmd = "2"
 # Manual benchmarks only (`cargo bench`, SPEC-12 §2.2); no plots, no rayon of its own.
 criterion = { version = "0.7", default-features = false, features = ["cargo_bench_support"] }
 insta = { version = "1", features = ["json"] }
+# Property tests of sk-score (SPEC-09 §6.3); no regression files, no fork/timeout support.
+proptest = { version = "1", default-features = false, features = ["std"] }
 predicates = "3"
 tempfile = "3"
 # Mock HTTP server for ManifestStore tests (SPEC-05 §6).
