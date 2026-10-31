@@ -99,7 +99,7 @@ fn bad_config(field: &str, value: f32) -> ScanIssue {
 }
 
 /// The serde name of a category, as written in the config.
-fn category_name(category: sk_core::model::Category) -> &'static str {
+pub(crate) fn category_name(category: sk_core::model::Category) -> &'static str {
     use sk_core::model::Category as C;
     match category {
         C::GameSave => "game_save",
