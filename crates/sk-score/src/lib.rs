@@ -9,6 +9,7 @@
 //! importance score with its components (§4.5).
 //! [`default_selection`] applies the default selection rules (§4.7).
 //! [`totals`] counts findings per category and selection (§4.9).
+//! [`run`] chains all steps into the Score phase of the engine.
 
 mod authority;
 mod config;
@@ -16,6 +17,7 @@ mod issues;
 mod merge;
 mod nested;
 mod order;
+mod run;
 mod sanitize;
 mod score;
 mod select;
@@ -26,6 +28,7 @@ pub use config::{validate_config, BAD_CONFIG_KEY, ISSUE_SOURCE};
 pub use issues::{BAD_NUMBER_KEY, CATEGORY_CONFLICT_KEY, NO_EVIDENCE_KEY, SENSITIVE_SELECTED_KEY};
 pub use merge::{merge_by_id, CONFLICT_TAG};
 pub use nested::{merge_nested, NESTED_TAG, VIA_ARG};
+pub use run::{run, ScoreInput, ScoreOutput, UNMEASURED_TAG};
 pub use score::{
     score, ADJUSTMENTS, BASE, CONFIDENCE, IMPORTANCE_ARG, IRREPLACEABILITY, RECENCY, SIZE_PENALTY,
     USER_AUTHORED, VALUE,
@@ -49,6 +52,8 @@ mod nested_glob_tests;
 mod nested_tests;
 #[cfg(test)]
 mod order_tests;
+#[cfg(test)]
+mod run_tests;
 #[cfg(test)]
 mod sanitize_tests;
 #[cfg(test)]

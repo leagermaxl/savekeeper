@@ -6,6 +6,7 @@ mod environment;
 mod games;
 mod heuristics;
 mod run;
+mod score;
 mod system;
 
 use std::collections::{BTreeMap, HashMap};
@@ -194,8 +195,10 @@ impl ScanPipeline {
             self.classify(&ctx, opts.llm, &mut acc, &run),
         )
         .await?;
-        // Filled by SPEC-09.
-        run.phase(ScanPhase::Score, async {}).await?;
+        run.phase(ScanPhase::Score, async {
+            self.score(&ctx.env, started_at, &mut acc, &run);
+        })
+        .await?;
 
         run.phase(ScanPhase::Done, async {
             self.finish(&ctx.env, opts, max_depth, acc, started_at, &run)
@@ -336,19 +339,15 @@ impl ScanPipeline {
         started_at: OffsetDateTime,
         run: &Run<'_>,
     ) -> Result<ScanReport, EngineError> {
+        // The findings are already in the result order of the `Score` phase
+        // (SPEC-09 §4.8): category order, then score descending.
         let Accumulated {
-            mut findings,
+            findings,
             mut issues,
             unknown_summaries,
+            totals,
             ..
         } = acc;
-        findings.sort_by(|a, b| {
-            let score = |f: &Finding| f.score.as_ref().map_or(0.0, |s| s.value);
-            a.category
-                .cmp(&b.category)
-                .then(score(b).total_cmp(&score(a)))
-                .then_with(|| a.id.cmp(&b.id))
-        });
         let mut report = ScanReport {
             schema_version: ScanReport::SCHEMA_VERSION,
             scan_id: Uuid::new_v4(),
@@ -369,7 +368,7 @@ impl ScanPipeline {
             findings,
             unknown_summaries,
             issues: Vec::new(),
-            totals: Totals::default(),
+            totals,
         };
         if let Some(dir) = &self.scans_dir {
             if let Err(error) = reports::save(dir, &report) {
@@ -434,6 +433,8 @@ struct Accumulated {
     issues: Vec<ScanIssue>,
     /// Summaries of the `Unknown` findings of the heuristics (SPEC-07 FR-07-08).
     unknown_summaries: Vec<FolderSummary>,
+    /// Totals of the `Score` phase (SPEC-09 §4.9).
+    totals: Totals,
 }
 
 impl Accumulated {

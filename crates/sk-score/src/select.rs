@@ -101,7 +101,6 @@ pub fn default_selection(f: &Finding, env: &Environment, cfg: &ScoringConfig) ->
 /// one `scoring.sensitive_selected` warning with the number of selected
 /// `Credentials` or `Sensitivity::High` findings in `message_args["count"]`,
 /// when there is at least one (SPEC-09 §4.7, FR-09-07).
-#[cfg_attr(not(test), allow(dead_code))] // called by run() (T-09-08)
 pub(crate) fn select_reporting(
     findings: &mut [Finding],
     env: &Environment,

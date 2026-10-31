@@ -59,7 +59,6 @@ impl Ord for Desc {
 ///
 /// Nested findings are sorted the same way; the UI groups them under their
 /// parent through `children`.
-#[cfg_attr(not(test), allow(dead_code))] // called by run() (T-09-08)
 pub(crate) fn sort_findings(findings: &mut [Finding]) {
     findings.sort_by_cached_key(|f| {
         (

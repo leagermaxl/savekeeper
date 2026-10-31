@@ -3014,6 +3014,7 @@ dependencies = [
  "sk-llm",
  "sk-rules",
  "sk-scan",
+ "sk-score",
  "sk-system",
  "sk-testkit",
  "tempfile",
