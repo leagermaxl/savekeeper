@@ -8,6 +8,7 @@
 //! nests findings into enclosing `FileSet`s (§4.4). [`score`] computes the
 //! importance score with its components (§4.5).
 //! [`default_selection`] applies the default selection rules (§4.7).
+//! [`totals`] counts findings per category and selection (§4.9).
 
 mod authority;
 mod config;
@@ -18,6 +19,7 @@ mod order;
 mod sanitize;
 mod score;
 mod select;
+mod totals;
 
 pub use authority::{authority, evidence_authority, source_priority, Authority};
 pub use config::{validate_config, BAD_CONFIG_KEY, ISSUE_SOURCE};
@@ -33,6 +35,7 @@ pub use select::{
     NEEDS_ELEVATION_TAG, RESTORABLE_TAG, TOO_LARGE_DEFAULT_TAG,
 };
 pub use sk_core::config::{default_weights, CategoryWeights, ScoringConfig};
+pub use totals::totals;
 
 #[cfg(test)]
 mod authority_tests;
@@ -45,6 +48,8 @@ mod nested_glob_tests;
 #[cfg(test)]
 mod nested_tests;
 #[cfg(test)]
+mod order_tests;
+#[cfg(test)]
 mod sanitize_tests;
 #[cfg(test)]
 mod score_table_tests;
@@ -52,3 +57,5 @@ mod score_table_tests;
 mod score_tests;
 #[cfg(test)]
 mod select_tests;
+#[cfg(test)]
+mod totals_tests;
