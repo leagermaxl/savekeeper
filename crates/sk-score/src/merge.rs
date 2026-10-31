@@ -184,9 +184,9 @@ fn merge_globs(target: &mut Target, losers: &[Finding]) {
 }
 
 /// Owned sort key of an evidence source: variant, then its fields.
-type SourceKey = (u8, String, String);
+pub(crate) type SourceKey = (u8, String, String);
 
-fn source_key(source: &EvidenceSource) -> SourceKey {
+pub(crate) fn source_key(source: &EvidenceSource) -> SourceKey {
     let (variant, a, b) = match source {
         EvidenceSource::User => (0, "", ""),
         EvidenceSource::Rule { rule_id } => (1, rule_id.as_str(), ""),
@@ -204,7 +204,7 @@ fn source_key(source: &EvidenceSource) -> SourceKey {
 
 /// Rule 3: dedup by `(source, message_key)` keeping the higher confidence,
 /// then sort by descending authority.
-fn merge_evidence(all: Vec<Evidence>) -> Vec<Evidence> {
+pub(crate) fn merge_evidence(all: Vec<Evidence>) -> Vec<Evidence> {
     let mut best: BTreeMap<(SourceKey, String), Evidence> = BTreeMap::new();
     for evidence in all {
         match best.entry((source_key(&evidence.source), evidence.message_key.clone())) {

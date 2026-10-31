@@ -18,6 +18,8 @@ cargo test --workspace
 
 - [ ] **macOS test fixes** (коммит `test: fix test builds on non-Windows hosts`): в `crates/sk-system/src/exporters/cloud_tests.rs` импорт `SystemExporter` перенесён в `#[cfg(windows)] mod win`. Проверить: `cargo clippy -p sk-system --all-targets -- -D warnings` и `cargo test -p sk-system cloud` (Windows-модуль компилируется и проходит).
 
+- [ ] **T-09-04** (`merge_nested`): `crates/sk-score/src/nested.rs::split` повторяет покомпонентное сравнение путей `sk_core::path` (буквы дисков, UNC, `\\?\`, регистр); тесты есть только на Unix-путях `Environment::fake`. Проверить: `cargo test -p sk-score nested` — и вручную, что находки `C:\Users\…` и `\\?\C:\Users\…` с разным регистром корректно вкладываются.
+
 ## Тесты, падающие на macOS (сверить на Windows и Linux)
 
 Найдено 2026-10-31 при первом прогоне `cargo test --workspace` на macOS (Rust 1.99.1), до

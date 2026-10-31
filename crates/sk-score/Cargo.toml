@@ -14,3 +14,5 @@ workspace = true
 [dependencies]
 # `ScoringConfig`, `Finding`, `ScanIssue` and the other SPEC-02 types.
 sk-core.workspace = true
+# Include/exclude glob checks of `merge_nested` (§4.4), matched like `sk-scan`.
+globset.workspace = true

@@ -3138,6 +3138,7 @@ dependencies = [
 name = "sk-score"
 version = "0.1.0"
 dependencies = [
+ "globset",
  "sk-core",
 ]
 
