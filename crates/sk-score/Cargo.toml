@@ -10,3 +10,7 @@ publish.workspace = true
 
 [lints]
 workspace = true
+
+[dependencies]
+# `ScoringConfig`, `Finding`, `ScanIssue` and the other SPEC-02 types.
+sk-core.workspace = true

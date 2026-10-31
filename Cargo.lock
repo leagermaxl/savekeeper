@@ -3137,6 +3137,9 @@ dependencies = [
 [[package]]
 name = "sk-score"
 version = "0.1.0"
+dependencies = [
+ "sk-core",
+]
 
 [[package]]
 name = "sk-system"
