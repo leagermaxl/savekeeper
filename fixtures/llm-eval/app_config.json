@@ -143,7 +143,7 @@
   ],
   "expected_app": "Windows Terminal",
   "summary": {
-   "path": "{LOCALAPPDATA}\\Packages\\Microsoft.<redacted>\\LocalState",
+   "path": "{LOCALAPPDATA}\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState",
    "total_bytes": 40960,
    "file_count": 3,
    "dir_count": 0,

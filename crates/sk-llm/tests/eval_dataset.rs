@@ -78,7 +78,9 @@ fn env() -> Environment {
 
 #[test]
 fn eval_names_are_already_redacted() {
-    // Summaries reach the LLM after `redact` (SPEC-03 §4.4); the set must look the same.
+    // Names reach the LLM after `redact` (SPEC-03 §4.4); the set must look the same.
+    // The path is a `PathTemplate` without `redact`, so real UWP package family
+    // names and SID folders stay as they are (`final_check` allows them, T-08-15).
     let env = env();
     for LoadedCase { case, .. } in load() {
         let s = &case.summary;
@@ -89,12 +91,6 @@ fn eval_names_are_already_redacted() {
         for name in names {
             assert_eq!(&redact(name, &env), name, "{}", case.id);
         }
-        assert_eq!(
-            redact(s.path.as_str(), &env),
-            s.path.as_str(),
-            "{}",
-            case.id
-        );
     }
 }
 

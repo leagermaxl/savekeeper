@@ -204,7 +204,7 @@
   "expected_category": "system_settings",
   "acceptable_categories": [],
   "summary": {
-   "path": "{LOCALAPPDATA}\\Packages\\Microsoft.Windows.<redacted>\\LocalState",
+   "path": "{LOCALAPPDATA}\\Packages\\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\\LocalState",
    "total_bytes": 126976,
    "file_count": 3,
    "dir_count": 0,

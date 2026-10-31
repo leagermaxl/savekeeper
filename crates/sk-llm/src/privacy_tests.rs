@@ -262,3 +262,124 @@ fn json_escapes_after_a_colon_are_not_paths_in_the_raw_view() {
     assert_eq!(check(r"C:\q"), Err(PrivacyViolation::AbsolutePath));
     assert_eq!(check(r"C:\"), Err(PrivacyViolation::AbsolutePath));
 }
+
+// Token exceptions for real Windows folder names (T-08-15).
+
+const TERMINAL: &str = "Microsoft.WindowsTerminal_8wekyb3d8bbwe";
+const SID: &str = "S-1-5-21-1234567890-2345678901-3456789012-1001";
+const JUMP_LIST_EXT: &str = "automaticdestinations-ms";
+const TOKEN: &str = "ghp_a1B2c3D4e5F6g7H8i9J0kLmNoPq";
+
+fn summary(path: &str, ext: &str, name: &str) -> serde_json::Value {
+    serde_json::json!({
+        "path": path,
+        "ext_histogram": [{ "ext": ext, "count": 1, "bytes": 10 }],
+        "sample_names": [name]
+    })
+}
+
+/// Serializes one element with this path, extension and sample name.
+fn item(path: &str, ext: &str, name: &str) -> String {
+    let summary = summary(path, ext, name);
+    serde_json::json!({ "id": "0123456789abcdef", "summary": summary }).to_string()
+}
+
+fn token_in(path: &str, ext: &str, name: &str) -> bool {
+    check(&item(path, ext, name)) == Err(PrivacyViolation::Token)
+}
+
+#[test]
+fn uwp_package_family_name_in_path_passes() {
+    let path = format!(r"{{LOCALAPPDATA}}\Packages\{TERMINAL}\LocalState");
+    assert_eq!(check(&item(&path, "json", "settings.json")), Ok(()));
+    let start = r"{LOCALAPPDATA}\Packages\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy";
+    assert_eq!(check(&item(start, "bin", "start2.bin")), Ok(()));
+    let edge = r"{LOCALAPPDATA}\Packages\Microsoft.MicrosoftEdgeDevToolsClient_8wekyb3d8bbwe";
+    assert_eq!(check(&item(edge, "json", "a.json")), Ok(()));
+}
+
+#[test]
+fn sid_in_path_passes() {
+    let path = format!(r"{{APPDATA}}\Microsoft\Protect\{SID}");
+    assert_eq!(check(&item(&path, "", "Preferred")), Ok(()));
+}
+
+#[test]
+fn long_extension_in_ext_histogram_passes() {
+    let path = r"{APPDATA}\Microsoft\Windows\Recent\AutomaticDestinations";
+    assert_eq!(check(&item(path, JUMP_LIST_EXT, "x.lnk")), Ok(()));
+}
+
+#[test]
+fn batch_with_repeated_exempt_values_passes() {
+    let path = format!(r"{{LOCALAPPDATA}}\Packages\{TERMINAL}\LocalState");
+    let one = summary(&path, JUMP_LIST_EXT, "a.json");
+    let json = serde_json::json!({ "items": [{ "summary": one }, { "summary": one }] });
+    assert_eq!(check(&json.to_string()), Ok(()));
+}
+
+#[test]
+fn real_tokens_are_still_caught() {
+    // In `path`, as a whole folder name and next to an exempt name.
+    assert!(token_in(&format!(r"{{APPDATA}}\App\{TOKEN}"), "json", "a"));
+    assert!(token_in(
+        &format!(r"{{APPDATA}}\{TERMINAL}\{TOKEN}"),
+        "json",
+        "a"
+    ));
+    // In `sample_names`.
+    assert!(token_in(r"{APPDATA}\App", "json", TOKEN));
+    // Exempt shapes are exempt only in their own fields.
+    for name in [TERMINAL, SID, JUMP_LIST_EXT] {
+        assert!(token_in(r"{APPDATA}\App", "json", name), "{name}");
+    }
+    assert!(token_in(
+        &format!(r"{{APPDATA}}\{JUMP_LIST_EXT}"),
+        "json",
+        "a"
+    ));
+    let ext_elsewhere = serde_json::json!({ "ext": JUMP_LIST_EXT }).to_string();
+    assert_eq!(check(&ext_elsewhere), Err(PrivacyViolation::Token));
+    // A value in an exempt field does not cover the same run elsewhere.
+    assert!(token_in(&format!(r"{{APPDATA}}\Protect\{SID}"), "", SID));
+    assert!(token_in(r"{APPDATA}\App", JUMP_LIST_EXT, JUMP_LIST_EXT));
+}
+
+#[test]
+fn near_misses_of_exempt_shapes_are_tokens() {
+    for name in [
+        // Upper case or wrong length of the publisher id, no `_`.
+        "Microsoft.WindowsTerminal_8WEKYB3D8BBWE",
+        "Microsoft.WindowsTerminal_8wekyb3d8bbwe1",
+        "Microsoft.WindowsTerminal-8wekyb3d8bbwe",
+        // Not a SID.
+        "S-1-5212345678902345678901234",
+        "s-1-5-21-1234567890-2345678901-3456789012",
+        "S-1-5-21-1234567890-2345678901-x456789012",
+        "S-1-5-21-1234567890--2345678901-3456789012",
+    ] {
+        assert!(
+            token_in(&format!(r"{{APPDATA}}\{name}"), "json", "a"),
+            "{name}"
+        );
+    }
+}
+
+#[test]
+fn exceptions_do_not_survive_duplicate_keys_or_invalid_json() {
+    let path = format!(r"{{APPDATA}}\Protect\{SID}");
+    let path = serde_json::Value::String(path).to_string();
+    let dup = format!(r#"{{"path":{path},"path":{path}}}"#);
+    assert_eq!(check(&dup), Err(PrivacyViolation::Token));
+    let broken = format!(r#"{{"path":{path} broken"#);
+    assert_eq!(check(&broken), Err(PrivacyViolation::Token));
+}
+
+#[test]
+fn other_rules_still_apply_in_exempt_fields() {
+    let path = format!(r"{{LOCALAPPDATA}}\Packages\{TERMINAL}\Max");
+    let json = item(&path, "json", "a");
+    assert_eq!(check(&json), Err(PrivacyViolation::UserName));
+    let json = item(r"{APPDATA}\App", "a@example.org", "a");
+    assert_eq!(check(&json), Err(PrivacyViolation::Email));
+}

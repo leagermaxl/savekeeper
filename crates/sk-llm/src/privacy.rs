@@ -1,5 +1,7 @@
 //! Defense-in-depth check of every element before it is sent (SPEC-08 §4.8).
 
+use std::collections::HashMap;
+
 use serde_json::Value;
 use sk_core::env::Environment;
 
@@ -23,7 +25,8 @@ pub enum PrivacyViolation {
     /// An email address.
     #[error("contains an email address")]
     Email,
-    /// A run of at least 24 `[A-Za-z0-9_-]` characters.
+    /// A run of at least 24 `[A-Za-z0-9_-]` characters, outside the
+    /// exceptions of [`final_check`].
     #[error("contains a token-like string")]
     Token,
 }
@@ -38,6 +41,14 @@ pub enum PrivacyViolation {
 /// for emails and tokens are those of `sk_core::privacy::redact`, so a
 /// properly redacted summary always passes. `<redacted>` itself passes.
 ///
+/// Token exceptions (real Windows folder names, T-08-15): in a string under
+/// a `path` key, a run of the form `<name>_<13 chars [a-z0-9]>` (UWP package
+/// family name) or `S-1-<n>(-<n>)+` (SID) is not a token; in the `ext` of an
+/// `ext_histogram` entry the token rule does not apply. The exceptions come
+/// from the parsed JSON, so they need valid JSON; in the text views a run is
+/// exempt only as many times as it occurs in those fields, so the same run
+/// in `sample_names` or under a duplicate key is still a token.
+///
 /// Three views of the input are checked, the first violation wins: the raw
 /// text (catches duplicate keys that a JSON parser drops), the raw text with
 /// JSON escapes decoded leniently (catches `Max` even in invalid JSON)
@@ -46,18 +57,30 @@ pub enum PrivacyViolation {
 /// [`UNESCAPE_ROUNDS`] rounds in all or until nothing changes, so text
 /// escaped twice (`\\u041c` inside a JSON string) is seen decoded too.
 pub fn final_check(json: &str, env: &Environment) -> Result<(), PrivacyViolation> {
-    check_view(json, env, true)?;
+    let parsed = serde_json::from_str::<Value>(json).ok();
+    let mut allowed = Allowed::new();
+    if let Some(value) = &parsed {
+        let _ = walk(value, Field::Other, &mut |s, field| {
+            allow_exempt_runs(s, field, &mut allowed);
+            Ok::<(), ()>(())
+        });
+    }
+    check_view(json, env, true, &allowed)?;
     let mut view = unescape_lenient(json);
-    check_text(&view, env)?;
-    if let Ok(value) = serde_json::from_str::<Value>(json) {
-        check_value(&value, env)?;
+    check_view(&view, env, false, &allowed)?;
+    if let Some(value) = &parsed {
+        walk(value, Field::Other, &mut |s, field| {
+            let mut own = Allowed::new();
+            allow_exempt_runs(s, field, &mut own);
+            check_view(s, env, false, &own)
+        })?;
     }
     for _ in 1..UNESCAPE_ROUNDS {
         let next = unescape_lenient(&view);
         if next == view {
             break;
         }
-        check_text(&next, env)?;
+        check_view(&next, env, false, &allowed)?;
         view = next;
     }
     Ok(())
@@ -66,24 +89,97 @@ pub fn final_check(json: &str, env: &Environment) -> Result<(), PrivacyViolation
 /// Rounds of lenient JSON unescaping checked by [`final_check`].
 const UNESCAPE_ROUNDS: usize = 4;
 
-fn check_value(value: &Value, env: &Environment) -> Result<(), PrivacyViolation> {
+/// How many times each token-like run may occur in a view without being a
+/// violation (the token exceptions of [`final_check`]).
+type Allowed = HashMap<String, usize>;
+
+/// Where a JSON value sits, for the token exceptions.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Field {
+    Other,
+    /// A value under a `path` key.
+    Path,
+    /// The array under an `ext_histogram` key.
+    ExtHistogram,
+    /// An object in that array.
+    ExtEntry,
+    /// The `ext` of such an object.
+    Ext,
+}
+
+/// Calls `f` for every string in `value`, keys included (as [`Field::Other`]).
+fn walk<E>(
+    value: &Value,
+    field: Field,
+    f: &mut impl FnMut(&str, Field) -> Result<(), E>,
+) -> Result<(), E> {
     match value {
-        Value::String(s) => check_text(s, env),
-        Value::Array(items) => items.iter().try_for_each(|v| check_value(v, env)),
+        Value::String(s) => f(s.as_str(), field),
+        Value::Array(items) => {
+            let child = if field == Field::ExtHistogram {
+                Field::ExtEntry
+            } else {
+                Field::Other
+            };
+            items.iter().try_for_each(|v| walk(v, child, f))
+        }
         Value::Object(obj) => obj.iter().try_for_each(|(k, v)| {
-            check_text(k, env)?;
-            check_value(v, env)
+            f(k.as_str(), Field::Other)?;
+            let child = match (field, k.as_str()) {
+                (_, "path") => Field::Path,
+                (_, "ext_histogram") => Field::ExtHistogram,
+                (Field::ExtEntry, "ext") => Field::Ext,
+                _ => Field::Other,
+            };
+            walk(v, child, f)
         }),
         Value::Null | Value::Bool(_) | Value::Number(_) => Ok(()),
     }
 }
 
-fn check_text(text: &str, env: &Environment) -> Result<(), PrivacyViolation> {
-    check_view(text, env, false)
+/// Finds the token-like runs of a string in `field` that are not tokens.
+/// Adds them to `allowed`.
+fn allow_exempt_runs(text: &str, field: Field, allowed: &mut Allowed) {
+    for run in token_runs(text) {
+        let exempt = match field {
+            Field::Path => is_package_family_name(run) || is_sid(run),
+            Field::Ext => true,
+            Field::Other | Field::ExtHistogram | Field::ExtEntry => false,
+        };
+        if exempt {
+            *allowed.entry(run.to_owned()).or_default() += 1;
+        }
+    }
+}
+
+/// `<name>_<publisher id>`: a non-empty name, `_` and 13 chars `[a-z0-9]`.
+fn is_package_family_name(run: &str) -> bool {
+    const PUBLISHER_ID_LEN: usize = 13;
+    let b = run.as_bytes();
+    if b.len() <= PUBLISHER_ID_LEN + 1 {
+        return false;
+    }
+    let (name, id) = b.split_at(b.len() - PUBLISHER_ID_LEN);
+    let id_char = |c: &u8| c.is_ascii_lowercase() || c.is_ascii_digit();
+    name.ends_with(b"_") && id.iter().all(id_char)
+}
+
+/// `S-1-<n>(-<n>)+`.
+fn is_sid(run: &str) -> bool {
+    let Some(rest) = run.strip_prefix("S-1-") else {
+        return false;
+    };
+    let number = |p: &&str| !p.is_empty() && p.bytes().all(|c| c.is_ascii_digit());
+    rest.contains('-') && rest.split('-').all(|p| number(&p))
 }
 
 /// `raw`: `text` is the serialized JSON itself, see [`has_absolute_path`].
-fn check_view(text: &str, env: &Environment, raw: bool) -> Result<(), PrivacyViolation> {
+fn check_view(
+    text: &str,
+    env: &Environment,
+    raw: bool,
+    allowed: &Allowed,
+) -> Result<(), PrivacyViolation> {
     if contains_word(text, &env.user_name) {
         return Err(PrivacyViolation::UserName);
     }
@@ -96,7 +192,7 @@ fn check_view(text: &str, env: &Environment, raw: bool) -> Result<(), PrivacyVio
     if has_email(text) {
         return Err(PrivacyViolation::Email);
     }
-    if has_token(text) {
+    if has_token(text, allowed) {
         return Err(PrivacyViolation::Token);
     }
     Ok(())
@@ -243,19 +339,21 @@ fn has_email(text: &str) -> bool {
     })
 }
 
-fn has_token(text: &str) -> bool {
-    let mut run = 0usize;
-    for c in text.chars() {
-        if c.is_ascii_alphanumeric() || matches!(c, '_' | '-') {
-            run += 1;
-            if run >= TOKEN_MIN_LEN {
-                return true;
-            }
-        } else {
-            run = 0;
-        }
+/// Maximal runs of `[A-Za-z0-9_-]` at least [`TOKEN_MIN_LEN`] long.
+fn token_runs(text: &str) -> Vec<&str> {
+    let not_token_char = |c: char| !(c.is_ascii_alphanumeric() || matches!(c, '_' | '-'));
+    let runs = text.split(not_token_char);
+    runs.filter(|run| run.len() >= TOKEN_MIN_LEN).collect()
+}
+
+/// A token-like run that occurs more often than `allowed` permits.
+fn has_token(text: &str, allowed: &Allowed) -> bool {
+    let mut counts: HashMap<&str, usize> = HashMap::new();
+    for run in token_runs(text) {
+        *counts.entry(run).or_default() += 1;
     }
-    false
+    let over = |(run, n): (&&str, &usize)| *n > allowed.get(*run).copied().unwrap_or(0);
+    counts.iter().any(over)
 }
 
 #[cfg(test)]

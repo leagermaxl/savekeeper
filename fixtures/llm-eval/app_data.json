@@ -634,7 +634,7 @@
   ],
   "expected_app": "Microsoft Sticky Notes",
   "summary": {
-   "path": "{LOCALAPPDATA}\\Packages\\Microsoft.<redacted>\\LocalState",
+   "path": "{LOCALAPPDATA}\\Packages\\Microsoft.MicrosoftStickyNotes_8wekyb3d8bbwe\\LocalState",
    "total_bytes": 1363968,
    "file_count": 3,
    "dir_count": 0,
