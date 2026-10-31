@@ -1,0 +1,27 @@
+{
+  "bad_config": "Invalid value {{value}} of setting {{field}}, the default is used",
+  "category_conflict": "Collectors disagree on what this is: it was classified as “$t(category.{{winner}})”, but it may also be “$t(category.{{loser}})”. Check it before deciding not to save it",
+  "bad_number": "Invalid number {{value}} in field {{field}} of a finding, it is treated as 0",
+  "no_evidence": "A finding came without any explanation of why it was found; it is rated with low confidence",
+  "sensitive_selected": "Passwords, keys or other sensitive data are selected for the backup (findings: {{count}}). Consider encrypting the backup",
+  "component": {
+    "irreplaceability": "Irreplaceability",
+    "user_authored": "Created by you",
+    "recency": "How recent",
+    "confidence": "Confidence",
+    "size_penalty": "Size penalty",
+    "adjustments": "Bonuses and penalties",
+    "base": "Base score",
+    "value": "Final score"
+  },
+  "tag": {
+    "nested": "Inside another finding: it is saved together with it",
+    "alternative": "Another way to save the data of the parent finding: not selected by default",
+    "restorable": "Cache or reinstallable files: they are restored without a backup",
+    "needs_elevation": "Needs administrator rights: restart SaveKeeper as administrator to save it",
+    "too_large_default": "Too large to be selected by default: select it manually if you need it",
+    "below_threshold": "Not important enough, or too large for an unrecognized item, to be selected by default",
+    "conflict": "Collectors disagree on the category: check whether it needs to be saved",
+    "unmeasured": "The size was not measured, the score is approximate"
+  }
+}

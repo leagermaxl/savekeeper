@@ -3195,6 +3195,7 @@ dependencies = [
  "criterion",
  "globset",
  "proptest",
+ "serde_json",
  "sk-core",
  "time",
 ]

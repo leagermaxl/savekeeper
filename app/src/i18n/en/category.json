@@ -1,0 +1,13 @@
+{
+  "game_save": "Game saves",
+  "game_config": "Game settings",
+  "app_config": "App settings",
+  "app_data": "App data",
+  "user_files": "User files",
+  "dev_environment": "Developer environment",
+  "credentials": "Passwords and keys",
+  "system_settings": "System settings",
+  "reinstallable": "Reinstallable",
+  "cache": "Cache and temporary files",
+  "unknown": "Unrecognized"
+}

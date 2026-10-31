@@ -8,5 +8,6 @@
     "xbox_wgs": "Saves of the Xbox / Microsoft Store game from package {{package}}",
     "ubisoft_savegames": "Local saves of Ubisoft Connect games"
   },
-  "system_export": "System state that is not stored in ordinary files: SaveKeeper exports it during the backup"
+  "system_export": "System state that is not stored in ordinary files: SaveKeeper exports it during the backup",
+  "scoring_fallback": "No evidence was recorded for this finding, so SaveKeeper rates it with low confidence"
 }

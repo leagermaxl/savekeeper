@@ -24,6 +24,8 @@ time.workspace = true
 criterion.workspace = true
 # Properties of `run()` (SPEC-09 §6.3).
 proptest.workspace = true
+# Reads the i18n resources in `tests/i18n_keys.rs` (SPEC-09 T-09-10).
+serde_json.workspace = true
 time = { workspace = true, features = ["macros"] }
 
 # Manual benchmark (SPEC-09 §6.4, NFR-09-01): `cargo bench -p sk-score --bench score`.
