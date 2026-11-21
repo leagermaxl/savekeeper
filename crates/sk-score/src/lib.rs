@@ -51,6 +51,8 @@ mod nested_glob_tests;
 #[cfg(test)]
 mod nested_tests;
 #[cfg(test)]
+mod nested_win_tests;
+#[cfg(test)]
 mod order_tests;
 #[cfg(test)]
 mod run_tests;
