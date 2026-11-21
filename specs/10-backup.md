@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-backup` (оркестрация — `sk-engine::BackupJob`) |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03, SPEC-06, SPEC-09 |
 | Используется в | SPEC-11, SPEC-13, SPEC-14 |
-| Последнее изменение | 2026-11-21 (§4.2: правила экранирования имён и семантика `original_name` — T-10-02); 2026-11-21 (§4.4: код ошибки `cloud_only` в списке кодов, как в FR-10-15 и §5 — T-10-01); 2026-10-10 (T-10-09: `params` экспортёра `checklist` из находок — SPEC-06 §4.7); 2026-10-10 (FR-10-15: cloud-only файлы не открываются и не скачиваются); 2026-10-10 (имя файла экспорта winget — `winget.json`, как в SPEC-06 §4.3); 2026-10-01 (пример `environment` в манифесте по SPEC-02 §6; закрыт вопрос по `EnvironmentSnapshot`) |
+| Последнее изменение | 2026-11-21 (§4.6: уточнения оценки — T-10-03); 2026-11-21 (§4.2: правила экранирования имён и семантика `original_name` — T-10-02); 2026-11-21 (§4.4: код ошибки `cloud_only` в списке кодов, как в FR-10-15 и §5 — T-10-01); 2026-10-10 (T-10-09: `params` экспортёра `checklist` из находок — SPEC-06 §4.7); 2026-10-10 (FR-10-15: cloud-only файлы не открываются и не скачиваются); 2026-10-10 (имя файла экспорта winget — `winget.json`, как в SPEC-06 §4.3); 2026-10-01 (пример `environment` в манифесте по SPEC-02 §6; закрыт вопрос по `EnvironmentSnapshot`) |
 
 ## 1. Цель
 
@@ -308,6 +308,15 @@ pub struct LockingProcess { pub pid: u32, pub name: String, pub app_name: String
 - ФС: `GetVolumeInformationW` → имя ФС. `FAT32`: проверка FR-10-04 по `largest_file_bytes` (если скан его знает) и по `estimated_archive_bytes`.
 - `TargetInsideSource`: если `parent_dir` лежит внутри корня какой-либо выбранной `FileSet`, это блокер (иначе бэкап попадёт сам в себя).
 - `TargetOnSystemDrive`: предупреждение «Бэкап на системном диске будет уничтожен при переустановке с форматированием».
+- Уточнения реализации (T-10-03):
+  - Сведения о томе — `sk_core::fs::volume_info` (SPEC-02 §3.6). Ошибка запроса тома для существующей папки → `Err(BackupError::Target)`. Отсутствующая папка → блокер `NotWritable`, `free_bytes = 0`, `fs_kind = Other("")`, проверки места и ФС не выполняются. Право записи проверяется созданием и удалением пустого `.savekeeper-write-test-<pid>-<n>.tmp` в `parent_dir`.
+  - Неизвестная ФС → `FsKind::Other("")`; сетевой том → `Network` (без проверки FAT32).
+  - `compression_level = 0` → коэффициент 1.0 для всех категорий. С шифрованием место: `(архив × 1.1 + 50 МиБ) × 2`.
+  - `Registry`/`SystemExport` без `stats` считаются как 1 МиБ и 1 файл без `UnknownSize`; `FileSet`/`File` без `stats` → `UnknownSize`, размер 0.
+  - Дубли вложенности: выбранная находка с тегом `nested`, входящая в `children` другой выбранной, не считается; альтернативы (`alternative`) считаются. Неизвестные `id` выбора игнорируются.
+  - `Sensitive{count}` — выбранные с `Sensitivity::High` или категорией `Credentials`, только без шифрования. `RequiresElevation` — только если `environment.is_elevated == false`. `LargeSelection` — `total_bytes ≥ 100 ГиБ`; `HugeFile` — `largest_file_bytes` (для `Target::File` — `total_bytes`) > 50 ГиБ.
+  - `StalePartial`: в `parent_dir` файлы `*.zip.partial`, `*.zip.age.partial` и папки `*.partial` с `manifest.json`, `entries.jsonl` или `files/`, по имени.
+  - Порядок блокеров: `EncryptWithDir`, `NotWritable`, `TargetInsideSource`, `InsufficientSpace`, `FsLimit` (файл, затем архив). Порядок предупреждений: `TargetOnSystemDrive`, `StalePartial`, `Sensitive`, `RequiresElevation`, `UnknownSize`, `HugeFile`, `LargeSelection`.
 
 ### 4.7 Шифрование
 - Крейт `age` (rage), `age::Encryptor::with_user_passphrase` (scrypt, work factor по умолчанию библиотеки).
@@ -380,7 +389,7 @@ pub struct LockingProcess { pub pid: u32, pub name: String, pub app_name: String
 
 - [x] **T-10-01** — Типы `BackupRequest/Options/Target/Estimate/Result`, `BackupManifest` и дочерние + serde/specta + JSON Schema (`schemars`) в `specs/schemas/`. *Зависит:* T-02-01. *Готово, когда:* insta-снапшот схемы и примера §4.4.
 - [x] **T-10-02** — Экранирование имён и построение `archive_path`. *Готово, когда:* unit-тесты §6.
-- [ ] **T-10-03** — `estimate()`: размер, коэффициенты, свободное место, тип ФС, блокеры и предупреждения. *Зависит:* T-10-01. *Готово, когда:* unit-тесты блокеров, Windows-тест `GetDiskFreeSpaceExW`.
+- [x] **T-10-03** — `estimate()`: размер, коэффициенты, свободное место, тип ФС, блокеры и предупреждения. *Зависит:* T-10-01. *Готово, когда:* unit-тесты блокеров, Windows-тест `GetDiskFreeSpaceExW`.
 - [ ] **T-10-04** — Абстракция `ArchiveSink` с реализациями `ZipSink` (deflate/stored по расширению, zip64, UTF-8, extra fields времени) и `DirSink` (SetFileTime, атрибуты). *Готово, когда:* round-trip тест для обоих.
 - [ ] **T-10-05** — Открытие исходных файлов с шарингом и ретраями (FR-10-05), `HashingReader` (blake3 tee), проверка `changed_during_read`. *Зависит:* T-10-04.
 - [ ] **T-10-06** — Restart Manager `find_lockers` (`sk-backup::win::rm`) + заглушка для не-Windows. *Готово, когда:* Windows-тест с блокирующим дочерним процессом.

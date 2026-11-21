@@ -3078,6 +3078,8 @@ dependencies = [
  "serde_json",
  "sk-core",
  "specta",
+ "tempfile",
+ "thiserror",
  "time",
  "uuid",
 ]

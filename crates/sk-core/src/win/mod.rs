@@ -17,6 +17,7 @@ pub(crate) mod registry;
 pub mod single_instance;
 #[cfg(windows)]
 pub(crate) mod system;
+pub(crate) mod volume;
 #[cfg(windows)]
 mod volumes;
 

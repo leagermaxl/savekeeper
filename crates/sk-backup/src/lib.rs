@@ -1,11 +1,15 @@
 //! Backup writer: archive, manifest, report, encryption and verification (SPEC-10).
 
 mod archive_path;
+mod error;
+mod estimate;
 mod manifest;
 mod schema;
 mod serde_util;
 mod types;
 
+pub use error::BackupError;
+pub use estimate::estimate;
 pub use manifest::{
     BackupManifest, EntryFlag, EntryKind, ErrorCode, ExportFile, ExportStatus, FileAttribute,
     FindingStatus, LockedEntry, LockedProcess, ManifestContainer, ManifestEntry, ManifestError,

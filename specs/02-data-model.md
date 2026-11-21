@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-core` |
 | Зависит от | SPEC-00 |
 | Используется в | все спеки |
-| Последнее изменение | 2026-10-17 (§2: `Finding.children` — также альтернативы с тегом `alternative`, SPEC-07 T-07-10); 2026-10-10 (`ScanReport.unknown_summaries` — источник `CollectOutput::unknown_summaries`, SPEC-07 T-07-05); 2026-10-10 (T-02-12: уточнения §3.5 — NotFound, ссылки, папки); 2026-10-10 (§3.5: `sk_core::fs::cloud_state` — проверка cloud-only без скачивания для бэкапа и копирующих экспортёров, задача T-02-12); 2026-10-10 (T-02-11: детали декодирования `values`, FFI в §3.4); 2026-10-10 (§3.4: `RegistryReader::values`, `RegData`, `RegValue`, `MemRegistry::set_value` — сырые значения ключа для sk-system, задача T-02-11); 2026-10-03 (T-02-10: `normalize_key`, корень вне Windows; общий RegistryReader и PathTemplate::specialize в sk-core; §3.2: `specialize`; §3.4: реестр только для чтения; T-04-05: §3.2, §2.7 — специализация мульти-значных токенов в шаблоне находки до расчёта `FindingId`); 2026-10-02 (§4.1: `Marker::ALL`; §6: `from_env`, `from_json`, `ReportError`, правила снапшота окружения; §2.7: API `FindingId::for_target`, уточнения формулы; §4.2: API `sk-core::privacy`, правила замен, `machine_name`; §3.1–§3.3: синтаксис шаблонов, `Token`, `TemplateError`, правила `resolve`/`from_path`, токены `{STORE_GAME_ID}`/`{GAME_DIR_NAME}` в таблице, `Environment.store_packages` для `{PACKAGE:…}`; §3.3: `Environment::known_folder`, `KnownFolder::ALL/token/from_token`; §3.1, §3.3: OneDrive-корни заполняет `detect()`, `EnvError`, раскладка `fake`, правила для дисков и процессов, состав T-02-05; §5: API `sk-core::path` и `PathSet`; §8, T-02-09: снапшот контракта — TS-декларации вместо JSON Schema, `u64` → `number`; T-02-09: `xtask bindings`, зависит от T-11-01; определены `OsInfo`, `KnownFolder`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `CollectorToggles`, `LlmMode`; обязательные Known Folders; состав и зависимости T-02-01/05/08) |
+| Последнее изменение | 2026-11-21 (§3.6: `sk_core::fs::volume_info` — SPEC-10 T-10-03); 2026-10-17 (§2: `Finding.children` — также альтернативы с тегом `alternative`, SPEC-07 T-07-10); 2026-10-10 (`ScanReport.unknown_summaries` — источник `CollectOutput::unknown_summaries`, SPEC-07 T-07-05); 2026-10-10 (T-02-12: уточнения §3.5 — NotFound, ссылки, папки); 2026-10-10 (§3.5: `sk_core::fs::cloud_state` — проверка cloud-only без скачивания для бэкапа и копирующих экспортёров, задача T-02-12); 2026-10-10 (T-02-11: детали декодирования `values`, FFI в §3.4); 2026-10-10 (§3.4: `RegistryReader::values`, `RegData`, `RegValue`, `MemRegistry::set_value` — сырые значения ключа для sk-system, задача T-02-11); 2026-10-03 (T-02-10: `normalize_key`, корень вне Windows; общий RegistryReader и PathTemplate::specialize в sk-core; §3.2: `specialize`; §3.4: реестр только для чтения; T-04-05: §3.2, §2.7 — специализация мульти-значных токенов в шаблоне находки до расчёта `FindingId`); 2026-10-02 (§4.1: `Marker::ALL`; §6: `from_env`, `from_json`, `ReportError`, правила снапшота окружения; §2.7: API `FindingId::for_target`, уточнения формулы; §4.2: API `sk-core::privacy`, правила замен, `machine_name`; §3.1–§3.3: синтаксис шаблонов, `Token`, `TemplateError`, правила `resolve`/`from_path`, токены `{STORE_GAME_ID}`/`{GAME_DIR_NAME}` в таблице, `Environment.store_packages` для `{PACKAGE:…}`; §3.3: `Environment::known_folder`, `KnownFolder::ALL/token/from_token`; §3.1, §3.3: OneDrive-корни заполняет `detect()`, `EnvError`, раскладка `fake`, правила для дисков и процессов, состав T-02-05; §5: API `sk-core::path` и `PathSet`; §8, T-02-09: снапшот контракта — TS-декларации вместо JSON Schema, `u64` → `number`; T-02-09: `xtask bindings`, зависит от T-11-01; определены `OsInfo`, `KnownFolder`, `DriveSnapshot`, `LauncherSnapshot`, `ScanOptionsSnapshot`, `CollectorToggles`, `LlmMode`; обязательные Known Folders; состав и зависимости T-02-01/05/08) |
 
 ## 1. Цель
 
@@ -435,6 +435,25 @@ pub fn cloud_state(path: &Path) -> std::io::Result<CloudState>; // CloudState �
 - Атрибуты читаются без открытия файла (`GetFileAttributesW` на расширенном пути, `sk-core::path::to_extended`), это не вызывает скачивание. `CloudOnly` — по тому же правилу, что SPEC-03 §4.2: `attrs & (0x400000 | 0x40000 | 0x1000) != 0` (RECALL_ON_DATA_ACCESS, RECALL_ON_OPEN, OFFLINE).
 - Нет файла или родительской папки → `Err(NotFound)`; прочие ошибки — как есть. Атрибуты берутся у самой записи, по ссылкам не следуем; папку тоже можно проверить. Вне Windows — `Ok(Local)` для существующей записи (`symlink_metadata`, в т.ч. битая ссылка).
 - FFI — в `sk-core::win`, для других ОС — заглушка.
+
+### 3.6 Сведения о томе
+
+Для оценки бэкапа (SPEC-10 §4.6): FFI разрешён только в `sk-core::win` (SPEC-00 §7.1).
+
+```rust
+// sk-core::fs
+pub fn volume_info(path: &Path) -> std::io::Result<VolumeInfo>;
+pub struct VolumeInfo {
+    pub root: PathBuf,             // корень тома (GetVolumePathNameW)
+    pub fs_name: Option<String>,   // "NTFS", "exFAT", "FAT32", … (GetVolumeInformationW)
+    pub remote: bool,              // сетевой диск (GetDriveTypeW)
+    pub free_bytes: u64,           // свободно для пользователя (GetDiskFreeSpaceExW)
+    pub system: bool,              // том системной папки Windows
+}
+```
+
+- `path` — существующая папка; иначе `Err(NotFound)` / `Err(NotADirectory)`. Длинные пути — через `sk-core::path::to_extended`.
+- Вне Windows — заглушка: `root = /`, `fs_name = None`, `free_bytes = u64::MAX`, `system = false`.
 
 ## 4. FolderSummary
 

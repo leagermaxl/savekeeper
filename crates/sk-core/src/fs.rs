@@ -139,6 +139,34 @@ pub fn cloud_state(path: &Path) -> std::io::Result<CloudState> {
     })
 }
 
+/// The volume that holds a folder (SPEC-10 §4.6: backup target estimate).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VolumeInfo {
+    /// Mount point of the volume (`C:\`, `\\server\share\`), without `\\?\`.
+    pub root: PathBuf,
+    /// File system name (`NTFS`, `FAT32`, `exFAT`, `ReFS`, …); `None` if unknown.
+    pub fs_name: Option<String>,
+    /// A network drive or share.
+    pub remote: bool,
+    /// Free space available to the current user at the folder.
+    pub free_bytes: u64,
+    /// The volume holds the Windows folder.
+    pub system: bool,
+}
+
+/// The volume of the existing folder `path`: `GetDiskFreeSpaceExW` on the
+/// folder, `GetVolumePathNameW` for its root, `GetVolumeInformationW` and
+/// `GetDriveTypeW` on the root. Only reads; extended paths are used.
+///
+/// A missing path is [`std::io::ErrorKind::NotFound`], a file is
+/// [`std::io::ErrorKind::NotADirectory`]; a failed file system name query
+/// gives `fs_name: None`. Outside Windows the root is `/`, the file system
+/// unknown, `remote` and `system` are `false`, and `free_bytes` is
+/// `u64::MAX` (unknown, not limiting).
+pub fn volume_info(path: &Path) -> std::io::Result<VolumeInfo> {
+    crate::win::volume::volume_info(path)
+}
+
 /// An entry found while listing or walking.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DirEntryInfo {
@@ -277,6 +305,10 @@ impl From<std::io::Error> for FsError {
 #[cfg(test)]
 #[path = "fs_cloud_tests.rs"]
 mod cloud_tests;
+
+#[cfg(test)]
+#[path = "fs_volume_tests.rs"]
+mod volume_tests;
 
 #[cfg(test)]
 mod tests {
