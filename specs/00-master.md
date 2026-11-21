@@ -101,7 +101,7 @@
 | SPEC-07 | [07-heuristics.md](07-heuristics.md) | Неизвестные папки, git-репозитории, пользовательские файлы, отсев мусора | P2 | `sk-heuristics` | in-progress |
 | SPEC-08 | [08-llm-classifier.md](08-llm-classifier.md) | Абстракция LLM, провайдеры, промпт, приватность, кэш | P2 | `sk-llm` | in-progress |
 | SPEC-09 | [09-scoring.md](09-scoring.md) | Оценка важности, выбор по умолчанию, слияние находок | P2 | `sk-score` | in-progress |
-| SPEC-10 | [10-backup.md](10-backup.md) | Запись бэкапа, манифест, отчёт, шифрование, верификация | P3 | `sk-backup` | approved |
+| SPEC-10 | [10-backup.md](10-backup.md) | Запись бэкапа, манифест, отчёт, шифрование, верификация | P3 | `sk-backup` | in-progress |
 | SPEC-11 | [11-ui.md](11-ui.md) | Tauri-приложение: экраны, IPC, состояние, i18n | P3 | `app/` | approved |
 | SPEC-12 | [12-testing-ci.md](12-testing-ci.md) | Стратегия тестов, фикстуры, CI | P0 (сквозная) | все | in-progress |
 | SPEC-13 | [13-restore.md](13-restore.md) | Восстановление из бэкапа | P4 (post-MVP) | `sk-restore` | approved |

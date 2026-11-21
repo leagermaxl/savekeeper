@@ -1,0 +1,1279 @@
+---
+source: crates/sk-backup/tests/manifest_contract.rs
+expression: manifest_json_schema()
+---
+{
+  "$defs": {
+    "AppKind": {
+      "description": "`sk_core::model::AppKind`.",
+      "oneOf": [
+        {
+          "const": "game",
+          "description": "A game.",
+          "type": "string"
+        },
+        {
+          "const": "application",
+          "description": "A regular application.",
+          "type": "string"
+        },
+        {
+          "const": "system",
+          "description": "Part of the operating system.",
+          "type": "string"
+        },
+        {
+          "const": "dev_tool",
+          "description": "A developer tool.",
+          "type": "string"
+        }
+      ]
+    },
+    "AppRef": {
+      "description": "`sk_core::model::AppRef` (SPEC-02 §2.4).",
+      "properties": {
+        "id": {
+          "description": "Normalized slug.",
+          "type": "string"
+        },
+        "installed": {
+          "description": "Whether it is installed now.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "kind": {
+          "$ref": "#/$defs/AppKind",
+          "description": "Kind of application."
+        },
+        "name": {
+          "description": "Display name.",
+          "type": "string"
+        },
+        "process_names": {
+          "description": "Lowercase executable names.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "source_ids": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Identifiers in external sources.",
+          "type": "object"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "source_ids",
+        "process_names"
+      ],
+      "type": "object"
+    },
+    "BackupFormat": {
+      "description": "`sk_core::config::BackupFormat`.",
+      "oneOf": [
+        {
+          "const": "zip",
+          "description": "A zip archive.",
+          "type": "string"
+        },
+        {
+          "const": "dir",
+          "description": "A plain folder.",
+          "type": "string"
+        }
+      ]
+    },
+    "BackupStatus": {
+      "description": "Overall status of a backup.",
+      "oneOf": [
+        {
+          "const": "complete",
+          "description": "Everything selected is saved.",
+          "type": "string"
+        },
+        {
+          "const": "complete_with_issues",
+          "description": "Saved, but some files are locked, missing or failed.",
+          "type": "string"
+        },
+        {
+          "const": "incomplete",
+          "description": "Cancelled or interrupted; only a kept `.partial` has this status (FR-10-08).",
+          "type": "string"
+        },
+        {
+          "const": "verify_failed",
+          "description": "Verification found a mismatch (FR-10-09).",
+          "type": "string"
+        }
+      ]
+    },
+    "Category": {
+      "description": "`sk_core::model::Category` (SPEC-02 §2.3).",
+      "oneOf": [
+        {
+          "const": "game_save",
+          "description": "Game saves.",
+          "type": "string"
+        },
+        {
+          "const": "game_config",
+          "description": "Game settings, configs and mods.",
+          "type": "string"
+        },
+        {
+          "const": "app_config",
+          "description": "Application settings.",
+          "type": "string"
+        },
+        {
+          "const": "app_data",
+          "description": "Application data.",
+          "type": "string"
+        },
+        {
+          "const": "user_files",
+          "description": "User files outside standard locations.",
+          "type": "string"
+        },
+        {
+          "const": "dev_environment",
+          "description": "SSH, git, IDEs, repositories, WSL.",
+          "type": "string"
+        },
+        {
+          "const": "credentials",
+          "description": "Keys, certificates, password managers.",
+          "type": "string"
+        },
+        {
+          "const": "system_settings",
+          "description": "winget, Wi-Fi, drivers, fonts, hosts ...",
+          "type": "string"
+        },
+        {
+          "const": "reinstallable",
+          "description": "Restored by reinstalling or downloading.",
+          "type": "string"
+        },
+        {
+          "const": "cache",
+          "description": "Caches, temporary files, logs.",
+          "type": "string"
+        },
+        {
+          "const": "unknown",
+          "description": "Not recognized.",
+          "type": "string"
+        }
+      ]
+    },
+    "DateTime": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "DriveKind": {
+      "description": "`sk_core::env::DriveKind`.",
+      "oneOf": [
+        {
+          "const": "fixed",
+          "description": "Internal disk.",
+          "type": "string"
+        },
+        {
+          "const": "removable",
+          "description": "USB stick, card reader.",
+          "type": "string"
+        },
+        {
+          "const": "network",
+          "description": "Network share.",
+          "type": "string"
+        },
+        {
+          "const": "cd_rom",
+          "description": "Optical drive.",
+          "type": "string"
+        },
+        {
+          "const": "unknown",
+          "description": "Anything else.",
+          "type": "string"
+        }
+      ]
+    },
+    "DriveSnapshot": {
+      "description": "`sk_core::model::DriveSnapshot`.",
+      "properties": {
+        "fs": {
+          "description": "File system.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "kind": {
+          "$ref": "#/$defs/DriveKind",
+          "description": "Drive type."
+        },
+        "label": {
+          "description": "Volume label.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "letter": {
+          "description": "Drive letter.",
+          "maxLength": 1,
+          "minLength": 1,
+          "type": "string"
+        },
+        "volume_serial": {
+          "description": "Volume serial number.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "letter",
+        "kind"
+      ],
+      "type": "object"
+    },
+    "EntryFlag": {
+      "description": "Note about a [`ManifestEntry`].",
+      "oneOf": [
+        {
+          "const": "changed_during_read",
+          "description": "Size or mtime changed while the file was read; it is saved anyway (§4.3).",
+          "type": "string"
+        },
+        {
+          "const": "non_utf8_path",
+          "description": "The source path is not valid UTF-8 and was replaced lossily (SPEC-02 §5).",
+          "type": "string"
+        },
+        {
+          "const": "name_escaped",
+          "description": "The name was escaped in `archive_path`; see `original_name` (§4.2).",
+          "type": "string"
+        }
+      ]
+    },
+    "EntryKind": {
+      "description": "Kind of a [`ManifestEntry`].",
+      "oneOf": [
+        {
+          "const": "file",
+          "description": "A regular file.",
+          "type": "string"
+        },
+        {
+          "const": "dir",
+          "description": "An empty folder.",
+          "type": "string"
+        },
+        {
+          "const": "symlink",
+          "description": "A symbolic link or junction; the content is not copied.",
+          "type": "string"
+        }
+      ]
+    },
+    "EnvironmentSnapshot": {
+      "description": "`sk_core::model::EnvironmentSnapshot` (SPEC-02 §6).",
+      "properties": {
+        "drives": {
+          "description": "Drives.",
+          "items": {
+            "$ref": "#/$defs/DriveSnapshot"
+          },
+          "type": "array"
+        },
+        "is_elevated": {
+          "description": "The scan ran with administrator rights.",
+          "type": "boolean"
+        },
+        "known_folders": {
+          "additionalProperties": {
+            "$ref": "#/$defs/PathTemplate"
+          },
+          "description": "Known folders by token name (`DOCUMENTS`, `SAVED_GAMES` ...) as templates.",
+          "type": "object"
+        },
+        "launchers": {
+          "description": "Launchers.",
+          "items": {
+            "$ref": "#/$defs/LauncherSnapshot"
+          },
+          "type": "array"
+        },
+        "machine_name": {
+          "description": "Computer name.",
+          "type": "string"
+        },
+        "os": {
+          "$ref": "#/$defs/OsInfo",
+          "description": "Operating system version."
+        }
+      },
+      "required": [
+        "os",
+        "machine_name",
+        "known_folders",
+        "drives",
+        "launchers",
+        "is_elevated"
+      ],
+      "type": "object"
+    },
+    "ErrorCode": {
+      "description": "Code of a [`ManifestError`] (§4.4, FR-10-15).",
+      "oneOf": [
+        {
+          "const": "access_denied",
+          "description": "Access is denied.",
+          "type": "string"
+        },
+        {
+          "const": "not_found",
+          "description": "The file or the finding's root no longer exists.",
+          "type": "string"
+        },
+        {
+          "const": "locked",
+          "description": "Locked by another process.",
+          "type": "string"
+        },
+        {
+          "const": "io",
+          "description": "Other I/O error.",
+          "type": "string"
+        },
+        {
+          "const": "path_too_long",
+          "description": "The path is too long.",
+          "type": "string"
+        },
+        {
+          "const": "name_invalid",
+          "description": "The name cannot be stored.",
+          "type": "string"
+        },
+        {
+          "const": "export_failed",
+          "description": "A system export failed.",
+          "type": "string"
+        },
+        {
+          "const": "elevation_denied",
+          "description": "The user declined the UAC prompt.",
+          "type": "string"
+        },
+        {
+          "const": "cancelled",
+          "description": "The backup was cancelled.",
+          "type": "string"
+        },
+        {
+          "const": "cloud_only",
+          "description": "Cloud-only file, not downloaded (FR-10-15).",
+          "type": "string"
+        }
+      ]
+    },
+    "ExportFile": {
+      "description": "A file produced by a system export.",
+      "properties": {
+        "archive_path": {
+          "description": "Path in the archive, `system/<exporter_id>/...`.",
+          "type": "string"
+        },
+        "blake3": {
+          "description": "BLAKE3 of the content, 64 hex characters.",
+          "type": "string"
+        },
+        "size": {
+          "description": "Size in bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "archive_path",
+        "size",
+        "blake3"
+      ],
+      "type": "object"
+    },
+    "ExportStatus": {
+      "description": "Result of a system export.",
+      "oneOf": [
+        {
+          "const": "complete",
+          "description": "Exported.",
+          "type": "string"
+        },
+        {
+          "const": "failed",
+          "description": "The exporter failed.",
+          "type": "string"
+        },
+        {
+          "const": "elevation_denied",
+          "description": "The user declined the UAC prompt.",
+          "type": "string"
+        },
+        {
+          "const": "unavailable",
+          "description": "The exporter is not available on this machine.",
+          "type": "string"
+        }
+      ]
+    },
+    "FileAttribute": {
+      "description": "Saved file attribute.",
+      "oneOf": [
+        {
+          "const": "readonly",
+          "description": "`FILE_ATTRIBUTE_READONLY`.",
+          "type": "string"
+        },
+        {
+          "const": "hidden",
+          "description": "`FILE_ATTRIBUTE_HIDDEN`.",
+          "type": "string"
+        },
+        {
+          "const": "system",
+          "description": "`FILE_ATTRIBUTE_SYSTEM`.",
+          "type": "string"
+        },
+        {
+          "const": "archive",
+          "description": "`FILE_ATTRIBUTE_ARCHIVE`.",
+          "type": "string"
+        }
+      ]
+    },
+    "FindingId": {
+      "description": "Stable finding identifier (SPEC-02 §2.7).",
+      "pattern": "^[0-9a-f]{16}$",
+      "type": "string"
+    },
+    "FindingStatus": {
+      "description": "Result for one finding.",
+      "oneOf": [
+        {
+          "const": "complete",
+          "description": "Everything is saved.",
+          "type": "string"
+        },
+        {
+          "const": "partial",
+          "description": "Some files are locked, missing or failed.",
+          "type": "string"
+        },
+        {
+          "const": "failed",
+          "description": "Nothing could be saved.",
+          "type": "string"
+        },
+        {
+          "const": "skipped",
+          "description": "Nothing to save: the finding has no files (§5).",
+          "type": "string"
+        }
+      ]
+    },
+    "LauncherSnapshot": {
+      "description": "`sk_core::model::LauncherSnapshot`.",
+      "properties": {
+        "game_count": {
+          "description": "Number of installed games.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "id": {
+          "description": "\"steam\", \"epic\" ...",
+          "type": "string"
+        },
+        "root": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PathTemplate"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Root as a template."
+        }
+      },
+      "required": [
+        "id",
+        "game_count"
+      ],
+      "type": "object"
+    },
+    "LockedEntry": {
+      "description": "A file that could not be read because other processes lock it (FR-10-06).",
+      "properties": {
+        "finding_id": {
+          "$ref": "#/$defs/FindingId",
+          "description": "Finding of the file."
+        },
+        "processes": {
+          "description": "Processes holding the file (Restart Manager).",
+          "items": {
+            "$ref": "#/$defs/LockedProcess"
+          },
+          "type": "array"
+        },
+        "source": {
+          "$ref": "#/$defs/PathTemplate",
+          "description": "Source path as a template."
+        }
+      },
+      "required": [
+        "finding_id",
+        "source",
+        "processes"
+      ],
+      "type": "object"
+    },
+    "LockedProcess": {
+      "description": "A process holding a locked file.",
+      "properties": {
+        "app_name": {
+          "description": "Application name from Restart Manager (`strAppName`).",
+          "type": "string"
+        },
+        "name": {
+          "description": "Executable name, e.g. `chrome.exe`.",
+          "type": "string"
+        },
+        "pid": {
+          "description": "Process id.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "pid",
+        "app_name"
+      ],
+      "type": "object"
+    },
+    "ManifestContainer": {
+      "description": "Container of a backup.",
+      "properties": {
+        "compression_level": {
+          "description": "Zip compression level `0..=9`.",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "encrypted": {
+          "description": "The zip is encrypted with age (FR-10-10).",
+          "type": "boolean"
+        },
+        "format": {
+          "$ref": "#/$defs/BackupFormat",
+          "description": "Zip archive or plain folder."
+        }
+      },
+      "required": [
+        "format",
+        "encrypted",
+        "compression_level"
+      ],
+      "type": "object"
+    },
+    "ManifestEntry": {
+      "description": "One written file, empty folder or symbolic link.",
+      "properties": {
+        "archive_path": {
+          "description": "Path in the archive, separator `/`.",
+          "type": "string"
+        },
+        "attributes": {
+          "description": "File attributes.",
+          "items": {
+            "$ref": "#/$defs/FileAttribute"
+          },
+          "type": "array"
+        },
+        "blake3": {
+          "description": "BLAKE3 of the content, 64 hex characters; `null` for folders and links.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ctime": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DateTime"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Creation time."
+        },
+        "finding_id": {
+          "$ref": "#/$defs/FindingId",
+          "description": "Finding the entry belongs to."
+        },
+        "flags": {
+          "description": "Notes about the entry.",
+          "items": {
+            "$ref": "#/$defs/EntryFlag"
+          },
+          "type": "array"
+        },
+        "kind": {
+          "$ref": "#/$defs/EntryKind",
+          "description": "Kind of entry."
+        },
+        "link_target": {
+          "description": "Target of a symbolic link or junction, not followed (§4.3).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mtime": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DateTime"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Modification time."
+        },
+        "original_name": {
+          "description": "Original file name if it was escaped in `archive_path` (§4.2).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "size": {
+          "description": "Size in bytes; `0` for folders and links.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "source": {
+          "$ref": "#/$defs/PathTemplate",
+          "description": "Source path as a template; never an absolute path with the user name."
+        }
+      },
+      "required": [
+        "finding_id",
+        "kind",
+        "source",
+        "archive_path",
+        "size",
+        "attributes",
+        "flags"
+      ],
+      "type": "object"
+    },
+    "ManifestError": {
+      "description": "An error during the backup.",
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/ErrorCode",
+          "description": "Error code."
+        },
+        "finding_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FindingId"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Finding the error belongs to; `null` for errors of the whole backup."
+        },
+        "message": {
+          "description": "OS or tool message, for diagnostics.",
+          "type": "string"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PathTemplate"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Source path as a template, if the error concerns a file."
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "type": "object"
+    },
+    "ManifestExport": {
+      "description": "Result of one system export.",
+      "properties": {
+        "elevated": {
+          "description": "It ran through the elevation helper (SPEC-14).",
+          "type": "boolean"
+        },
+        "exporter_id": {
+          "description": "Exporter identifier (SPEC-06).",
+          "type": "string"
+        },
+        "files": {
+          "description": "Files it produced.",
+          "items": {
+            "$ref": "#/$defs/ExportFile"
+          },
+          "type": "array"
+        },
+        "finding_id": {
+          "$ref": "#/$defs/FindingId",
+          "description": "Finding of the export."
+        },
+        "params": {
+          "description": "Parameters the exporter ran with."
+        },
+        "status": {
+          "$ref": "#/$defs/ExportStatus",
+          "description": "Result."
+        }
+      },
+      "required": [
+        "finding_id",
+        "exporter_id",
+        "params",
+        "files",
+        "status",
+        "elevated"
+      ],
+      "type": "object"
+    },
+    "ManifestFinding": {
+      "description": "Snapshot of a selected finding (SPEC-02 §2.1), without resolved paths.",
+      "properties": {
+        "app": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AppRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Application or game."
+        },
+        "archive_dir": {
+          "description": "Folder of the finding's files: `files/<id>` (file targets).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "archive_path": {
+          "description": "Path of the single archive file: `registry/<id>.reg` (registry targets).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "category": {
+          "$ref": "#/$defs/Category",
+          "description": "Kind of data."
+        },
+        "id": {
+          "$ref": "#/$defs/FindingId",
+          "description": "Finding identifier."
+        },
+        "sensitivity": {
+          "$ref": "#/$defs/Sensitivity",
+          "description": "How sensitive the data is."
+        },
+        "stats": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ManifestFindingStats"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "What was written for the finding (file targets)."
+        },
+        "status": {
+          "$ref": "#/$defs/FindingStatus",
+          "description": "Result for the finding."
+        },
+        "target": {
+          "$ref": "#/$defs/ManifestTarget",
+          "description": "What was saved."
+        },
+        "title": {
+          "description": "Display title.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "category",
+        "target",
+        "sensitivity",
+        "status"
+      ],
+      "type": "object"
+    },
+    "ManifestFindingStats": {
+      "description": "Size and number of files written for a finding.",
+      "properties": {
+        "file_count": {
+          "description": "Files written.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "total_bytes": {
+          "description": "Bytes written.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "total_bytes",
+        "file_count"
+      ],
+      "type": "object"
+    },
+    "ManifestTarget": {
+      "description": "`sk_core::model::Target` without resolved paths.",
+      "oneOf": [
+        {
+          "description": "A set of files under a root.",
+          "properties": {
+            "exclude": {
+              "description": "Globs relative to `root`.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "include": {
+              "description": "Globs relative to `root`; empty means `**`.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "file_set",
+              "type": "string"
+            },
+            "root": {
+              "$ref": "#/$defs/PathTemplate",
+              "description": "Root as a template."
+            }
+          },
+          "required": [
+            "kind",
+            "root",
+            "include",
+            "exclude"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A single file.",
+          "properties": {
+            "kind": {
+              "const": "file",
+              "type": "string"
+            },
+            "path": {
+              "$ref": "#/$defs/PathTemplate",
+              "description": "File path as a template."
+            }
+          },
+          "required": [
+            "kind",
+            "path"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A registry key.",
+          "properties": {
+            "hive": {
+              "$ref": "#/$defs/RegHive",
+              "description": "Registry hive."
+            },
+            "key": {
+              "description": "Key path inside the hive.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "registry",
+              "type": "string"
+            },
+            "recursive": {
+              "description": "Subkeys included.",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "hive",
+            "key",
+            "recursive"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "Output of a system exporter (SPEC-06).",
+          "properties": {
+            "exporter_id": {
+              "description": "Exporter identifier.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "system_export",
+              "type": "string"
+            },
+            "params": {
+              "description": "Exporter-specific parameters."
+            }
+          },
+          "required": [
+            "kind",
+            "exporter_id",
+            "params"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "ManifestTotals": {
+      "description": "Totals of a backup.",
+      "properties": {
+        "archive_bytes": {
+          "description": "Size of the archive.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "bytes": {
+          "description": "Bytes read from the sources.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "errors": {
+          "description": "Errors.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "files": {
+          "description": "Files written.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "locked": {
+          "description": "Locked files.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "files",
+        "bytes",
+        "archive_bytes",
+        "locked",
+        "errors"
+      ],
+      "type": "object"
+    },
+    "OsInfo": {
+      "description": "`sk_core::env::OsInfo`.",
+      "properties": {
+        "arch": {
+          "description": "\"x86_64\" | \"aarch64\" | \"x86\".",
+          "type": "string"
+        },
+        "build": {
+          "description": "\"26100.2033\".",
+          "type": "string"
+        },
+        "display_version": {
+          "description": "\"24H2\".",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "product": {
+          "description": "\"Windows 11 Pro\".",
+          "type": "string"
+        },
+        "ui_language": {
+          "description": "BCP-47, \"ru-RU\".",
+          "type": "string"
+        }
+      },
+      "required": [
+        "product",
+        "build",
+        "arch",
+        "ui_language"
+      ],
+      "type": "object"
+    },
+    "PathTemplate": {
+      "description": "Path with tokens such as {APPDATA}, separator \\ (SPEC-02 §3.1).",
+      "type": "string"
+    },
+    "RegHive": {
+      "description": "`sk_core::model::RegHive`.",
+      "oneOf": [
+        {
+          "const": "hkcu",
+          "description": "`HKEY_CURRENT_USER`.",
+          "type": "string"
+        },
+        {
+          "const": "hklm",
+          "description": "`HKEY_LOCAL_MACHINE`.",
+          "type": "string"
+        }
+      ]
+    },
+    "Sensitivity": {
+      "description": "`sk_core::model::Sensitivity`.",
+      "oneOf": [
+        {
+          "const": "none",
+          "description": "Nothing sensitive.",
+          "type": "string"
+        },
+        {
+          "const": "low",
+          "description": "Somewhat personal.",
+          "type": "string"
+        },
+        {
+          "const": "high",
+          "description": "Passwords, keys, tokens.",
+          "type": "string"
+        }
+      ]
+    },
+    "Uuid": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "Verification": {
+      "description": "Result of the verification after writing (FR-10-09).",
+      "properties": {
+        "checked_files": {
+          "description": "Entries checked.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "mismatches": {
+          "description": "Entries that did not match.",
+          "items": {
+            "$ref": "#/$defs/VerificationMismatch"
+          },
+          "type": "array"
+        },
+        "ok": {
+          "description": "Every entry matched.",
+          "type": "boolean"
+        },
+        "performed": {
+          "description": "Verification ran.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "performed",
+        "ok",
+        "checked_files",
+        "mismatches"
+      ],
+      "type": "object"
+    },
+    "VerificationMismatch": {
+      "description": "An entry whose content read back differs from the manifest.",
+      "properties": {
+        "actual_blake3": {
+          "description": "BLAKE3 read back; `null` if the entry is missing or unreadable.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "archive_path": {
+          "description": "Path in the archive.",
+          "type": "string"
+        },
+        "expected_blake3": {
+          "description": "BLAKE3 in the manifest.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "archive_path",
+        "expected_blake3"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "`manifest.json` of a backup (SPEC-10 §4.4).",
+  "properties": {
+    "app_version": {
+      "description": "Version of the program that wrote the backup.",
+      "type": "string"
+    },
+    "backup_id": {
+      "$ref": "#/$defs/Uuid",
+      "description": "Backup identifier."
+    },
+    "container": {
+      "$ref": "#/$defs/ManifestContainer",
+      "description": "Container of the backup."
+    },
+    "created_at": {
+      "$ref": "#/$defs/DateTime",
+      "description": "Backup start."
+    },
+    "entries": {
+      "description": "One entry per written file, in write order.",
+      "items": {
+        "$ref": "#/$defs/ManifestEntry"
+      },
+      "type": "array"
+    },
+    "environment": {
+      "$ref": "#/$defs/EnvironmentSnapshot",
+      "description": "Anonymized environment of the source machine (SPEC-02 §6)."
+    },
+    "errors": {
+      "description": "Errors.",
+      "items": {
+        "$ref": "#/$defs/ManifestError"
+      },
+      "type": "array"
+    },
+    "exports": {
+      "description": "Results of system exports.",
+      "items": {
+        "$ref": "#/$defs/ManifestExport"
+      },
+      "type": "array"
+    },
+    "findings": {
+      "description": "Snapshot of the selected findings, without resolved paths.",
+      "items": {
+        "$ref": "#/$defs/ManifestFinding"
+      },
+      "type": "array"
+    },
+    "finished_at": {
+      "$ref": "#/$defs/DateTime",
+      "description": "Backup end."
+    },
+    "format": {
+      "description": "Always [`BackupManifest::FORMAT`].",
+      "type": "string"
+    },
+    "locked": {
+      "description": "Files that could not be read because other processes lock them.",
+      "items": {
+        "$ref": "#/$defs/LockedEntry"
+      },
+      "type": "array"
+    },
+    "scan_id": {
+      "$ref": "#/$defs/Uuid",
+      "description": "Scan the backup was made from (`ScanReport.scan_id`)."
+    },
+    "schema_version": {
+      "description": "[`BackupManifest::SCHEMA_VERSION`] when written.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "status": {
+      "$ref": "#/$defs/BackupStatus",
+      "description": "Overall status."
+    },
+    "totals": {
+      "$ref": "#/$defs/ManifestTotals",
+      "description": "Totals."
+    },
+    "verification": {
+      "$ref": "#/$defs/Verification",
+      "description": "Result of the verification after writing (FR-10-09)."
+    }
+  },
+  "required": [
+    "format",
+    "schema_version",
+    "status",
+    "backup_id",
+    "scan_id",
+    "app_version",
+    "created_at",
+    "finished_at",
+    "container",
+    "environment",
+    "findings",
+    "entries",
+    "exports",
+    "locked",
+    "errors",
+    "totals",
+    "verification"
+  ],
+  "title": "SaveKeeper backup manifest v1",
+  "type": "object"
+}

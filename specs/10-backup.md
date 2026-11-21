@@ -3,12 +3,12 @@
 | Поле | Значение |
 |---|---|
 | ID | SPEC-10 |
-| Статус | approved |
+| Статус | in-progress |
 | Фаза | P3 |
 | Крейт(ы) | `sk-backup` (оркестрация — `sk-engine::BackupJob`) |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03, SPEC-06, SPEC-09 |
 | Используется в | SPEC-11, SPEC-13, SPEC-14 |
-| Последнее изменение | 2026-10-10 (T-10-09: `params` экспортёра `checklist` из находок — SPEC-06 §4.7); 2026-10-10 (FR-10-15: cloud-only файлы не открываются и не скачиваются); 2026-10-10 (имя файла экспорта winget — `winget.json`, как в SPEC-06 §4.3); 2026-10-01 (пример `environment` в манифесте по SPEC-02 §6; закрыт вопрос по `EnvironmentSnapshot`) |
+| Последнее изменение | 2026-11-21 (§4.4: код ошибки `cloud_only` в списке кодов, как в FR-10-15 и §5 — T-10-01); 2026-10-10 (T-10-09: `params` экспортёра `checklist` из находок — SPEC-06 §4.7); 2026-10-10 (FR-10-15: cloud-only файлы не открываются и не скачиваются); 2026-10-10 (имя файла экспорта winget — `winget.json`, как в SPEC-06 §4.3); 2026-10-01 (пример `environment` в манифесте по SPEC-02 §6; закрыт вопрос по `EnvironmentSnapshot`) |
 
 ## 1. Цель
 
@@ -283,7 +283,7 @@ flowchart TD
 
 - Для `manifest.json` генерируется JSON Schema (`schemars`) в `specs/schemas/backup-manifest-v1.schema.json`. Этот файл — контракт для SPEC-13.
 - `source` всегда `PathTemplate` (SPEC-02 §3). Абсолютные пути с именем пользователя в манифест не попадают.
-- Коды ошибок (`code`): `access_denied`, `not_found`, `locked`, `io`, `path_too_long`, `name_invalid`, `export_failed`, `elevation_denied`, `cancelled`.
+- Коды ошибок (`code`): `access_denied`, `not_found`, `locked`, `io`, `path_too_long`, `name_invalid`, `export_failed`, `elevation_denied`, `cloud_only`, `cancelled`.
 - Типы в Rust: `BackupManifest`, `ManifestFinding`, `ManifestEntry`, `ManifestExport`, `LockedEntry`, `ManifestError`, `Verification` — `serde` + `specta`.
 - Большие манифесты (≥ 100 тыс. записей) пишутся потоково: записи `entries` накапливаются во временном файле JSON Lines (`.partial/entries.jsonl`) и при финализации склеиваются в итоговый JSON без загрузки в память.
 
@@ -376,7 +376,7 @@ pub struct LockingProcess { pub pid: u32, pub name: String, pub app_name: String
 
 ## 7. Задачи
 
-- [ ] **T-10-01** — Типы `BackupRequest/Options/Target/Estimate/Result`, `BackupManifest` и дочерние + serde/specta + JSON Schema (`schemars`) в `specs/schemas/`. *Зависит:* T-02-01. *Готово, когда:* insta-снапшот схемы и примера §4.4.
+- [x] **T-10-01** — Типы `BackupRequest/Options/Target/Estimate/Result`, `BackupManifest` и дочерние + serde/specta + JSON Schema (`schemars`) в `specs/schemas/`. *Зависит:* T-02-01. *Готово, когда:* insta-снапшот схемы и примера §4.4.
 - [ ] **T-10-02** — Экранирование имён и построение `archive_path`. *Готово, когда:* unit-тесты §6.
 - [ ] **T-10-03** — `estimate()`: размер, коэффициенты, свободное место, тип ФС, блокеры и предупреждения. *Зависит:* T-10-01. *Готово, когда:* unit-тесты блокеров, Windows-тест `GetDiskFreeSpaceExW`.
 - [ ] **T-10-04** — Абстракция `ArchiveSink` с реализациями `ZipSink` (deflate/stored по расширению, zip64, UTF-8, extra fields времени) и `DirSink` (SetFileTime, атрибуты). *Готово, когда:* round-trip тест для обоих.

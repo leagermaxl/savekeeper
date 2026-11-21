@@ -55,6 +55,8 @@ rustls = { version = "0.23", default-features = false, features = ["ring", "std"
 keyring = { version = "3.6", default-features = false }
 # Linear-time regexes for rule conditions (SPEC-04 NFR-04-02).
 regex = "1"
+# JSON Schema of the backup manifest `specs/schemas/backup-manifest-v1.schema.json` (SPEC-10 §4.4).
+schemars = { version = "1", default-features = false, features = ["derive", "std"] }
 # `SecretString` for API keys: redacted `Debug`, zeroed on drop (SPEC-08 §4.10).
 secrecy = "0.10"
 serde = { version = "1", features = ["derive"] }

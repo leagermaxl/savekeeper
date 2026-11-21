@@ -1,0 +1,236 @@
+---
+source: crates/sk-backup/tests/manifest_contract.rs
+expression: written
+---
+{
+  "app_version": "0.1.0+g1a2b3c4",
+  "backup_id": "7b1c1f4e-2d3a-4b5c-8d9e-0f1a2b3c4d5e",
+  "container": {
+    "compression_level": 6,
+    "encrypted": false,
+    "format": "zip"
+  },
+  "created_at": "2026-09-28T14:30:12Z",
+  "entries": [
+    {
+      "archive_path": "files/3fa2c9e01b7d44aa/76561198000000000/ER0000.sl2",
+      "attributes": [
+        "archive"
+      ],
+      "blake3": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "ctime": "2025-03-01T10:00:00Z",
+      "finding_id": "3fa2c9e01b7d44aa",
+      "flags": [],
+      "kind": "file",
+      "mtime": "2026-09-27T22:10:04.123Z",
+      "original_name": null,
+      "size": 28311552,
+      "source": "{APPDATA}\\EldenRing\\76561198000000000\\ER0000.sl2"
+    },
+    {
+      "archive_path": "files/3fa2c9e01b7d44aa/CON~sk",
+      "attributes": [
+        "hidden",
+        "archive"
+      ],
+      "blake3": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "ctime": null,
+      "finding_id": "3fa2c9e01b7d44aa",
+      "flags": [
+        "name_escaped",
+        "changed_during_read"
+      ],
+      "kind": "file",
+      "mtime": "2026-09-27T22:10:04Z",
+      "original_name": "CON",
+      "size": 0,
+      "source": "{APPDATA}\\EldenRing\\CON"
+    },
+    {
+      "archive_path": "files/3fa2c9e01b7d44aa/latest",
+      "attributes": [],
+      "blake3": null,
+      "ctime": null,
+      "finding_id": "3fa2c9e01b7d44aa",
+      "flags": [],
+      "kind": "symlink",
+      "link_target": "76561198000000000",
+      "mtime": null,
+      "original_name": null,
+      "size": 0,
+      "source": "{APPDATA}\\EldenRing\\latest"
+    }
+  ],
+  "environment": {
+    "drives": [
+      {
+        "fs": "NTFS",
+        "kind": "fixed",
+        "label": "Data",
+        "letter": "D",
+        "volume_serial": 305419896
+      }
+    ],
+    "is_elevated": false,
+    "known_folders": {
+      "DOCUMENTS": "{ONEDRIVE}\\Документы",
+      "SAVED_GAMES": "{HOME}\\Saved Games"
+    },
+    "launchers": [
+      {
+        "game_count": 12,
+        "id": "steam",
+        "root": "{PROGRAMFILES_X86}\\Steam"
+      }
+    ],
+    "machine_name": "DESKTOP-01",
+    "os": {
+      "arch": "x86_64",
+      "build": "26100.2033",
+      "display_version": "24H2",
+      "product": "Windows 11 Pro",
+      "ui_language": "ru-RU"
+    }
+  },
+  "errors": [
+    {
+      "code": "access_denied",
+      "finding_id": "3fa2c9e01b7d44aa",
+      "message": "Access is denied. (os error 5)",
+      "source": "{HOME}\\Saved Games\\x.sav"
+    },
+    {
+      "code": "cloud_only",
+      "finding_id": null,
+      "message": "",
+      "source": null
+    }
+  ],
+  "exports": [
+    {
+      "elevated": false,
+      "exporter_id": "winget",
+      "files": [
+        {
+          "archive_path": "system/winget/winget.json",
+          "blake3": "d74981efa70a0c880b8d8c1985d075dbcbf679b99a5f9914e5aaf96b831a9e24",
+          "size": 18211
+        }
+      ],
+      "finding_id": "e0c47a1f9b8d2233",
+      "params": {},
+      "status": "complete"
+    }
+  ],
+  "findings": [
+    {
+      "app": {
+        "id": "elden-ring",
+        "installed": true,
+        "kind": "game",
+        "name": "ELDEN RING",
+        "process_names": [
+          "eldenring.exe"
+        ],
+        "source_ids": {
+          "steam": "1245620"
+        }
+      },
+      "archive_dir": "files/3fa2c9e01b7d44aa",
+      "category": "game_save",
+      "id": "3fa2c9e01b7d44aa",
+      "sensitivity": "none",
+      "stats": {
+        "file_count": 4,
+        "total_bytes": 28311552
+      },
+      "status": "complete",
+      "target": {
+        "exclude": [],
+        "include": [],
+        "kind": "file_set",
+        "root": "{APPDATA}\\EldenRing"
+      },
+      "title": "ELDEN RING — сохранения"
+    },
+    {
+      "archive_path": "registry/5c1e0a9d3b2f7e61.reg",
+      "category": "app_config",
+      "id": "5c1e0a9d3b2f7e61",
+      "sensitivity": "low",
+      "status": "complete",
+      "target": {
+        "hive": "hkcu",
+        "key": "Software\\SimonTatham\\PuTTY",
+        "kind": "registry",
+        "recursive": true
+      },
+      "title": "PuTTY — сессии"
+    },
+    {
+      "category": "system_settings",
+      "id": "e0c47a1f9b8d2233",
+      "sensitivity": "none",
+      "status": "complete",
+      "target": {
+        "exporter_id": "winget",
+        "kind": "system_export",
+        "params": {}
+      },
+      "title": "winget"
+    },
+    {
+      "archive_dir": "files/77aa00bb11cc22dd",
+      "category": "app_data",
+      "id": "77aa00bb11cc22dd",
+      "sensitivity": "high",
+      "stats": {
+        "file_count": 0,
+        "total_bytes": 0
+      },
+      "status": "partial",
+      "target": {
+        "kind": "file",
+        "path": "{LOCALAPPDATA}\\Google\\Chrome\\User Data\\Default\\History"
+      },
+      "title": "Google Chrome — профиль"
+    }
+  ],
+  "finished_at": "2026-09-28T14:41:57Z",
+  "format": "savekeeper-backup",
+  "locked": [
+    {
+      "finding_id": "77aa00bb11cc22dd",
+      "processes": [
+        {
+          "app_name": "Google Chrome",
+          "name": "chrome.exe",
+          "pid": 1234
+        }
+      ],
+      "source": "{LOCALAPPDATA}\\Google\\Chrome\\User Data\\Default\\History"
+    }
+  ],
+  "scan_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+  "schema_version": 1,
+  "status": "complete_with_issues",
+  "totals": {
+    "archive_bytes": 1987654321,
+    "bytes": 3221225472,
+    "errors": 2,
+    "files": 18234,
+    "locked": 1
+  },
+  "verification": {
+    "checked_files": 18234,
+    "mismatches": [
+      {
+        "actual_blake3": null,
+        "archive_path": "files/3fa2c9e01b7d44aa/CON~sk",
+        "expected_blake3": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+      }
+    ],
+    "ok": false,
+    "performed": true
+  }
+}
