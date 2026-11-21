@@ -126,7 +126,7 @@ fn attribute_bits(attributes: &[FileAttribute]) -> u32 {
 }
 
 /// Saved attributes of `FILE_ATTRIBUTE_*` flags, in the order of [`FileAttribute`].
-fn attributes_of(bits: u32) -> Vec<FileAttribute> {
+pub(crate) fn attributes_of(bits: u32) -> Vec<FileAttribute> {
     [
         (ATTR_READONLY, FileAttribute::Readonly),
         (ATTR_HIDDEN, FileAttribute::Hidden),

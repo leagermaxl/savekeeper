@@ -7,6 +7,7 @@ mod manifest;
 mod schema;
 mod serde_util;
 mod sink;
+mod source;
 mod types;
 
 pub use error::BackupError;
