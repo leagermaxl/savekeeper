@@ -1,5 +1,6 @@
 //! Backup writer: archive, manifest, report, encryption and verification (SPEC-10).
 
+mod archive_path;
 mod manifest;
 mod schema;
 mod serde_util;
