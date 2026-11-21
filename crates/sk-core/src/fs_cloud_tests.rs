@@ -1,4 +1,5 @@
-//! Tests of [`cloud_state`] (SPEC-02 §3.5, T-02-12) on the real file system.
+//! Tests of [`cloud_state`] (SPEC-02 §3.5, T-02-12) and [`set_attributes`]
+//! (SPEC-02 §3.7) on the real file system.
 //!
 //! Files are created in a temporary folder under `<workspace>/target/tmp`,
 //! not in the system temp folder; on Windows only attributes of these test
@@ -70,7 +71,6 @@ mod win {
     use std::os::windows::fs::MetadataExt;
 
     use super::*;
-    use crate::win::fs::set_attributes;
 
     const FILE_ATTRIBUTE_OFFLINE: u32 = 0x1000;
 
@@ -105,6 +105,22 @@ mod win {
         );
     }
 
+    /// `set_attributes` sets exactly the given flags; 0 clears them (`NORMAL`).
+    #[test]
+    fn set_attributes_on_long_path() {
+        const READONLY_HIDDEN_SYSTEM: u32 = 0x1 | 0x2 | 0x4;
+        let dir = temp_dir();
+        let path = file(&long_dir(dir.path()), "attrs.sav");
+        set_attributes(&path, READONLY_HIDDEN_SYSTEM).unwrap();
+        let attrs = crate::win::fs::attributes(&path).unwrap();
+        assert_eq!(attrs & 0x27, READONLY_HIDDEN_SYSTEM);
+        set_attributes(&path, 0).unwrap();
+        let attrs = crate::win::fs::attributes(&path).unwrap();
+        assert_eq!(attrs & 0x27, 0);
+        let err = set_attributes(&dir.path().join("missing.sav"), 0).unwrap_err();
+        assert_eq!(err.kind(), ErrorKind::NotFound);
+    }
+
     #[test]
     fn invalid_name_error_is_returned_as_is() {
         let dir = temp_dir();
@@ -120,4 +136,16 @@ fn existing_path_is_local_outside_windows() {
     let dir = temp_dir();
     let path = file(dir.path(), "plain.sav");
     assert_eq!(cloud_state(&path).unwrap(), CloudState::Local);
+}
+
+/// Outside Windows only the read-only flag has an effect.
+#[cfg(not(windows))]
+#[test]
+fn set_attributes_maps_readonly_outside_windows() {
+    let dir = temp_dir();
+    let path = file(dir.path(), "plain.sav");
+    set_attributes(&path, 0x1 | 0x2).unwrap();
+    assert!(fs::metadata(&path).unwrap().permissions().readonly());
+    set_attributes(&path, 0).unwrap();
+    assert!(!fs::metadata(&path).unwrap().permissions().readonly());
 }

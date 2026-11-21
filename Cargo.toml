@@ -72,6 +72,8 @@ tracing = "0.1"
 tracing-appender = "0.2"
 tracing-subscriber = "0.3"
 uuid = "1"
+# Backup archives (SPEC-10 §4.3); features are chosen per crate (sk-backup: deflate via zlib-rs).
+zip = { version = "9", default-features = false }
 # Embedded Ludusavi snapshot, compressed by sk-games/build.rs (SPEC-05 FR-05-02).
 zstd = "0.14"
 windows = "0.62"

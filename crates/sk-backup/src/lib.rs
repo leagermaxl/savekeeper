@@ -6,6 +6,7 @@ mod estimate;
 mod manifest;
 mod schema;
 mod serde_util;
+mod sink;
 mod types;
 
 pub use error::BackupError;

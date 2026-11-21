@@ -19,10 +19,12 @@ serde_json.workspace = true
 sk-core.workspace = true
 specta.workspace = true
 thiserror.workspace = true
-# Timestamps of the manifest (RFC 3339).
-time.workspace = true
+# Timestamps of the manifest (RFC 3339); `local-offset`: local DOS times of zip entries.
+time = { workspace = true, features = ["local-offset"] }
 # `backup_id`, `scan_id`.
 uuid = { workspace = true, features = ["serde"] }
+# `zip` backups (SPEC-10 §4.3): deflate (pure Rust zlib-rs) or stored, zip64.
+zip = { workspace = true, features = ["deflate-flate2-zlib-rs"] }
 
 [dev-dependencies]
 # Snapshots of the manifest example and its JSON Schema (SPEC-10 T-10-01, SPEC-12 FR-12-04).

@@ -139,6 +139,19 @@ pub fn cloud_state(path: &Path) -> std::io::Result<CloudState> {
     })
 }
 
+/// Sets the `FILE_ATTRIBUTE_*` flags of the entry at `path`
+/// (`SetFileAttributesW` on the extended path); `0` means
+/// `FILE_ATTRIBUTE_NORMAL` (SPEC-02 §3.7).
+///
+/// Only for files SaveKeeper wrote itself, such as the files of a `dir`
+/// backup (SPEC-10 §4.3): user files are never changed (principle P1). The
+/// OS error is returned as is. Outside Windows only
+/// `FILE_ATTRIBUTE_READONLY` (`0x1`) has an effect, as the read-only
+/// permission; the other flags are ignored.
+pub fn set_attributes(path: &Path, attrs: u32) -> std::io::Result<()> {
+    crate::win::fs::set_attributes(path, attrs)
+}
+
 /// The volume that holds a folder (SPEC-10 §4.6: backup target estimate).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct VolumeInfo {

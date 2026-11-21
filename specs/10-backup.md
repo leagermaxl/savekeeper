@@ -8,7 +8,7 @@
 | Крейт(ы) | `sk-backup` (оркестрация — `sk-engine::BackupJob`) |
 | Зависит от | SPEC-01, SPEC-02, SPEC-03, SPEC-06, SPEC-09 |
 | Используется в | SPEC-11, SPEC-13, SPEC-14 |
-| Последнее изменение | 2026-11-21 (§4.6: уточнения оценки — T-10-03); 2026-11-21 (§4.2: правила экранирования имён и семантика `original_name` — T-10-02); 2026-11-21 (§4.4: код ошибки `cloud_only` в списке кодов, как в FR-10-15 и §5 — T-10-01); 2026-10-10 (T-10-09: `params` экспортёра `checklist` из находок — SPEC-06 §4.7); 2026-10-10 (FR-10-15: cloud-only файлы не открываются и не скачиваются); 2026-10-10 (имя файла экспорта winget — `winget.json`, как в SPEC-06 §4.3); 2026-10-01 (пример `environment` в манифесте по SPEC-02 §6; закрыт вопрос по `EnvironmentSnapshot`) |
+| Последнее изменение | 2026-11-21 (§4.3: `ArchiveSink`, детали zip и dir; зависимость `zip` 9 — SPEC-01 §4.2, T-10-04); 2026-11-21 (§4.6: уточнения оценки — T-10-03); 2026-11-21 (§4.2: правила экранирования имён и семантика `original_name` — T-10-02); 2026-11-21 (§4.4: код ошибки `cloud_only` в списке кодов, как в FR-10-15 и §5 — T-10-01); 2026-10-10 (T-10-09: `params` экспортёра `checklist` из находок — SPEC-06 §4.7); 2026-10-10 (FR-10-15: cloud-only файлы не открываются и не скачиваются); 2026-10-10 (имя файла экспорта winget — `winget.json`, как в SPEC-06 §4.3); 2026-10-01 (пример `environment` в манифесте по SPEC-02 §6; закрыт вопрос по `EnvironmentSnapshot`) |
 
 ## 1. Цель
 
@@ -204,6 +204,10 @@ flowchart TD
    - mtime и атрибуты: zip хранит mtime в extended timestamp (0x5455) и NTFS extra field (0x000a). Для `dir` выставляются `SetFileTime` и атрибуты `READONLY|HIDDEN|SYSTEM|ARCHIVE`.
 4. **Проверка отмены** — между файлами и каждые 8 МиБ внутри большого файла.
 
+Контейнер пишется через внутренний (`pub(crate)`) трейт `ArchiveSink` (`ZipSink`/`DirSink`): ошибка чтения источника — запись откатывается, бэкап продолжается; ошибка записи — остановка; отмена проверяется в цикле копирования каждые 8 МиБ. Детали (T-10-04):
+- zip: zip64-заголовок локальной записи, если ожидаемый размер ≥ 2 ГиБ (запас на рост файла при чтении); флаг EFS у не-ASCII имён (ASCII-имена одинаковы в UTF-8 и CP437); DOS-время — локальное (при ошибке — UTC); атрибуты — MS-DOS external attributes; в NTFS extra field atime = mtime; при `compression_level = 0` всё `Stored`.
+- `dir`: время — через `File::set_times` (mtime, ctime), атрибуты — `sk_core::fs::set_attributes` (SPEC-02 §3.7); запись без атрибутов получает `NORMAL` (снимается `ARCHIVE`, который Windows ставит новым файлам). Существующий файл назначения не перезаписывается.
+
 ### 4.4 manifest.json v1
 
 ```jsonc
@@ -390,7 +394,7 @@ pub struct LockingProcess { pub pid: u32, pub name: String, pub app_name: String
 - [x] **T-10-01** — Типы `BackupRequest/Options/Target/Estimate/Result`, `BackupManifest` и дочерние + serde/specta + JSON Schema (`schemars`) в `specs/schemas/`. *Зависит:* T-02-01. *Готово, когда:* insta-снапшот схемы и примера §4.4.
 - [x] **T-10-02** — Экранирование имён и построение `archive_path`. *Готово, когда:* unit-тесты §6.
 - [x] **T-10-03** — `estimate()`: размер, коэффициенты, свободное место, тип ФС, блокеры и предупреждения. *Зависит:* T-10-01. *Готово, когда:* unit-тесты блокеров, Windows-тест `GetDiskFreeSpaceExW`.
-- [ ] **T-10-04** — Абстракция `ArchiveSink` с реализациями `ZipSink` (deflate/stored по расширению, zip64, UTF-8, extra fields времени) и `DirSink` (SetFileTime, атрибуты). *Готово, когда:* round-trip тест для обоих.
+- [x] **T-10-04** — Абстракция `ArchiveSink` с реализациями `ZipSink` (deflate/stored по расширению, zip64, UTF-8, extra fields времени) и `DirSink` (SetFileTime, атрибуты). *Готово, когда:* round-trip тест для обоих.
 - [ ] **T-10-05** — Открытие исходных файлов с шарингом и ретраями (FR-10-05), `HashingReader` (blake3 tee), проверка `changed_during_read`. *Зависит:* T-10-04.
 - [ ] **T-10-06** — Restart Manager `find_lockers` (`sk-backup::win::rm`) + заглушка для не-Windows. *Готово, когда:* Windows-тест с блокирующим дочерним процессом.
 - [ ] **T-10-07** — Фаза файлов: ленивое перечисление через `FsScanner::walk` (SPEC-03), порядок по категории и score, дедуп, проверка отмены, `entries.jsonl`. *Зависит:* T-10-05, SPEC-03 T-03-xx (walk).
